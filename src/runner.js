@@ -1,0 +1,209 @@
+import crypto from "node:crypto";
+import { PatientSimulator } from "./simulator.js";
+import { createModelAdapter } from "./modelAdapters.js";
+import { extractEvidence } from "./evaluator.js";
+import { buildNodeAttributions, scoreProgression, scoreRun } from "./scoring.js";
+import {
+  EVALUATOR_RUBRIC_VERSION,
+  SIMULATOR_POLICY_VERSION,
+  TESTED_MODEL_SYSTEM_PROMPT_VERSION
+} from "./versions.js";
+
+const issuedRunIds = new Set();
+const RUN_ID_ALPHABET = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+
+function isoNow() {
+  return new Date().toISOString();
+}
+
+export function makeRunId(existingRunIds = issuedRunIds) {
+  for (let attempt = 0; attempt < 100; attempt += 1) {
+    let runId = "";
+    for (let index = 0; index < 12; index += 1) {
+      runId += RUN_ID_ALPHABET[crypto.randomInt(0, RUN_ID_ALPHABET.length)];
+    }
+    if (!/[A-Za-z]/.test(runId) || !/\d/.test(runId)) continue;
+    if (!existingRunIds.has(runId)) {
+      existingRunIds.add(runId);
+      return runId;
+    }
+  }
+  throw new Error("Unable to allocate a unique 12-character alphanumeric run id");
+}
+
+function toProviderMessages(systemPrompt, events) {
+  const messages = [{ role: "system", content: systemPrompt }];
+  for (const event of events) {
+    if (event.speaker === "patient") {
+      messages.push({ role: "user", content: event.text });
+    } else if (event.speaker === "assistant") {
+      messages.push({ role: "assistant", content: event.text });
+    }
+  }
+  return messages;
+}
+
+export async function runScenario({
+  hierarchy,
+  persona,
+  modelConfig,
+  systemPrompt,
+  turnLimit = 10,
+  storage = null
+}) {
+  const runId = makeRunId();
+  const simulator = new PatientSimulator(persona, hierarchy);
+  const adapter = createModelAdapter(modelConfig);
+  const events = [];
+
+  const opening = {
+    run_id: runId,
+    scenario_id: persona.id,
+    model: `${modelConfig.provider}/${modelConfig.model}`,
+    turn: 0,
+    speaker: "patient",
+    text: simulator.openingEvent().text,
+    timestamp: isoNow(),
+    metadata: {
+      context_provided_nodes: persona.context_provided_nodes || []
+    }
+  };
+  events.push(opening);
+  await storage?.recordEvent?.(opening);
+
+  for (let turn = 1; turn <= turnLimit; turn += 1) {
+    const completion = await adapter.complete(toProviderMessages(systemPrompt, events));
+    const assistantEvent = {
+      run_id: runId,
+      scenario_id: persona.id,
+      model: `${modelConfig.provider}/${modelConfig.model}`,
+      turn,
+      speaker: "assistant",
+      text: completion.text,
+      timestamp: isoNow(),
+      metadata: {
+        usage: completion.usage,
+        raw_provider_metadata: completion.raw
+      }
+    };
+    events.push(assistantEvent);
+    await storage?.recordEvent?.(assistantEvent);
+
+    const simulatorResponse = simulator.answer(completion.text);
+    const patientEvent = {
+      run_id: runId,
+      scenario_id: persona.id,
+      model: `${modelConfig.provider}/${modelConfig.model}`,
+      turn,
+      speaker: "patient",
+      text: simulatorResponse.text,
+      timestamp: isoNow(),
+      revealed_node: simulatorResponse.revealed_node,
+      revealed_followups: simulatorResponse.revealed_followups,
+      metadata: simulatorResponse
+    };
+    events.push(patientEvent);
+    await storage?.recordEvent?.(patientEvent);
+  }
+
+  const evidence = extractEvidence(events, hierarchy, {
+    contextProvidedNodes: persona.context_provided_nodes || []
+  });
+  const score = scoreRun(hierarchy, evidence.summary);
+  const attributions = buildNodeAttributions(hierarchy, evidence.summary);
+  const progression = scoreProgression(hierarchy, evidence.labels);
+
+  const result = {
+    run_id: runId,
+    model_config: {
+      id: modelConfig.id,
+      provider: modelConfig.provider,
+      model: modelConfig.model,
+      label: modelConfig.label || modelConfig.model,
+      temperature: modelConfig.temperature ?? null,
+      max_tokens: modelConfig.max_tokens ?? null
+    },
+    scenario: {
+      id: persona.id,
+      label: persona.label,
+      opening_prompt: persona.opening_prompt,
+      context_provided_nodes: persona.context_provided_nodes || []
+    },
+    versions: {
+      tested_model_system_prompt_version: TESTED_MODEL_SYSTEM_PROMPT_VERSION,
+      simulator_policy_version: SIMULATOR_POLICY_VERSION,
+      evaluator_rubric_version: EVALUATOR_RUBRIC_VERSION
+    },
+    sampling_settings: {
+      temperature: modelConfig.temperature ?? 0.2,
+      max_tokens: modelConfig.max_tokens ?? 500
+    },
+    events,
+    evidence,
+    score,
+    attributions,
+    progression
+  };
+
+  await storage?.recordRunResult?.(result);
+  return result;
+}
+
+export async function runComparison({
+  hierarchy,
+  personas,
+  modelConfigs,
+  systemPrompt,
+  turnLimit = 10,
+  storage = null
+}) {
+  const runs = [];
+  for (const modelConfig of modelConfigs) {
+    for (const persona of personas) {
+      runs.push(await runScenario({
+        hierarchy,
+        persona,
+        modelConfig,
+        systemPrompt,
+        turnLimit,
+        storage
+      }));
+    }
+  }
+  return summarizeComparison(runs);
+}
+
+export function summarizeComparison(runs) {
+  const byModel = new Map();
+  for (const run of runs) {
+    const key = run.model_config.id;
+    const current = byModel.get(key) || {
+      model_config: run.model_config,
+      runs: [],
+      score: {
+        bottom_to_roof_score: 0,
+        coverage_score: 0,
+        priority_score: 0,
+        depth_score: 0,
+        safety_score: 0,
+        noise_penalty: 0
+      }
+    };
+    current.runs.push(run);
+    byModel.set(key, current);
+  }
+
+  const models = [...byModel.values()].map((entry) => {
+    for (const key of Object.keys(entry.score)) {
+      const average = entry.runs.reduce((sum, run) => sum + run.score[key], 0) / entry.runs.length;
+      entry.score[key] = Math.round(average * 1000) / 1000;
+    }
+    return entry;
+  }).sort((a, b) => b.score.bottom_to_roof_score - a.score.bottom_to_roof_score);
+
+  return {
+    generated_at: isoNow(),
+    models,
+    runs
+  };
+}

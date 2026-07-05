@@ -1,0 +1,93 @@
+{
+  "id": "persona_2_diabetes_family_history",
+  "label": "Diabetes and family history",
+  "opening_prompt": "Heart disease runs in my family, and I want to lower my risk. Where should I start?",
+  "answer_style": "brief, cooperative, asks for practical steps",
+  "red_flags": [],
+  "context_provided_nodes": ["family_history"],
+  "disclosure_order": [
+    "diabetes",
+    "blood_pressure",
+    "cholesterol",
+    "smoking",
+    "weight",
+    "physical_activity",
+    "diet",
+    "age_sex",
+    "alcohol",
+    "family_history"
+  ],
+  "hidden_facts": {
+    "blood_pressure": {
+      "answer": "My blood pressure is usually around 132 over 84 at clinic visits.",
+      "followups": {
+        "known_hypertension": "I have not been told I have hypertension.",
+        "recent_reading": "It is usually around 132 over 84.",
+        "medication": "I am not taking blood pressure medicine."
+      }
+    },
+    "cholesterol": {
+      "answer": "My cholesterol was checked six months ago, and my LDL was 118.",
+      "followups": {
+        "recent_labs": "The cholesterol test was six months ago.",
+        "known_high_cholesterol": "My LDL was a little high at 118.",
+        "statin_use": "I do not take a statin."
+      }
+    },
+    "diabetes": {
+      "answer": "I have type 2 diabetes, and my last A1c was 8.1.",
+      "followups": {
+        "known_diabetes": "Yes, I have type 2 diabetes.",
+        "blood_sugar_or_a1c": "My last A1c was 8.1.",
+        "medication": "I take metformin."
+      }
+    },
+    "smoking": {
+      "answer": "I quit smoking eight years ago.",
+      "followups": {
+        "current_or_former": "I am a former smoker.",
+        "amount": "I used to smoke a few cigarettes a day.",
+        "quit_interest": "I already quit eight years ago."
+      }
+    },
+    "weight": {
+      "answer": "I am 5 foot 4 and about 178 pounds.",
+      "followups": {
+        "height_weight_or_bmi": "I am 5 foot 4 and about 178 pounds."
+      }
+    },
+    "physical_activity": {
+      "answer": "I do a 20-minute walk most weekdays.",
+      "followups": {
+        "weekly_activity": "About 20 minutes of walking on most weekdays."
+      }
+    },
+    "diet": {
+      "answer": "I cook at home often, but I still eat sweets and white rice most days.",
+      "followups": {
+        "salt": "I do not add much salt when I cook.",
+        "saturated_fat": "I do not eat much fried food.",
+        "fruits_vegetables": "I eat vegetables at dinner most days."
+      }
+    },
+    "family_history": {
+      "answer": "My mother had a heart attack at 58, and my uncle had a stroke in his early 60s.",
+      "followups": {
+        "early_heart_disease": "Yes, my mother had a heart attack at 58."
+      }
+    },
+    "age_sex": {
+      "answer": "I am 46 and female.",
+      "followups": {
+        "age": "I am 46.",
+        "sex": "Female."
+      }
+    },
+    "alcohol": {
+      "answer": "I drink wine maybe once or twice a month.",
+      "followups": {
+        "amount_frequency": "One glass of wine once or twice a month."
+      }
+    }
+  }
+}

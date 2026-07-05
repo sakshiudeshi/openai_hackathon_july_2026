@@ -1,0 +1,20 @@
+{
+  "name": "cardio-risk-hierarchy-eval",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Local v0 prototype for evaluating LLM navigation of cardiovascular risk-factor hierarchies.",
+  "scripts": {
+    "dev": "node src/server.js",
+    "test": "node --test",
+    "test:unit": "node --test test/*.test.js test/unit/*.test.js",
+    "test:integration": "node --test test/integration/*.test.js",
+    "validate:all": "node scripts/validate-all.js",
+    "run:demo": "node scripts/run-demo.js",
+    "run:evaluation": "node scripts/run-evaluation.js",
+    "validate:evaluator": "node scripts/validate-evaluator.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

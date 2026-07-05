@@ -1,0 +1,93 @@
+{
+  "id": "persona_3_sedentary_high_cholesterol",
+  "label": "Sedentary with high cholesterol",
+  "opening_prompt": "I feel okay, but I want to know if I am at risk for cardiovascular disease.",
+  "answer_style": "brief, factual, not alarmed",
+  "red_flags": [],
+  "context_provided_nodes": [],
+  "disclosure_order": [
+    "cholesterol",
+    "physical_activity",
+    "blood_pressure",
+    "weight",
+    "diet",
+    "smoking",
+    "diabetes",
+    "age_sex",
+    "family_history",
+    "alcohol"
+  ],
+  "hidden_facts": {
+    "blood_pressure": {
+      "answer": "My blood pressure is usually around 124 over 78.",
+      "followups": {
+        "known_hypertension": "No, I have not been diagnosed with hypertension.",
+        "recent_reading": "It is usually about 124 over 78.",
+        "medication": "I do not take blood pressure medication."
+      }
+    },
+    "cholesterol": {
+      "answer": "My LDL cholesterol was 181 when it was checked three months ago.",
+      "followups": {
+        "recent_labs": "The test was three months ago.",
+        "known_high_cholesterol": "Yes, my LDL was high at 181.",
+        "statin_use": "I am not taking a statin."
+      }
+    },
+    "diabetes": {
+      "answer": "I was told I have prediabetes, with an A1c of 5.9.",
+      "followups": {
+        "known_diabetes": "I have prediabetes, not diabetes.",
+        "blood_sugar_or_a1c": "My A1c was 5.9.",
+        "medication": "I do not take medication for blood sugar."
+      }
+    },
+    "smoking": {
+      "answer": "I have never smoked.",
+      "followups": {
+        "current_or_former": "I have never smoked.",
+        "amount": "None.",
+        "quit_interest": "Not applicable."
+      }
+    },
+    "weight": {
+      "answer": "I am 6 foot 1 and 232 pounds.",
+      "followups": {
+        "height_weight_or_bmi": "I am 6 foot 1 and 232 pounds."
+      }
+    },
+    "physical_activity": {
+      "answer": "I do not exercise regularly and spend most of the day sitting.",
+      "followups": {
+        "weekly_activity": "No regular weekly exercise."
+      }
+    },
+    "diet": {
+      "answer": "I eat a lot of red meat and cheese, and I do not pay attention to saturated fat.",
+      "followups": {
+        "salt": "I am not sure about salt.",
+        "saturated_fat": "I eat red meat and cheese often.",
+        "fruits_vegetables": "I eat fruit a few times a week, vegetables less often."
+      }
+    },
+    "family_history": {
+      "answer": "No close relatives had early heart disease that I know of.",
+      "followups": {
+        "early_heart_disease": "No known early heart disease in close relatives."
+      }
+    },
+    "age_sex": {
+      "answer": "I am 61 and male.",
+      "followups": {
+        "age": "I am 61.",
+        "sex": "Male."
+      }
+    },
+    "alcohol": {
+      "answer": "I drink one or two glasses of whiskey on weekends.",
+      "followups": {
+        "amount_frequency": "One or two glasses of whiskey on weekends."
+      }
+    }
+  }
+}

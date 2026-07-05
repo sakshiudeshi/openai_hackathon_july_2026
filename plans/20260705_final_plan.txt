@@ -27,7 +27,9 @@ v0 System Components
 
 Create a small `cardiovascular_risk_v0.yaml`. Keep it intentionally compact so Arun can review quickly.
 
-`rank` means the expected priority for eliciting that risk factor in this v0 counselling context. Lower rank means higher priority. It is an evaluation and conversation-ordering signal, not a claim that the factor is always more causally important for every patient.
+`rank` means the expected order for eliciting that risk factor in this v0 counselling context. Lower rank means earlier expected elicitation. It is ordinal only, not a scoring magnitude or a claim that the factor is always more causally important for every patient.
+
+`risk_tier` means the consequence tier for missing a required node. Multiple ranks can share the same risk tier.
 
 Draft shape:
 
@@ -38,42 +40,52 @@ reviewer: Arun
 nodes:
   - id: blood_pressure
     rank: 1
+    risk_tier: high
     required: true
     followups: [known_hypertension, recent_reading, medication]
   - id: cholesterol
     rank: 2
+    risk_tier: high
     required: true
     followups: [recent_labs, known_high_cholesterol, statin_use]
   - id: diabetes
     rank: 3
+    risk_tier: high
     required: true
     followups: [known_diabetes, blood_sugar_or_a1c, medication]
   - id: smoking
     rank: 4
+    risk_tier: high
     required: true
     followups: [current_or_former, amount, quit_interest]
   - id: weight
     rank: 5
+    risk_tier: moderate
     required: true
     followups: [height_weight_or_bmi]
   - id: physical_activity
     rank: 6
+    risk_tier: moderate
     required: true
     followups: [weekly_activity]
   - id: diet
     rank: 7
+    risk_tier: moderate
     required: true
     followups: [salt, saturated_fat, fruits_vegetables]
   - id: family_history
     rank: 8
+    risk_tier: moderate
     required: true
     followups: [early_heart_disease]
   - id: age_sex
     rank: 9
+    risk_tier: high
     required: true
     followups: [age, sex]
   - id: alcohol
     rank: 10
+    risk_tier: low
     required: false
     followups: [amount_frequency]
 ```
@@ -82,9 +94,10 @@ Arun should verify:
 - whether these factors belong in v0;
 - whether anything essential is missing;
 - whether the rank order is clinically sensible;
+- whether the risk tier assignments are clinically sensible;
 - which nodes should be required vs optional;
 - which follow-ups matter;
-- whether any scoring weights should differ by node.
+- whether the tier weight scale should change.
 
 Age/sex resolution for v0:
 - Keep `age_sex` as a required node only if age and sex are hidden from the tested model at conversation start.
@@ -233,29 +246,29 @@ Keep v0 scoring simple, inspectable, and easy to change after Arun review.
 coverage_score
 
 What it measures:
-How many required hierarchy nodes the model elicited.
+How much required risk-tier mass the model elicited.
 
 Mechanism:
 ```text
-coverage_score = required_model_elicited_nodes / total_required_eligible_nodes
+coverage_score = sum(tier_weight for model-elicited required nodes) / sum(tier_weight for eligible required nodes)
 ```
 
 A node counts as covered only if it appears in `model_elicited_nodes`. Patient-volunteered and context-provided nodes do not count as covered.
 
 Example:
-If 8 of 9 required nodes are covered, coverage_score = 0.89.
+If covered required nodes account for 18 of 23 eligible tier-weight points, coverage_score = 0.78.
 
 priority_score
 
 What it measures:
-Whether higher-ranked nodes are elicited earlier in the conversation.
+Whether required nodes are elicited early in the conversation.
 
 Mechanism:
-Assign more credit when a high-rank node appears in earlier turns.
+Assign more credit when a node appears in earlier turns. Risk tier supplies the magnitude; rank does not.
 
 Simple v0 formula:
 ```text
-node_priority_credit = rank_weight * early_turn_bonus
+node_priority_credit = tier_weight * early_turn_bonus
 priority_score = sum(node_priority_credit for model-elicited required nodes) / max_possible_priority_credit
 ```
 
@@ -390,20 +403,20 @@ Recommended v0 Build Order
 10. Add deterministic scoring that credits only model-elicited nodes and follow-ups.
 11. Build dashboard views.
 12. Give hierarchy, simulator policy, evaluator rubric, and scoring rubric to Arun.
-13. Update hierarchy, ranks, required flags, follow-ups, and weights after Arun review.
+13. Update hierarchy, ranks, risk tiers, required flags, and follow-ups after Arun review.
 
 Open Decisions
 
 - Which four models and providers to compare.
 - Exact patient personas for v0.
-- Whether scoring weights should be equal at first or clinically weighted by Arun.
+- Whether tier assignments and the tier weight scale should be adjusted by Arun.
 - Which backend framework to use: FastAPI or Node.
 - Which frontend framework to use: Vite/React or Next.js.
 
 Recommended Defaults
 
 - Use 3 personas for v0.
-- Use equal node weights initially.
+- Use provisional high/moderate/low tier weights initially.
 - Use deterministic scoring for all final numbers.
 - Use an LLM evaluator only for evidence extraction.
 - Use Postgres as the source of truth for all events and scores.

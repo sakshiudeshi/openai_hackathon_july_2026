@@ -1,0 +1,16 @@
+{
+  "server": {
+    "port": 5173
+  },
+  "run": {
+    "turnLimit": 10
+  },
+  "modelConfigs": {
+    "path": "config/model_configs.json"
+  },
+  "storage": {
+    "outputDir": "runs",
+    "latestComparisonFile": "latest-comparison.json",
+    "demoComparisonFile": "demo-results.json"
+  }
+}

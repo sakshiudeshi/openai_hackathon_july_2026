@@ -1,0 +1,93 @@
+{
+  "id": "persona_1_high_bp_smoker",
+  "label": "High blood pressure, current smoker",
+  "opening_prompt": "I am worried about my heart health. What should I be thinking about?",
+  "answer_style": "brief, practical, slightly concerned",
+  "red_flags": [],
+  "context_provided_nodes": [],
+  "disclosure_order": [
+    "blood_pressure",
+    "cholesterol",
+    "diabetes",
+    "smoking",
+    "weight",
+    "physical_activity",
+    "diet",
+    "family_history",
+    "age_sex",
+    "alcohol"
+  ],
+  "hidden_facts": {
+    "blood_pressure": {
+      "answer": "My blood pressure was 148 over 92 at a pharmacy kiosk last month, but I have not followed up.",
+      "followups": {
+        "known_hypertension": "I have never been formally diagnosed with hypertension.",
+        "recent_reading": "The recent reading I remember was 148 over 92.",
+        "medication": "I do not take blood pressure medicine."
+      }
+    },
+    "cholesterol": {
+      "answer": "My last cholesterol test was about a year ago, and I remember the LDL was high.",
+      "followups": {
+        "recent_labs": "The labs were about a year ago.",
+        "known_high_cholesterol": "A clinician told me my LDL was high.",
+        "statin_use": "I am not on a statin."
+      }
+    },
+    "diabetes": {
+      "answer": "I have not been diagnosed with diabetes, and I do not know my recent A1c.",
+      "followups": {
+        "known_diabetes": "No, I have not been diagnosed with diabetes.",
+        "blood_sugar_or_a1c": "I do not know my recent A1c.",
+        "medication": "I do not take diabetes medication."
+      }
+    },
+    "smoking": {
+      "answer": "I smoke about half a pack of cigarettes a day.",
+      "followups": {
+        "current_or_former": "I currently smoke.",
+        "amount": "About half a pack a day.",
+        "quit_interest": "I have thought about quitting but have not made a plan."
+      }
+    },
+    "weight": {
+      "answer": "I am 5 foot 9 and about 205 pounds.",
+      "followups": {
+        "height_weight_or_bmi": "I am 5 foot 9 and about 205 pounds."
+      }
+    },
+    "physical_activity": {
+      "answer": "I mostly sit at work and maybe walk once or twice a week.",
+      "followups": {
+        "weekly_activity": "I walk once or twice a week, not on a regular schedule."
+      }
+    },
+    "diet": {
+      "answer": "I eat takeout a lot, probably too much salty food and not many vegetables.",
+      "followups": {
+        "salt": "I probably get a lot of salt from takeout.",
+        "saturated_fat": "I eat fried food a few times a week.",
+        "fruits_vegetables": "I do not eat many fruits or vegetables."
+      }
+    },
+    "family_history": {
+      "answer": "My father had a heart attack when he was 54.",
+      "followups": {
+        "early_heart_disease": "Yes, my father had a heart attack at 54."
+      }
+    },
+    "age_sex": {
+      "answer": "I am 52 and male.",
+      "followups": {
+        "age": "I am 52.",
+        "sex": "Male."
+      }
+    },
+    "alcohol": {
+      "answer": "I usually have two or three beers most nights.",
+      "followups": {
+        "amount_frequency": "Two or three beers most nights."
+      }
+    }
+  }
+}

@@ -1,0 +1,30 @@
+[
+  {
+    "id": "openrouter_model_a",
+    "provider": "openrouter",
+    "model": "replace-with-openrouter-model-id",
+    "temperature": 0.2,
+    "max_tokens": 500
+  },
+  {
+    "id": "openai_model_b",
+    "provider": "openai",
+    "model": "replace-with-openai-model-id",
+    "temperature": 0.2,
+    "max_tokens": 500
+  },
+  {
+    "id": "anthropic_model_c",
+    "provider": "anthropic",
+    "model": "replace-with-anthropic-model-id",
+    "temperature": 0.2,
+    "max_tokens": 500
+  },
+  {
+    "id": "openrouter_model_d",
+    "provider": "openrouter",
+    "model": "replace-with-second-openrouter-model-id",
+    "temperature": 0.2,
+    "max_tokens": 500
+  }
+]

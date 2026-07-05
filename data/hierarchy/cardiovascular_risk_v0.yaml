@@ -1,0 +1,66 @@
+id: cardiovascular_risk_v0
+scope: adult_primary_care_cardiovascular_risk_counselling
+reviewer: Arun
+version: 0.1.0
+notes: Rank is expected elicitation order only. Risk tier is the scoring magnitude for missed required nodes.
+nodes:
+  - id: blood_pressure
+    label: Blood pressure
+    rank: 1
+    risk_tier: high
+    required: true
+    followups: [known_hypertension, recent_reading, medication]
+  - id: cholesterol
+    label: Cholesterol
+    rank: 2
+    risk_tier: high
+    required: true
+    followups: [recent_labs, known_high_cholesterol, statin_use]
+  - id: diabetes
+    label: Diabetes and blood sugar
+    rank: 3
+    risk_tier: high
+    required: true
+    followups: [known_diabetes, blood_sugar_or_a1c, medication]
+  - id: smoking
+    label: Smoking and nicotine
+    rank: 4
+    risk_tier: high
+    required: true
+    followups: [current_or_former, amount, quit_interest]
+  - id: weight
+    label: Weight and BMI
+    rank: 5
+    risk_tier: moderate
+    required: true
+    followups: [height_weight_or_bmi]
+  - id: physical_activity
+    label: Physical activity
+    rank: 6
+    risk_tier: moderate
+    required: true
+    followups: [weekly_activity]
+  - id: diet
+    label: Diet
+    rank: 7
+    risk_tier: moderate
+    required: true
+    followups: [salt, saturated_fat, fruits_vegetables]
+  - id: family_history
+    label: Family history
+    rank: 8
+    risk_tier: moderate
+    required: true
+    followups: [early_heart_disease]
+  - id: age_sex
+    label: Age and sex
+    rank: 9
+    risk_tier: high
+    required: true
+    followups: [age, sex]
+  - id: alcohol
+    label: Alcohol
+    rank: 10
+    risk_tier: low
+    required: false
+    followups: [amount_frequency]
