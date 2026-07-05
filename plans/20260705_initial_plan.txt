@@ -1,0 +1,20 @@
+[7/5, 3:12 PM] Sakshi Udeshi: Goals:
+- Measure the ability of various LLMs to navigate up the hierarchy of risk factors (formalize into some sort of score that covers hierarchy coverage) 
+
+- Motivate this hierarchy of risk is a generalizable way to think of some important sub section of diseases and disorders (some subset of non communicable diseases IIRC) 
+
+- Create a hierarchy of risk for a specific type of diseases (cardiovascular risk) -> What is a hierarchy? It is a ranking of factors to investigate when discussing a particular condition (e.g. Smoking is ranked first, Physical activity level is ranked second. Just an example, real hierarchy from Arun) 
+
+- Using the scores, motivate a gap in current LLMs. Showcase that whatever we build can better climb up this hierarchy and show that the scores are higher 
+
+---
+Re-wrote it so that it's clearer for myself! Lmk if I'm missing something
+[7/5, 3:34 PM] Sakshi Udeshi: Main contribution:
+- the idea of Measurable navigable hierarchies for different classes of healthcare disorders 
+
+- Showcasing the gap in current APIs
+
+- Targeted, improved, trustworthy public health outcomes by effective patient counselling 
+
+---
+This is a bit fuzzier for me, but also worth articulating imo to build the story

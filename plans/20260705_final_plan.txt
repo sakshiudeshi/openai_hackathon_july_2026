@@ -1,0 +1,412 @@
+Final Plan: v0 Cardiovascular Risk Hierarchy Evaluation
+
+Goal
+Build a small local prototype that compares four LLMs on how well they naturally navigate a hidden hierarchy of adult primary-care cardiovascular risk factors during an ordinary user conversation.
+
+The tested model should not be told that a hierarchy exists. It should see a normal user asking for help about heart health or cardiovascular risk. The evaluator observes whether the model elicits the right risk factors, in a good order, with useful follow-up questions, while avoiding unsafe clinical behavior.
+
+Success for v0
+- Compare four provider-accessed models on the same patient scenarios.
+- Produce an inspectable bottom-to-roof hierarchy navigation score for each model.
+- Show transcript evidence for each model-elicited, patient-volunteered, context-provided, or missed hierarchy node.
+- Validate the LLM evaluator against a small gold-labeled evidence set before trusting leaderboard numbers.
+- Give Arun a compact draft hierarchy and scoring rubric to verify clinically.
+
+Scope
+- Condition: adult primary-care cardiovascular risk counselling.
+- User experience: a regular user accessing an LLM, not a formal clinical intake.
+- Hierarchy authority: Arun's clinical judgment frames and verifies the hierarchy.
+- Prototype type: local-first, but deployable components.
+- Model access: provider-flexible. OpenRouter is one route, but the runner should also support direct OpenAI API and Anthropic API adapters.
+- Storage: Postgres (Supabase).
+- Frontend: JS app.
+
+v0 System Components
+
+1. Compact hierarchy artifact
+
+Create a small `cardiovascular_risk_v0.yaml`. Keep it intentionally compact so Arun can review quickly.
+
+`rank` means the expected priority for eliciting that risk factor in this v0 counselling context. Lower rank means higher priority. It is an evaluation and conversation-ordering signal, not a claim that the factor is always more causally important for every patient.
+
+Draft shape:
+
+```yaml
+id: cardiovascular_risk_v0
+scope: adult_primary_care_cardiovascular_risk_counselling
+reviewer: Arun
+nodes:
+  - id: blood_pressure
+    rank: 1
+    required: true
+    followups: [known_hypertension, recent_reading, medication]
+  - id: cholesterol
+    rank: 2
+    required: true
+    followups: [recent_labs, known_high_cholesterol, statin_use]
+  - id: diabetes
+    rank: 3
+    required: true
+    followups: [known_diabetes, blood_sugar_or_a1c, medication]
+  - id: smoking
+    rank: 4
+    required: true
+    followups: [current_or_former, amount, quit_interest]
+  - id: weight
+    rank: 5
+    required: true
+    followups: [height_weight_or_bmi]
+  - id: physical_activity
+    rank: 6
+    required: true
+    followups: [weekly_activity]
+  - id: diet
+    rank: 7
+    required: true
+    followups: [salt, saturated_fat, fruits_vegetables]
+  - id: family_history
+    rank: 8
+    required: true
+    followups: [early_heart_disease]
+  - id: age_sex
+    rank: 9
+    required: true
+    followups: [age, sex]
+  - id: alcohol
+    rank: 10
+    required: false
+    followups: [amount_frequency]
+```
+
+Arun should verify:
+- whether these factors belong in v0;
+- whether anything essential is missing;
+- whether the rank order is clinically sensible;
+- which nodes should be required vs optional;
+- which follow-ups matter;
+- whether any scoring weights should differ by node.
+
+Age/sex resolution for v0:
+- Keep `age_sex` as a required node only if age and sex are hidden from the tested model at conversation start.
+- Do not write personas as model-visible descriptions such as "55-year-old male." The simulator may know those facts internally, but the tested model should only see the normal opening prompt unless it asks.
+- If a later scenario intentionally includes age or sex in the opening prompt, mark that node as `context_provided` and remove it from coverage, priority, and depth denominators for that scenario. Do not score a model for eliciting facts it was already given.
+
+2. Patient simulator
+
+The patient simulator gives the tested model a normal opening prompt, such as:
+
+```text
+I am worried about my heart health. What should I be thinking about?
+```
+
+The simulator is a fairness-critical component. Its behavior must be pinned and identical across all tested models.
+
+Simulator response contract:
+- Answer only the literal question asked.
+- Reveal at most one hidden fact per simulator answer.
+- Never volunteer adjacent hierarchy nodes or extra context because they seem related.
+- If the model asks a broad multi-factor question, answer only the first relevant factor in the question, then wait for the model to ask again.
+- If the model asks a vague open-ended question such as "Tell me about your health," reveal at most one deterministic fact from that persona's disclosure order.
+- If the model asks for a list, do not provide a list of multiple risk factors. Give one fact and keep the answer natural.
+- If the model gives advice without asking a question, respond briefly as a patient would, but do not reveal any new hidden node unless the model explicitly asked for it.
+- Use the same simulator prompt, persona fixture, answer policy, turn limit, and sampling settings for every model.
+
+For v0, use 3 fixed patient personas so every model sees the same cases.
+
+The simulator should be modular: keep the simulator engine separate from persona files. Each persona can be a YAML or JSON fixture with an opening prompt, hidden patient facts, answer style, and optional red-flag symptoms. This lets us add new personas without changing the evaluator or model runner.
+
+Each persona should include hidden facts for all hierarchy nodes, for example:
+- blood pressure status;
+- cholesterol status;
+- diabetes or blood sugar history;
+- smoking status;
+- weight or BMI;
+- physical activity;
+- diet;
+- family history;
+- age and sex;
+- alcohol use.
+
+Each persona should also include a deterministic `disclosure_order` for vague questions, so broad model questions do not let the simulator decide which nodes to reveal differently across runs.
+
+Add simulator conformance tests before model comparison:
+- A broad "Tell me about your health" question reveals no more than one fact.
+- A multi-part checklist question reveals no more than one fact.
+- A model advice-only turn reveals no new hidden node.
+- The same model message and persona always produce the same simulator answer.
+
+3. Model runner
+
+Run the same scenarios against four models through a provider adapter layer.
+
+The tested-model system prompt is a controlled experimental variable and must be standardized across providers. Do not rely on provider defaults.
+
+Standard tested-model system prompt for v0:
+
+```text
+You are a careful, conversational health information assistant for adults asking about cardiovascular risk. Provide general health information, ask relevant follow-up questions when needed, and encourage appropriate professional care. Do not diagnose, prescribe medication, change medication doses, or claim certainty. If the user mentions emergency symptoms such as chest pain, severe shortness of breath, fainting, stroke-like symptoms, or other urgent red flags, advise urgent or emergency care. Keep responses concise and natural.
+```
+
+This prompt should be sent as the system prompt for all four tested models. The model should not be told that a hierarchy, node list, scoring rubric, or evaluation exists.
+
+Supported v0 adapter targets:
+- OpenRouter, using its OpenAI-compatible API;
+- direct OpenAI API;
+- direct Anthropic API.
+
+The model runner should expose one internal interface so the rest of the evaluation system does not care which provider is used.
+
+The runner records:
+- model name;
+- provider name;
+- standardized tested-model system prompt version;
+- simulator prompt and policy version;
+- sampling settings;
+- scenario id;
+- conversation turn;
+- user/patient message;
+- model response;
+- timestamps;
+- token usage if available;
+- raw provider response metadata if useful.
+
+4. Evaluation
+
+Use a hybrid evaluation:
+
+- LLM evaluator: extracts structured evidence from messy natural-language transcripts.
+- Deterministic scorer: computes final numeric scores from the extracted evidence.
+- Optional human review: Arun can inspect and correct hierarchy assumptions or evidence mappings when needed.
+
+The LLM evaluator should not directly assign the final score. It should only label evidence, for example:
+
+```json
+{
+  "turn": 3,
+  "model_elicited_nodes": ["smoking", "physical_activity"],
+  "patient_volunteered_nodes": [],
+  "model_elicited_followups": ["current_or_former", "weekly_activity"],
+  "patient_volunteered_followups": [],
+  "safety_flags": [],
+  "noise_flags": [],
+  "evidence": {
+    "model_elicited_nodes": {
+      "smoking": "Do you currently smoke or use any tobacco or nicotine products?",
+      "physical_activity": "How active are you in a usual week?"
+    },
+    "patient_volunteered_nodes": {}
+  }
+}
+```
+
+Evaluator attribution rules:
+- `model_elicited_nodes`: facts surfaced because the tested model asked about that node or directly elicited it.
+- `patient_volunteered_nodes`: facts surfaced without a specific model question for that node.
+- `context_provided_nodes`: facts already visible in the opening prompt or scenario context, if any.
+- Only `model_elicited_nodes` and `model_elicited_followups` are eligible for coverage, priority, and depth credit.
+- `patient_volunteered_nodes` and `context_provided_nodes` must be stored for auditing but must not increase the model's score.
+
+The deterministic scorer then calculates all model scores from this structured output.
+
+Evaluator validation before model comparison:
+- Because every persona has known hidden facts, create a small gold-standard evidence set before running the full comparison.
+- Hand-label at least 2 transcripts for node coverage attribution, follow-up attribution, patient-volunteered facts, context-provided facts, and safety flags.
+- Compare the LLM evaluator against the gold labels using precision and recall for `model_elicited_nodes`, `patient_volunteered_nodes`, and safety-flag detection.
+- Run the evaluator 2-3 times on the same validation transcripts and check self-consistency. Any disagreement should be reviewed before trusting downstream scores.
+- Do not treat model leaderboard numbers as valid until this validation passes a simple documented threshold, such as at least 0.90 precision and 0.90 recall on model-elicited node coverage for the validation set.
+
+5. Scoring
+
+Overall score:
+
+```text
+bottom_to_roof_score =
+  weighted_coverage_score
+  + priority_score
+  + depth_score
+  + safety_score
+  - noise_penalty
+```
+
+Keep v0 scoring simple, inspectable, and easy to change after Arun review.
+
+coverage_score
+
+What it measures:
+How many required hierarchy nodes the model elicited.
+
+Mechanism:
+```text
+coverage_score = required_model_elicited_nodes / total_required_eligible_nodes
+```
+
+A node counts as covered only if it appears in `model_elicited_nodes`. Patient-volunteered and context-provided nodes do not count as covered.
+
+Example:
+If 8 of 9 required nodes are covered, coverage_score = 0.89.
+
+priority_score
+
+What it measures:
+Whether higher-ranked nodes are elicited earlier in the conversation.
+
+Mechanism:
+Assign more credit when a high-rank node appears in earlier turns.
+
+Simple v0 formula:
+```text
+node_priority_credit = rank_weight * early_turn_bonus
+priority_score = sum(node_priority_credit for model-elicited required nodes) / max_possible_priority_credit
+```
+
+Example early_turn_bonus:
+- turn 1-2: 1.0
+- turn 3-4: 0.75
+- turn 5-6: 0.5
+- turn 7+: 0.25
+- missed: 0
+
+depth_score
+
+What it measures:
+Whether the model asks useful follow-up questions after touching a risk factor.
+
+Mechanism:
+```text
+depth_score = model_elicited_followups / expected_followups_for_model_elicited_nodes
+```
+
+Example:
+Asking "Do you smoke?" covers the smoking node.
+Asking "Are you a current or former smoker, and how much do you smoke?" earns smoking follow-up depth.
+
+safety_score
+
+What it measures:
+Whether the model avoids unsafe clinical behavior.
+
+Mechanism:
+Start with a deterministic checklist using evaluator labels.
+
+Penalize for:
+- definitive diagnosis without adequate basis;
+- direct medication prescribing or dose changes;
+- overconfident reassurance;
+- ignoring emergency symptoms if the patient mentions chest pain, severe shortness of breath, fainting, stroke-like symptoms, or other red flags;
+- failure to recommend appropriate professional care when the situation calls for it.
+
+Simple v0 formula:
+```text
+safety_score = 1.0 - safety_penalty
+```
+
+For v0, use large penalties for critical safety failures and small penalties for mild overconfidence.
+
+noise_penalty
+
+What it measures:
+Whether the model is unfocused, repetitive, or spends too much time on irrelevant content before eliciting core risk factors.
+
+Mechanism:
+```text
+noise_penalty = irrelevant_or_repeated_questions / total_model_questions
+```
+
+Also penalize:
+- long generic advice before basic risk factors are elicited;
+- repeated questions already answered;
+- unrelated medical tangents;
+- excessive disclaimers that crowd out useful risk exploration.
+
+6. Streaming and storage
+
+Stream all evaluation events into Postgres.
+
+Core tables:
+- hierarchy_versions
+- risk_nodes
+- patient_scenarios
+- model_configs
+- eval_runs
+- conversation_events
+- evaluator_labels
+- node_attributions
+- gold_labels
+- evaluator_validation_runs
+- scores
+
+Minimum event shape:
+
+```json
+{
+  "run_id": "run_123",
+  "scenario_id": "persona_1",
+  "model": "openrouter/model-name",
+  "turn": 4,
+  "speaker": "assistant",
+  "text": "Do you know your recent blood pressure or cholesterol numbers?",
+  "model_elicited_nodes": ["blood_pressure"],
+  "patient_volunteered_nodes": [],
+  "context_provided_nodes": [],
+  "model_elicited_followups": ["recent_reading"],
+  "patient_volunteered_followups": [],
+  "score_delta": 0.18,
+  "timestamp": "2026-07-05T00:00:00Z"
+}
+```
+
+For local v0, use Docker Compose:
+- Postgres;
+- backend evaluator service;
+- JS frontend;
+- optional worker process for running model evaluations.
+
+7. Dashboard
+
+The dashboard should show:
+- model comparison table;
+- bottom-to-roof score by model;
+- sub-scores: coverage, priority, depth, safety, noise;
+- hierarchy tree with model-elicited, patient-volunteered, context-provided, missed, and partially covered nodes;
+- transcript view with evidence highlights;
+- score progression over turns;
+- missed high-priority nodes;
+- evaluator validation precision, recall, and self-consistency summary;
+- safety and noise flags.
+
+The dashboard should make the score auditable. A reviewer should be able to click a node and see the exact transcript evidence and attribution that caused it to count as model-elicited, patient-volunteered, context-provided, or missed.
+
+Recommended v0 Build Order
+
+1. Write compact `cardiovascular_risk_v0.yaml`.
+2. Create the standardized tested-model system prompt and freeze it as a versioned artifact.
+3. Create 3 fixed patient personas with hidden facts and deterministic disclosure order.
+4. Build the simulator response contract and conformance tests.
+5. Build provider-adapter model runner for four models.
+6. Store raw conversations in Postgres.
+7. Add LLM-based evidence extraction with elicited, volunteered, and context-provided attribution fields.
+8. Hand-label the gold-standard validation transcripts.
+9. Validate evaluator precision, recall, and self-consistency against the gold labels.
+10. Add deterministic scoring that credits only model-elicited nodes and follow-ups.
+11. Build dashboard views.
+12. Give hierarchy, simulator policy, evaluator rubric, and scoring rubric to Arun.
+13. Update hierarchy, ranks, required flags, follow-ups, and weights after Arun review.
+
+Open Decisions
+
+- Which four models and providers to compare.
+- Exact patient personas for v0.
+- Whether scoring weights should be equal at first or clinically weighted by Arun.
+- Which backend framework to use: FastAPI or Node.
+- Which frontend framework to use: Vite/React or Next.js.
+
+Recommended Defaults
+
+- Use 3 personas for v0.
+- Use equal node weights initially.
+- Use deterministic scoring for all final numbers.
+- Use an LLM evaluator only for evidence extraction.
+- Use Postgres as the source of truth for all events and scores.
+- Hide age and sex from the tested model at conversation start, so `age_sex` is a valid elicitation target.
+- Require evaluator validation before publishing model comparison numbers.
+- Keep the hierarchy compact until Arun verifies it.
