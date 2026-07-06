@@ -10,8 +10,12 @@ export class LlmPatient {
     this.adapter = adapter;
     this.policyVersion = LLM_PATIENT_POLICY_VERSION;
     this.systemPrompt = options.systemPrompt || buildPatientSystemPrompt(persona, hierarchy);
-    // From the patient's point of view the assistant/doctor is the "user" and
-    // the patient's own turns are "assistant" turns. Seed with the opening line.
+    // Fallback transcript, used only when a caller drives the patient WITHOUT
+    // supplying the runner's authoritative `events` (e.g. a standalone/direct
+    // caller or test). In the normal run path the runner's events are the single
+    // source of truth and this is never read. From the patient's point of view
+    // the assistant/doctor is the "user" and the patient's own turns are
+    // "assistant" turns, so seed with the opening line as an assistant turn.
     this.history = [{ role: "assistant", content: persona.opening_prompt }];
   }
 
@@ -24,11 +28,20 @@ export class LlmPatient {
     };
   }
 
-  async answer(modelMessage) {
-    this.history.push({ role: "user", content: String(modelMessage || "") });
+  // `events` is the runner's authoritative transcript (opening + every
+  // assistant/patient turn recorded so far, including the current doctor turn).
+  // When present it is the single source of truth: the patient reads the exact
+  // conversation the run recorded rather than a separately-accumulated copy.
+  // `modelMessage` is retained for the fallback path where no events are passed.
+  async answer(modelMessage, events = null) {
+    const useEvents = Array.isArray(events) && events.length > 0;
+    const conversation = useEvents
+      ? toPatientMessages(events)
+      : [...this.history, { role: "user", content: String(modelMessage || "") }];
+
     const completion = await this.adapter.complete([
       { role: "system", content: this.systemPrompt },
-      ...this.history
+      ...conversation
     ]);
     const raw = completion.text || "I am not sure how to answer that.";
     // The patient signals it is finished by ending its message with the END
@@ -37,8 +50,12 @@ export class LlmPatient {
     // instead of forcing the patient to keep talking with nothing left to say.
     const done = END_MARKER.test(raw);
     const text = raw.replace(END_MARKER, "").trim() || "Thanks, that's all I needed.";
-    // Keep the cleaned text in history so the marker never leaks back to the model.
-    this.history.push({ role: "assistant", content: text });
+    // Only maintain the fallback transcript when we are the source of truth.
+    // Store the cleaned text so the marker never leaks back to the model.
+    if (!useEvents) {
+      this.history.push({ role: "user", content: String(modelMessage || "") });
+      this.history.push({ role: "assistant", content: text });
+    }
     return {
       speaker: "patient",
       text,
@@ -52,6 +69,22 @@ export class LlmPatient {
       usage: completion.usage || null
     };
   }
+}
+
+// Render the runner's canonical event transcript into chat messages from the
+// patient's point of view: the assistant/doctor speaks as "user", the patient
+// speaks as "assistant". This is the mirror image of the runner's
+// toProviderMessages (which frames the same events for the tested model).
+function toPatientMessages(events) {
+  const messages = [];
+  for (const event of events) {
+    if (event.speaker === "assistant") {
+      messages.push({ role: "user", content: event.text });
+    } else if (event.speaker === "patient") {
+      messages.push({ role: "assistant", content: event.text });
+    }
+  }
+  return messages;
 }
 
 // Matches a trailing end-of-conversation marker, tolerating surrounding

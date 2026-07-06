@@ -107,7 +107,11 @@ export async function runScenario({
     await storage?.recordEvent?.(assistantEvent);
     assistantTurns += 1;
 
-    const simulatorResponse = await simulator.answer(completion.text);
+    // `events` is the single source of truth for the transcript: it already
+    // includes this turn's assistant message, so the patient reads the exact
+    // recorded conversation rather than keeping a parallel copy. The scripted
+    // PatientSimulator ignores the second argument.
+    const simulatorResponse = await simulator.answer(completion.text, events);
     const patientEvent = {
       run_id: runId,
       scenario_id: persona.id,
@@ -189,12 +193,16 @@ export async function runComparison({
   storage = null,
   createPatient,
   extractEvidence: extractEvidenceFn,
-  scoreOptions
+  scoreOptions,
+  onProgress = null
 }) {
   const runs = [];
+  const total = modelConfigs.length * personas.length;
+  let completed = 0;
   for (const modelConfig of modelConfigs) {
     for (const persona of personas) {
-      runs.push(await runScenario({
+      onProgress?.({ phase: "start", completed, total, modelConfig, persona });
+      const result = await runScenario({
         hierarchy,
         persona,
         modelConfig,
@@ -204,7 +212,10 @@ export async function runComparison({
         createPatient,
         extractEvidence: extractEvidenceFn,
         scoreOptions
-      }));
+      });
+      runs.push(result);
+      completed += 1;
+      onProgress?.({ phase: "complete", completed, total, modelConfig, persona, result });
     }
   }
   return summarizeComparison(runs);
