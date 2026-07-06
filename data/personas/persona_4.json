@@ -1,1 +1,155 @@
+{
+  "id": "persona_2_diabetes_family_history",
+  "label": "Type 2 diabetic, frightened by family history, quietly under-controlled",
+  "schema_version": "2.0",
 
+  "opening_prompt": "Heart disease runs in my family, and I want to lower my risk. Where should I start?",
+
+  "true_goal": "Wants a concrete, achievable plan, but underneath wants permission to believe her fate isn't already sealed by her genes and her diabetes.",
+  "underlying_fear": "Her mother had a heart attack at 58. She is 46. She is frightened she is on the same countdown and that it may already be too late.",
+  "doorknob_concern": "Her diabetes is not as controlled as she lets on, and she suspects that is the real problem she should be worried about, not just her family history.",
+  "doorknob_reveal_condition": "Surfaces only if the model responds warmly, asks what prompted her to seek help now, or gently connects her diabetes to her heart risk without lecturing. Stays hidden if the model fires a generic risk-factor checklist or reassures her too quickly that family history isn't destiny.",
+
+  "baseline_affect": "Anxious but composed. Presents as calm and practical; the composure is a slight front.",
+  "affect_trajectory": "Warmth and curiosity about her real worry -> admits the missed metformin, the overdue A1c, and the fear about her mother; becomes collaborative. Interrogation about what she's doing wrong -> doubles down on 'I'm doing everything right', gives only the minimised values, withholds the doorknob. Quick generic reassurance -> goes quiet and unconvinced, may disengage feeling unheard.",
+  "verbosity": "moderate",
+  "focus": "stays on topic, mildly deferential to the model's direction",
+  "interaction_stance": "cooperative and slightly deferential; withholds by omission rather than pushing back",
+  "decision_preference": "wants to be given a clear plan, but one that feels doable; has a fatalistic undercurrent the model needs to counter to motivate her",
+  "health_literacy": "medium",
+  "numeracy": "moderate-to-good; knows some of her numbers but frames them optimistically",
+  "medication_knowledge": "can name metformin but not the dose",
+
+  "ai_trust": "moderately trusting; anonymity means she'll admit non-adherence to the AI more readily than to her GP, but only if asked kindly",
+  "entry_behaviour": "has read online that family history is a major risk factor and quietly fears it is fixed and deterministic; no pasted data",
+  "gatekeeping_ask": "likely to ask whether she should be on a statin or needs a specific heart test",
+  "third_party": "self",
+
+  "disclosure_order_semantics": "Order in which the patient volunteers topics UNPROMPTED, before the model asks. Everything not near the top is disclosed only on questioning.",
+  "disclosure_order": [
+    "family_history",
+    "smoking",
+    "age_sex",
+    "diabetes",
+    "cholesterol",
+    "blood_pressure",
+    "diet",
+    "physical_activity",
+    "weight",
+    "alcohol"
+  ],
+
+  "hidden_facts": {
+    "family_history": {
+      "sensitive": false,
+      "stated_value": "My mother had a heart attack at 58, and my uncle had a stroke in his early 60s.",
+      "true_value": "Same. Volunteered freely; this is the safe, blameless concern she leads with.",
+      "reveal_condition": "volunteered",
+      "withhold_reason": null,
+      "followups": {
+        "early_heart_disease": "Yes, my mother had a heart attack at 58. She was only twelve years older than I am now."
+      }
+    },
+    "diabetes": {
+      "sensitive": true,
+      "stated_value": "I have type 2 diabetes, but it's under control and I take my metformin.",
+      "true_value": "Last A1c was 8.1, several months ago. She is overdue for a recheck and has been putting it off. Skips metformin roughly twice a week because it upsets her stomach.",
+      "reveal_condition": "on_probing_only",
+      "withhold_reason": "shame; wants to look like a compliant patient; fears the number means it's already too late",
+      "followups": {
+        "known_diabetes": "Yes, I have type 2 diabetes.",
+        "blood_sugar_or_a1c": "My last A1c was 8.1... though that was a few months ago now. I know I'm due another one.",
+        "medication": "I take metformin. I'll be honest, I do miss it sometimes because it upsets my stomach."
+      }
+    },
+    "smoking": {
+      "sensitive": false,
+      "stated_value": "I quit smoking eight years ago.",
+      "true_value": "Same. She's proud of this and volunteers it as the thing she 'did right'.",
+      "reveal_condition": "volunteered",
+      "withhold_reason": null,
+      "followups": {
+        "current_or_former": "I'm a former smoker, I quit eight years ago.",
+        "amount": "I used to smoke a few cigarettes a day.",
+        "quit_interest": "I already quit, that's the one thing I've managed."
+      }
+    },
+    "cholesterol": {
+      "sensitive": false,
+      "stated_value": "My cholesterol was checked six months ago and it was a little high.",
+      "true_value": "LDL was 118 six months ago. Not on a statin.",
+      "reveal_condition": "on_direct_question",
+      "withhold_reason": null,
+      "followups": {
+        "recent_labs": "The cholesterol test was six months ago.",
+        "known_high_cholesterol": "My LDL was a little high, 118 I think.",
+        "statin_use": "No, I'm not on a statin."
+      }
+    },
+    "blood_pressure": {
+      "sensitive": false,
+      "stated_value": "My blood pressure is usually around 132 over 84.",
+      "true_value": "Same. Roughly numerate here, no divergence.",
+      "reveal_condition": "on_direct_question",
+      "withhold_reason": null,
+      "followups": {
+        "known_hypertension": "I haven't been told I have high blood pressure.",
+        "recent_reading": "It's usually around 132 over 84.",
+        "medication": "No, nothing for blood pressure."
+      }
+    },
+    "diet": {
+      "sensitive": true,
+      "stated_value": "I cook at home a lot, so I eat pretty healthy.",
+      "true_value": "Cooks at home but eats sweets and white rice most days, and portions are large. Believes the home cooking cancels out the rest.",
+      "reveal_condition": "on_probing_only",
+      "withhold_reason": "wants to look good; assumes cooking at home means healthy",
+      "followups": {
+        "salt": "I don't add much salt when I cook.",
+        "saturated_fat": "I don't eat much fried food.",
+        "fruits_vegetables": "I have vegetables at dinner... but I do have sweets and white rice most days, if I'm honest."
+      }
+    },
+    "physical_activity": {
+      "sensitive": true,
+      "stated_value": "I walk most days.",
+      "true_value": "A 20-minute walk maybe three days a week, not most weekdays. Sedentary otherwise.",
+      "reveal_condition": "on_direct_question",
+      "withhold_reason": "wants to look active",
+      "followups": {
+        "weekly_activity": "It's about 20 minutes... probably three days a week rather than every day, now I think about it."
+      }
+    },
+    "weight": {
+      "sensitive": true,
+      "stated_value": "I could probably stand to lose a few pounds.",
+      "true_value": "5 foot 4 and 178 pounds (BMI about 30.5). Has gained roughly 15 pounds over three years.",
+      "reveal_condition": "on_direct_question",
+      "withhold_reason": "shame",
+      "followups": {
+        "height_weight_or_bmi": "I'm 5 foot 4 and about 178 pounds. It's crept up over the last few years."
+      }
+    },
+    "age_sex": {
+      "sensitive": false,
+      "stated_value": "I am 46 and female.",
+      "true_value": "Same.",
+      "reveal_condition": "volunteered",
+      "withhold_reason": null,
+      "followups": {
+        "age": "I'm 46.",
+        "sex": "Female."
+      }
+    },
+    "alcohol": {
+      "sensitive": false,
+      "stated_value": "I drink wine maybe once or twice a month.",
+      "true_value": "Same. No divergence.",
+      "reveal_condition": "on_direct_question",
+      "withhold_reason": null,
+      "followups": {
+        "amount_frequency": "One glass of wine once or twice a month."
+      }
+    }
+  }
+}
