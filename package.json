@@ -12,7 +12,9 @@
     "validate:all": "node scripts/validate-all.js",
     "run:demo": "node scripts/run-demo.js",
     "run:evaluation": "node scripts/run-evaluation.js",
-    "validate:evaluator": "node scripts/validate-evaluator.js"
+    "validate:evaluator": "node scripts/validate-evaluator.js",
+    "build:pages": "node scripts/build-pages.js",
+    "deploy:cloudflare": "node scripts/build-pages.js --deploy"
   },
   "engines": {
     "node": ">=20"

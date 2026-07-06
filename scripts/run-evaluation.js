@@ -4,6 +4,7 @@ import { buildEngine } from "../src/engine.js";
 import { runComparison } from "../src/runner.js";
 import { LocalRunStore } from "../src/storage/localRunStore.js";
 import { SupabaseStore } from "../src/storage/supabaseStore.js";
+import { createProgressBar } from "./lib/progress-bar.js";
 
 function argValue(name, fallback = null) {
   const index = process.argv.indexOf(name);
@@ -34,16 +35,21 @@ const storage = {
   }
 };
 
+const personas = loadPersonas();
+const modelConfigs = loadModelConfigs(configPath);
+const progress = createProgressBar({ total: modelConfigs.length * personas.length });
+
 const comparison = await runComparison({
   hierarchy: loadHierarchy(),
-  personas: loadPersonas(),
-  modelConfigs: loadModelConfigs(configPath),
+  personas,
+  modelConfigs,
   systemPrompt: loadSystemPrompt(),
   turnLimit,
   storage,
   createPatient: engine.createPatient,
   extractEvidence: engine.extractEvidence,
-  scoreOptions: { applyNoisePenalty: appConfig.scoring.noisePenalty }
+  scoreOptions: { applyNoisePenalty: appConfig.scoring.noisePenalty },
+  onProgress: progress
 });
 
 const outputPath = localStore.writeComparison(appConfig.storage.latestComparisonFile, comparison);
