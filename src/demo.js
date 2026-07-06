@@ -18,7 +18,8 @@ export async function generateDemoComparison({ force = false, config = loadAppCo
     personas,
     modelConfigs: demoModelConfigs(),
     systemPrompt,
-    turnLimit: config.run.turnLimit
+    turnLimit: config.run.turnLimit,
+    scoreOptions: { applyNoisePenalty: config.scoring.noisePenalty }
   });
 
   cachedDemo = {

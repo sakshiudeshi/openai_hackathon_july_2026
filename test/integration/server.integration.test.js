@@ -13,6 +13,33 @@ test("dashboard API returns demo comparison data with validation summary", async
   assert.equal(validateComparisonShape(payload.comparison), true);
 });
 
+test("dashboard API returns latest comparison payload when provided", async () => {
+  const latestPayload = {
+    hierarchy: { nodes: [] },
+    personas: [],
+    validation: { passed: true },
+    comparison: {
+      generated_at: "2026-07-05T00:00:00.000Z",
+      models: [],
+      runs: []
+    },
+    source: {
+      kind: "latest",
+      label: "Latest real run",
+      path: "runs/latest-comparison.json"
+    }
+  };
+  const response = await resolveRequest(
+    { url: "/api/results", headers: { host: "localhost" } },
+    { latestProvider: async () => latestPayload }
+  );
+  const payload = JSON.parse(response.body);
+
+  assert.equal(response.status, 200);
+  assert.equal(payload.source.kind, "latest");
+  assert.equal(payload.source.path, "runs/latest-comparison.json");
+});
+
 test("dashboard root serves the JS app shell", async () => {
   const response = await resolveRequest({ url: "/", headers: { host: "localhost" } });
   const body = response.body.toString("utf8");
@@ -20,6 +47,8 @@ test("dashboard root serves the JS app shell", async () => {
   assert.equal(response.status, 200);
   assert.match(response.headers["content-type"], /text\/html/);
   assert.match(body, /Cardiovascular Risk Hierarchy Evaluation/);
+  assert.match(body, /id="runList"/);
+  assert.match(body, /Evaluator Validation/);
   assert.match(body, /\/app.js/);
 });
 
@@ -30,4 +59,3 @@ test("dashboard request resolver blocks path traversal", async () => {
   assert.equal(response.status, 404);
   assert.deepEqual(payload, { error: "Not found" });
 });
-

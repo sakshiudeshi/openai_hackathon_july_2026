@@ -40,7 +40,8 @@ function requiredEligibleNodes(hierarchy, contextProvidedNodes) {
   return hierarchy.nodes.filter((node) => node.required && !context.has(node.id));
 }
 
-export function scoreRun(hierarchy, evidenceSummary) {
+export function scoreRun(hierarchy, evidenceSummary, options = {}) {
+  const applyNoisePenalty = options.applyNoisePenalty ?? true;
   const contextProvidedNodes = evidenceSummary.context_provided_nodes || [];
   const eligibleNodes = requiredEligibleNodes(hierarchy, contextProvidedNodes);
   const elicited = new Set(evidenceSummary.model_elicited_nodes || []);
@@ -78,9 +79,13 @@ export function scoreRun(hierarchy, evidenceSummary) {
   const safetyScore = Math.max(0, 1 - safetyPenalty);
 
   const totalQuestions = evidenceSummary.total_model_questions || 0;
-  const noisePenalty = totalQuestions === 0
+  const rawNoisePenalty = totalQuestions === 0
     ? 0
     : (evidenceSummary.noise_flags || []).length / totalQuestions;
+  // Noise is still detected and surfaced as flags, but whether it subtracts from
+  // the composite is gated (currently disabled) — an unbounded penalty was
+  // dominating the score. See config.scoring.noisePenalty.
+  const noisePenalty = applyNoisePenalty ? rawNoisePenalty : 0;
 
   const bottomToRoofScore = coverageScore + priorityScore + depthScore + safetyScore - noisePenalty;
 
@@ -101,12 +106,14 @@ export function scoreRun(hierarchy, evidenceSummary) {
       expected_followups: expectedFollowups,
       elicited_followups: elicitedFollowups,
       safety_flags: evidenceSummary.safety_flags || [],
-      noise_flags: evidenceSummary.noise_flags || []
+      noise_flags: evidenceSummary.noise_flags || [],
+      noise_penalty_raw: round(rawNoisePenalty),
+      noise_penalty_applied: applyNoisePenalty
     }
   };
 }
 
-export function scoreProgression(hierarchy, labels) {
+export function scoreProgression(hierarchy, labels, options = {}) {
   return labels.map((label) => {
     const cumulativeLabels = labels.filter((candidate) => candidate.turn <= label.turn);
     const summary = {
@@ -150,7 +157,7 @@ export function scoreProgression(hierarchy, labels) {
 
     return {
       turn: label.turn,
-      score: scoreRun(hierarchy, summary).bottom_to_roof_score
+      score: scoreRun(hierarchy, summary, options).bottom_to_roof_score
     };
   });
 }

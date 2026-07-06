@@ -37,6 +37,14 @@ npm run run:evaluation
 
 Results are written to `runs/` by default. Each run is stored under `runs/<run_id>/` with a compact `manifest.json` and the full `run.json` transcript/evidence payload. If `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are set, the storage layer can stream rows to Supabase's PostgREST API after `db/schema.sql` has been applied.
 
+For a one-model OpenAI run with `gpt-5.4-mini`, put `OPENAI_API_KEY` in `.env` or export it in your shell, then run:
+
+```bash
+npm run run:evaluation -- --config config/openai_single_model.json
+```
+
+The CLI loads `.env` automatically and never writes API keys into run artifacts.
+
 ## Runtime config
 
 Central defaults live in `config/default.json`.

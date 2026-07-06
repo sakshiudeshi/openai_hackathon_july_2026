@@ -1,5 +1,6 @@
 import { loadHierarchy, loadModelConfigs, loadPersonas, loadSystemPrompt } from "../src/artifacts.js";
 import { loadAppConfig } from "../src/config.js";
+import { buildEngine } from "../src/engine.js";
 import { runComparison } from "../src/runner.js";
 import { LocalRunStore } from "../src/storage/localRunStore.js";
 import { SupabaseStore } from "../src/storage/supabaseStore.js";
@@ -13,9 +14,16 @@ function argValue(name, fallback = null) {
 const appConfig = loadAppConfig();
 const configPath = argValue("--config", appConfig.modelConfigs.path);
 const turnLimit = Number(argValue("--turn-limit", String(appConfig.run.turnLimit)));
+// --engine scripted|llm overrides config; defaults to config/default.json ("llm").
+const engineConfig = { ...appConfig, engine: argValue("--engine", appConfig.engine) };
+const engine = buildEngine(engineConfig);
+console.log(`Conversation engine: ${engine.mode}`);
 const localStore = new LocalRunStore(appConfig.storage.outputDir);
 const supabaseStore = new SupabaseStore();
 const storage = {
+  async recordRunStarted(run) {
+    await supabaseStore.recordRunStarted(run);
+  },
   async recordEvent(event) {
     await localStore.recordEvent(event);
     await supabaseStore.recordEvent(event);
@@ -32,7 +40,10 @@ const comparison = await runComparison({
   modelConfigs: loadModelConfigs(configPath),
   systemPrompt: loadSystemPrompt(),
   turnLimit,
-  storage
+  storage,
+  createPatient: engine.createPatient,
+  extractEvidence: engine.extractEvidence,
+  scoreOptions: { applyNoisePenalty: appConfig.scoring.noisePenalty }
 });
 
 const outputPath = localStore.writeComparison(appConfig.storage.latestComparisonFile, comparison);

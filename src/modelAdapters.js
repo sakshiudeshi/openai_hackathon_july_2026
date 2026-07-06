@@ -42,6 +42,11 @@ class OpenAICompatibleAdapter {
       headers["X-Title"] = "Cardio Risk Hierarchy Eval v0";
     }
 
+    const tokenLimit = this.config.max_completion_tokens ?? this.config.max_tokens ?? 500;
+    const tokenLimitParam = this.provider === "openai"
+      ? { max_completion_tokens: tokenLimit }
+      : { max_tokens: tokenLimit };
+
     const response = await fetch(baseUrl, {
       method: "POST",
       headers,
@@ -49,7 +54,7 @@ class OpenAICompatibleAdapter {
         model: this.config.model,
         messages,
         temperature: this.config.temperature ?? 0.2,
-        max_tokens: this.config.max_tokens ?? 500
+        ...tokenLimitParam
       })
     });
     if (!response.ok) {
@@ -120,4 +125,3 @@ export function createModelAdapter(config) {
   if (config.provider === "anthropic") return new AnthropicAdapter(config);
   throw new Error(`Unsupported provider: ${config.provider}`);
 }
-

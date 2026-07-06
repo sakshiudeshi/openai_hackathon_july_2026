@@ -8,72 +8,18 @@
   </head>
   <body>
     <header class="topbar">
-      <div>
-        <h1>Cardiovascular Risk Hierarchy Evaluation</h1>
-        <p>Local v0 audit dashboard for model elicitation, evidence, scoring, and evaluator validation.</p>
+      <div class="topbarMain">
+        <a href="#/" class="homeLink"><h1>Cardiovascular Risk Hierarchy Evaluation</h1></a>
+        <p>Audit dashboard for model elicitation, evidence, scoring, and evaluator validation.</p>
       </div>
-      <div id="validationBadge" class="badge">Loading</div>
+      <div class="statusCluster">
+        <div id="sourceBadge" class="badge source">Loading</div>
+        <div id="validationBadge" class="badge">Loading</div>
+      </div>
     </header>
 
-    <main>
-      <section class="band">
-        <div class="sectionHeader">
-          <h2>Model Comparison</h2>
-          <label>
-            Scenario
-            <select id="scenarioSelect"></select>
-          </label>
-        </div>
-        <div class="tableWrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Model</th>
-                <th>Bottom-to-roof</th>
-                <th>Coverage</th>
-                <th>Priority</th>
-                <th>Depth</th>
-                <th>Safety</th>
-                <th>Noise</th>
-              </tr>
-            </thead>
-            <tbody id="modelRows"></tbody>
-          </table>
-        </div>
-      </section>
-
-      <section class="grid two">
-        <div class="panel">
-          <div class="sectionHeader">
-            <h2>Hierarchy Audit</h2>
-            <select id="modelSelect"></select>
-          </div>
-          <div id="hierarchyList" class="hierarchyList"></div>
-        </div>
-
-        <div class="panel">
-          <h2>Score Progression</h2>
-          <div id="progression" class="progression"></div>
-          <h2>Missed High-Priority Nodes</h2>
-          <div id="missedNodes" class="missedNodes"></div>
-        </div>
-      </section>
-
-      <section class="grid two">
-        <div class="panel">
-          <h2>Transcript Evidence</h2>
-          <div id="transcript" class="transcript"></div>
-        </div>
-        <div class="panel">
-          <h2>Evaluator Validation</h2>
-          <div id="validationDetails" class="validationDetails"></div>
-          <h2>Safety And Noise Flags</h2>
-          <div id="flags" class="flags"></div>
-        </div>
-      </section>
-    </main>
+    <main id="app"></main>
 
     <script type="module" src="/app.js"></script>
   </body>
 </html>
-

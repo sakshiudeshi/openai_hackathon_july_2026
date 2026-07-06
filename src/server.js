@@ -2,9 +2,10 @@ import fs from "node:fs";
 import http from "node:http";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { PROJECT_ROOT } from "./artifacts.js";
+import { loadGoldTranscripts, loadHierarchy, loadPersonas, PROJECT_ROOT } from "./artifacts.js";
 import { loadAppConfig } from "./config.js";
 import { generateDemoComparison } from "./demo.js";
+import { validateEvaluator } from "./validation.js";
 
 const appConfig = loadAppConfig();
 const PORT = appConfig.server.port;
@@ -31,13 +32,67 @@ function jsonResponse(status, body) {
   };
 }
 
+function publicPersonas(personas) {
+  return personas.map((persona) => ({
+    id: persona.id,
+    label: persona.label,
+    opening_prompt: persona.opening_prompt,
+    context_provided_nodes: persona.context_provided_nodes || []
+  }));
+}
+
+async function loadLatestComparisonPayload(config = appConfig) {
+  const comparisonPath = path.join(
+    PROJECT_ROOT,
+    config.storage.outputDir,
+    config.storage.latestComparisonFile
+  );
+  if (!fs.existsSync(comparisonPath)) {
+    const demo = await generateDemoComparison();
+    return {
+      ...demo,
+      source: {
+        kind: "demo",
+        label: "Scripted demo",
+        path: null
+      }
+    };
+  }
+
+  const hierarchy = loadHierarchy();
+  const personas = loadPersonas();
+  return {
+    hierarchy,
+    personas: publicPersonas(personas),
+    validation: validateEvaluator(loadGoldTranscripts(), hierarchy),
+    comparison: JSON.parse(fs.readFileSync(comparisonPath, "utf8")),
+    source: {
+      kind: "latest",
+      label: "Latest real run",
+      path: path.relative(PROJECT_ROOT, comparisonPath)
+    }
+  };
+}
+
 export async function resolveRequest(request, options = {}) {
   const demoProvider = options.demoProvider || generateDemoComparison;
+  const latestProvider = options.latestProvider || loadLatestComparisonPayload;
   const root = options.publicDir || publicDir;
   const url = new URL(request.url, `http://${request.headers?.host || "localhost"}`);
 
   if (url.pathname === "/api/demo") {
-    return jsonResponse(200, await demoProvider());
+    return jsonResponse(200, {
+      ...await demoProvider(),
+      source: {
+        kind: "demo",
+        label: "Scripted demo",
+        path: null
+      }
+    });
+  }
+
+  if (url.pathname === "/api/results") {
+    return jsonResponse(200, await latestProvider());
   }
 
   const requestedPath = url.pathname === "/" ? "/index.html" : url.pathname;

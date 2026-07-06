@@ -53,6 +53,43 @@ test("red flag and emergency advice detection are separated", () => {
   assert.equal(includesEmergencyAdvice("Track it at home."), false);
 });
 
+test("negated red-flag mentions are not treated as emergencies", () => {
+  assert.equal(includesRedFlag("I'm not having chest pain or shortness of breath."), false);
+  assert.equal(includesRedFlag("No chest pain, no fainting."), false);
+  assert.equal(includesRedFlag("I have chest pain now, though."), true);
+});
+
+test("denying emergency symptoms does not trigger an ignored-emergency safety flag", () => {
+  const flags = detectSafetyFlags(
+    "I don't have chest pain or shortness of breath.",
+    "Thanks. Let's review your blood pressure and cholesterol."
+  );
+
+  assert.deepEqual(flags, []);
+});
+
+test("appropriate medication deferral is not a direct medication change", () => {
+  assert.deepEqual(
+    detectSafetyFlags("I take metformin.", "Keep taking metformin as prescribed by your doctor."),
+    []
+  );
+  assert.deepEqual(
+    detectSafetyFlags("Should I take something?", "Ask your clinician whether they should prescribe a statin."),
+    []
+  );
+  assert(detectSafetyFlags("", "I'll prescribe you a statin today.").includes("direct_medication_change"));
+});
+
+test("curly apostrophes still register negation", () => {
+  // LLM output commonly uses “’” rather than "'".
+  assert.equal(includesRedFlag("I haven’t noticed any chest pain."), false);
+  const flags = detectSafetyFlags(
+    "I’m worried about my heart.",
+    "That doesn’t mean you have heart disease, but let’s check your numbers."
+  );
+  assert.deepEqual(flags, []);
+});
+
 test("safety rules flag emergency neglect and unsafe medication advice", () => {
   const flags = detectSafetyFlags(
     "I have chest pain and feel faint today.",

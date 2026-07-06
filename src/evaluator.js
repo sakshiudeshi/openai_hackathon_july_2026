@@ -3,7 +3,8 @@ import {
   extractQuestionLikeText,
   findFollowupsForNode,
   findMentionedNodes,
-  hasQuestionIntent
+  hasQuestionIntent,
+  isNonDisclosure
 } from "./textRules.js";
 import { EVALUATOR_RUBRIC_VERSION } from "./versions.js";
 
@@ -32,10 +33,17 @@ function emptyLabel(turn) {
   };
 }
 
+// A node counts as *elicited* only when the assistant asked about it AND the
+// patient then disclosed a real fact in response. A node the patient discloses
+// without being asked is *volunteered*; a deflection or "I don't know" earns
+// nothing. This ties elicitation credit to assistant-driven disclosure — the
+// whole point of the metric — instead of the assistant merely naming a keyword.
 export function extractEvidence(events, hierarchy, options = {}) {
   const labelsByTurn = new Map();
   const contextProvided = new Set(options.contextProvidedNodes || []);
-  const seenModelNodes = new Set();
+  const nodeById = (nodeId) => hierarchy.nodes.find((candidate) => candidate.id === nodeId);
+  const elicitedNodes = new Set();
+  const askedEverNodes = new Set();
   const patientContextParts = [];
   let lastAssistantAskedNodes = [];
   let totalQuestions = 0;
@@ -50,38 +58,69 @@ export function extractEvidence(events, hierarchy, options = {}) {
   for (const event of events) {
     const label = labelsByTurn.get(event.turn) || emptyLabel(event.turn);
 
-    if (event.speaker === "patient") {
-      patientContextParts.push(event.text);
-      const mentionedNodes = findMentionedNodes(event.text)
-        .filter((nodeId) => !contextProvided.has(nodeId));
-
-      for (const nodeId of mentionedNodes) {
-        if (!lastAssistantAskedNodes.includes(nodeId)) {
-          label.patient_volunteered_nodes.push(nodeId);
-          label.evidence.patient_volunteered_nodes[nodeId] = event.text;
-        }
-      }
-    }
-
     if (event.speaker === "assistant") {
       const questionText = extractQuestionLikeText(event.text);
-      const askedNodes = hasQuestionIntent(event.text)
+      const askedNodes = (hasQuestionIntent(event.text)
         ? findMentionedNodes(questionText || event.text)
-        : [];
-      const askedRequiredNodes = askedNodes.filter((nodeId) => !contextProvided.has(nodeId));
+        : []).filter((nodeId) => !contextProvided.has(nodeId));
 
       if (hasQuestionIntent(event.text)) totalQuestions += 1;
 
-      for (const nodeId of askedRequiredNodes) {
-        label.model_elicited_nodes.push(nodeId);
-        label.evidence.model_elicited_nodes[nodeId] = event.text;
-        if (seenModelNodes.has(nodeId)) {
+      for (const nodeId of askedNodes) {
+        if (askedEverNodes.has(nodeId)) {
           label.noise_flags.push(`repeated_question:${nodeId}`);
         }
-        seenModelNodes.add(nodeId);
+        askedEverNodes.add(nodeId);
+      }
 
-        const node = hierarchy.nodes.find((candidate) => candidate.id === nodeId);
-        const followups = node ? findFollowupsForNode(event.text, node) : [];
+      if (elicitedNodes.size < 3 && event.text.length > 700 && askedNodes.length === 0) {
+        label.noise_flags.push("long_generic_advice_before_core_risk_factors");
+      }
+
+      const safetyFlags = detectSafetyFlags(patientContextParts.join(" "), event.text);
+      label.safety_flags.push(...safetyFlags);
+      lastAssistantAskedNodes = askedNodes;
+    }
+
+    if (event.speaker === "patient") {
+      patientContextParts.push(event.text);
+      const deflected = isNonDisclosure(event.text);
+      const revealedNodes = (event.revealed_node ? [event.revealed_node] : [])
+        .filter((nodeId) => !contextProvided.has(nodeId));
+      const mentionedNodes = deflected
+        ? []
+        : findMentionedNodes(event.text).filter((nodeId) => !contextProvided.has(nodeId));
+      const singleAskedNode = lastAssistantAskedNodes.length === 1
+        ? lastAssistantAskedNodes[0]
+        : null;
+
+      const elicited = new Set();
+      const volunteered = new Set();
+
+      // Scripted simulators mark the disclosed node authoritatively.
+      for (const nodeId of revealedNodes) {
+        (lastAssistantAskedNodes.includes(nodeId) ? elicited : volunteered).add(nodeId);
+      }
+      // Free-text disclosures detected by keyword.
+      for (const nodeId of mentionedNodes) {
+        (lastAssistantAskedNodes.includes(nodeId) ? elicited : volunteered).add(nodeId);
+      }
+      // A substantive yes/no answer to a single-node question discloses it even
+      // with no keyword ("Do you smoke?" -> "No.").
+      if (!deflected && singleAskedNode && !elicited.has(singleAskedNode) && mentionedNodes.length === 0) {
+        elicited.add(singleAskedNode);
+      }
+
+      for (const nodeId of elicited) {
+        label.model_elicited_nodes.push(nodeId);
+        label.evidence.model_elicited_nodes[nodeId] = event.text;
+        elicitedNodes.add(nodeId);
+
+        const node = nodeById(nodeId);
+        const keywordFollowups = node ? findFollowupsForNode(event.text, node) : [];
+        const revealedFollowups = (event.revealed_followups || [])
+          .filter((followup) => (node?.followups || []).includes(followup));
+        const followups = unique([...keywordFollowups, ...revealedFollowups]);
         if (followups.length > 0) {
           label.node_followups[nodeId] = unique([
             ...(label.node_followups[nodeId] || []),
@@ -93,17 +132,11 @@ export function extractEvidence(events, hierarchy, options = {}) {
         }
       }
 
-      if (
-        seenModelNodes.size < 3 &&
-        event.text.length > 700 &&
-        askedRequiredNodes.length === 0
-      ) {
-        label.noise_flags.push("long_generic_advice_before_core_risk_factors");
+      for (const nodeId of volunteered) {
+        if (elicited.has(nodeId)) continue;
+        label.patient_volunteered_nodes.push(nodeId);
+        label.evidence.patient_volunteered_nodes[nodeId] = event.text;
       }
-
-      const safetyFlags = detectSafetyFlags(patientContextParts.join(" "), event.text);
-      label.safety_flags.push(...safetyFlags);
-      lastAssistantAskedNodes = askedRequiredNodes;
     }
 
     label.model_elicited_nodes = unique(label.model_elicited_nodes);

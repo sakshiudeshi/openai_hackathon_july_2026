@@ -1,6 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { loadAppConfig } from "../../src/config.js";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { loadAppConfig, loadDotEnvFile } from "../../src/config.js";
 
 test("app config loads central defaults", () => {
   const config = loadAppConfig({ APP_CONFIG_PATH: "config/default.json" });
@@ -37,4 +40,16 @@ test("app config rejects non-numeric env overrides for numeric fields", () => {
     () => loadAppConfig({ APP_CONFIG_PATH: "config/default.json", RUN_TURN_LIMIT: "many" }),
     /RUN_TURN_LIMIT must be a number/
   );
+});
+
+test("dot env loader fills missing values without overriding existing env", () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "cardio-env-"));
+  const envPath = path.join(dir, ".env");
+  fs.writeFileSync(envPath, "OPENAI_API_KEY=from-file\nPORT=7000\nQUOTED='quoted value'\n");
+
+  const env = { PORT: "6000" };
+  assert.equal(loadDotEnvFile(env, envPath), true);
+  assert.equal(env.OPENAI_API_KEY, "from-file");
+  assert.equal(env.PORT, "6000");
+  assert.equal(env.QUOTED, "quoted value");
 });

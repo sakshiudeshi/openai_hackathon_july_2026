@@ -49,12 +49,27 @@ export async function runScenario({
   modelConfig,
   systemPrompt,
   turnLimit = 10,
-  storage = null
+  storage = null,
+  createPatient = (persona_, hierarchy_) => new PatientSimulator(persona_, hierarchy_),
+  extractEvidence: extractEvidenceFn = extractEvidence,
+  scoreOptions = {}
 }) {
   const runId = makeRunId();
-  const simulator = new PatientSimulator(persona, hierarchy);
+  const simulator = createPatient(persona, hierarchy);
   const adapter = createModelAdapter(modelConfig);
   const events = [];
+
+  await storage?.recordRunStarted?.({
+    run_id: runId,
+    hierarchy,
+    persona,
+    modelConfig,
+    versions: {
+      tested_model_system_prompt_version: TESTED_MODEL_SYSTEM_PROMPT_VERSION,
+      simulator_policy_version: SIMULATOR_POLICY_VERSION,
+      evaluator_rubric_version: EVALUATOR_RUBRIC_VERSION
+    }
+  });
 
   const opening = {
     run_id: runId,
@@ -89,7 +104,7 @@ export async function runScenario({
     events.push(assistantEvent);
     await storage?.recordEvent?.(assistantEvent);
 
-    const simulatorResponse = simulator.answer(completion.text);
+    const simulatorResponse = await simulator.answer(completion.text);
     const patientEvent = {
       run_id: runId,
       scenario_id: persona.id,
@@ -106,12 +121,12 @@ export async function runScenario({
     await storage?.recordEvent?.(patientEvent);
   }
 
-  const evidence = extractEvidence(events, hierarchy, {
+  const evidence = await extractEvidenceFn(events, hierarchy, {
     contextProvidedNodes: persona.context_provided_nodes || []
   });
-  const score = scoreRun(hierarchy, evidence.summary);
+  const score = scoreRun(hierarchy, evidence.summary, scoreOptions);
   const attributions = buildNodeAttributions(hierarchy, evidence.summary);
-  const progression = scoreProgression(hierarchy, evidence.labels);
+  const progression = scoreProgression(hierarchy, evidence.labels, scoreOptions);
 
   const result = {
     run_id: runId,
@@ -131,8 +146,8 @@ export async function runScenario({
     },
     versions: {
       tested_model_system_prompt_version: TESTED_MODEL_SYSTEM_PROMPT_VERSION,
-      simulator_policy_version: SIMULATOR_POLICY_VERSION,
-      evaluator_rubric_version: EVALUATOR_RUBRIC_VERSION
+      simulator_policy_version: simulator.policyVersion || SIMULATOR_POLICY_VERSION,
+      evaluator_rubric_version: evidence.evaluator_rubric_version || EVALUATOR_RUBRIC_VERSION
     },
     sampling_settings: {
       temperature: modelConfig.temperature ?? 0.2,
@@ -155,7 +170,10 @@ export async function runComparison({
   modelConfigs,
   systemPrompt,
   turnLimit = 10,
-  storage = null
+  storage = null,
+  createPatient,
+  extractEvidence: extractEvidenceFn,
+  scoreOptions
 }) {
   const runs = [];
   for (const modelConfig of modelConfigs) {
@@ -166,7 +184,10 @@ export async function runComparison({
         modelConfig,
         systemPrompt,
         turnLimit,
-        storage
+        storage,
+        createPatient,
+        extractEvidence: extractEvidenceFn,
+        scoreOptions
       }));
     }
   }

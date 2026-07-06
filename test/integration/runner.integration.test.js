@@ -51,6 +51,32 @@ test("runScenario storage integration writes per-run manifest metadata", async (
   assert.deepEqual(manifest.artifacts, { run: "run.json" });
 });
 
+test("runScenario records run startup before streaming events", async () => {
+  const calls = [];
+  const result = await runScenario({
+    hierarchy,
+    persona: personas[0],
+    modelConfig: demoModelConfigs()[0],
+    systemPrompt,
+    turnLimit: 1,
+    storage: {
+      async recordRunStarted(run) {
+        calls.push(["started", run.run_id]);
+      },
+      async recordEvent(event) {
+        calls.push(["event", event.run_id]);
+      },
+      async recordRunResult(run) {
+        calls.push(["result", run.run_id]);
+      }
+    }
+  });
+
+  assert.deepEqual(calls[0], ["started", result.run_id]);
+  assert.deepEqual(calls.at(-1), ["result", result.run_id]);
+  assert(calls.slice(1, -1).every(([kind, runId]) => kind === "event" && runId === result.run_id));
+});
+
 test("context-provided scenario removes context node from scoring denominator", async () => {
   const personaWithContext = personas.find((persona) => persona.context_provided_nodes.includes("family_history"));
   const result = await runScenario({

@@ -38,7 +38,9 @@ test("context-provided nodes are stored but excluded from volunteered labels", (
 
   assert.deepEqual(result.summary.context_provided_nodes, ["family_history"]);
   assert.deepEqual(result.summary.patient_volunteered_nodes, []);
-  assert.deepEqual(result.summary.model_elicited_nodes, ["blood_pressure"]);
+  // The assistant asked about blood pressure but the patient never replied, so
+  // nothing was elicited — asking without a disclosure earns no credit.
+  assert.deepEqual(result.summary.model_elicited_nodes, []);
 });
 
 test("evaluator detects repeated questions as noise", () => {

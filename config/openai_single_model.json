@@ -1,0 +1,10 @@
+[
+  {
+    "id": "openai_gpt_5_4_mini",
+    "label": "OpenAI GPT-5.4 mini",
+    "provider": "openai",
+    "model": "gpt-5.4-mini",
+    "temperature": 0.2,
+    "max_tokens": 500
+  }
+]
