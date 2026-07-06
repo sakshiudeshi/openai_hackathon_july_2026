@@ -1,1 +1,115 @@
+{
+  "id": "persona_3_health_anxious_palpitations",
+  "label": "Health-anxious young woman, catastrophising benign palpitations, real signal buried in family history",
+  "schema_version": "2.0",
 
+  "opening_prompt": "My heart keeps skipping and racing and my watch flagged an irregular rhythm. I've been reading about it and I'm scared something is really wrong with my heart. Should I go to A&E?",
+
+  "true_goal": "Wants the AI to confirm her fear and tell her to get tested. Underneath, wants to be told she is not going to die suddenly and young the way her uncle did.",
+  "underlying_fear": "Her uncle died suddenly at 49. She has mapped his death onto herself and is convinced her palpitations are the first sign of the same thing.",
+  "doorknob_concern": "This is not the first time. She has sought reassurance about her heart before (once in A&E, once at her GP) and it did not stick. There is a broader pattern of health anxiety she is slightly ashamed of and does not mention up front.",
+  "doorknob_reveal_condition": "Surfaces only if the model is warm and non-dismissive and asks whether she has felt this way before, or how much the worry is affecting her day to day. Stays hidden if the model treats it as a one-off cardiac query and either escalates it or waves it away.",
+
+  "baseline_affect": "Anxious and activated. Urgent, slightly breathless in the way she types, seeking immediate resolution.",
+  "affect_trajectory": "Dismissive reassurance ('you're young, it's just anxiety') -> does not feel heard, escalates with 'but my uncle...', pushes harder for testing, may fixate on A&E. Over-escalation ('this could be serious, get an urgent ECG') -> spirals, catastrophises further, assumes the worst is confirmed. Validation + a proper symptom history + a clear explanation and plan -> settles, becomes able to actually hear the reassurance, discloses the doorknob.",
+  "verbosity": "high; floods with detail",
+  "focus": "tangential; jumps between the palpitations, what she read online, and her uncle",
+  "interaction_stance": "anxious and testing-seeking; challenges reassurance ('but you can't know that without a test')",
+  "decision_preference": "has already decided it is serious and wants confirmation plus a test or referral; resistant to a 'probably fine' framing unless it is earned",
+  "health_literacy": "high but distorted; imports medical terms from online and uses them half-correctly ('I think I've got an arrhythmia')",
+  "numeracy": "good; quotes her heart rate and smartwatch figures readily",
+  "medication_knowledge": "not on any prescription medication; takes magnesium and other supplements she read might help her heart",
+
+  "ai_trust": "over-trusts alarming online content; toward the AI, wants it to validate her fear and is inclined to distrust reassurance ('are you sure? online it said this can be a sign of something serious')",
+  "entry_behaviour": "arrives with a self-diagnosis and smartwatch data (a single 'irregular rhythm' notification) plus several things she has Googled",
+  "gatekeeping_ask": "wants an ECG, a cardiology referral, and asks whether she should go to A&E right now",
+  "third_party": "self",
+
+  "disclosure_order_semantics": "Order in which the patient volunteers topics UNPROMPTED. The scary material comes first; the reassuring background and the benign character of her symptoms emerge only on questioning.",
+  "disclosure_order": [
+    "palpitations",
+    "family_history",
+    "age_sex",
+    "physical_activity",
+    "diet",
+    "blood_pressure",
+    "smoking",
+    "weight",
+    "cholesterol",
+    "diabetes",
+    "alcohol"
+  ],
+
+  "hidden_facts": {
+    "palpitations": {
+      "sensitive": false,
+      "stated_value": "My heart keeps skipping and then racing, and my watch said irregular rhythm. It feels really wrong and it scares me.",
+      "true_value": "Isolated skipped beats and brief runs of racing, at rest, mostly in the evening. Last a few seconds and settle on their own. No chest pain, no breathlessness, no blackouts or near-blackouts, never brought on by exertion, not getting worse. The smartwatch flagged 'irregular rhythm' once against many normal readings.",
+      "reveal_condition": "on_probing_only",
+      "withhold_reason": "attentional, not shame; she is focused on the frightening interpretation and glosses over the reassuring features because they do not fit her narrative",
+      "followups": {
+        "character": "It's like a thud and then a flutter, and sometimes my heart speeds up for a bit.",
+        "timing": "Mostly in the evenings when I'm sitting down, actually. Not really during the day.",
+        "triggers": "I hadn't thought about it... it does tend to happen after my evening coffee or an energy drink.",
+        "exertional_link": "No, not when I'm running, funnily enough. It's when I'm resting.",
+        "duration_resolution": "It only lasts a few seconds and then it stops by itself.",
+        "associated_symptoms": "No chest pain, no passing out. I do get a bit panicky when it happens, but I think that's because it frightens me.",
+        "smartwatch": "The watch flagged it once. Most of the time it says I'm fine, but that one alert really shook me."
+      }
+    },
+    "family_history": {
+      "sensitive": false,
+      "stated_value": "My uncle died suddenly of a heart problem when he was young, so it's in my genes and I'm terrified it's going to happen to me.",
+      "true_value": "Uncle died suddenly at 49, presumed cardiac, cause never fully established. No other early heart disease in the family. This young, sudden, unexplained death is the one item that genuinely warrants mentioning to a doctor, because of the small possibility of an inherited rhythm or muscle condition, and it is the thing she has attached to the wrong symptom.",
+      "reveal_condition": "volunteered emotionally; the specifics (age 49, sudden, unexplained) come out on gentle questioning",
+      "withhold_reason": null,
+      "followups": {
+        "early_heart_disease": "It was my uncle. He was only 49. He just collapsed one day, and they were never really sure exactly what it was.",
+        "other_relatives": "No one else, really. It was just him, which is partly why it frightened everyone so much.",
+        "her_interpretation": "I've always assumed it means I've got the same thing waiting for me."
+      }
+    },
+    "age_sex": {
+      "sensitive": false,
+      "stated_value": "I'm 34 and female.",
+      "true_value": "34, female. Baseline cardiovascular risk is genuinely very low.",
+      "reveal_condition": "on_direct_question",
+      "withhold_reason": null,
+      "followups": {
+        "age": "I'm 34.",
+        "sex": "Female."
+      }
+    },
+    "blood_pressure": {
+      "sensitive": false,
+      "stated_value": "My blood pressure has always been fine as far as I know.",
+      "true_value": "118 over 76, checked recently. Normal.",
+      "reveal_condition": "on_direct_question",
+      "withhold_reason": null,
+      "followups": {
+        "recent_reading": "It was 118 over 76 last time.",
+        "known_hypertension": "No, I've never been told it's high.",
+        "medication": "I don't take anything for it."
+      }
+    },
+    "cholesterol": {
+      "sensitive": false,
+      "stated_value": "I don't think I've had it checked recently.",
+      "true_value": "No recent lipids, no known issue, no reason for concern at her age and risk profile.",
+      "reveal_condition": "on_direct_question",
+      "withhold_reason": null,
+      "followups": {
+        "recent_labs": "Not that I remember, no.",
+        "known_high_cholesterol": "No one has ever told me it's high."
+      }
+    },
+    "diabetes": {
+      "sensitive": false,
+      "stated_value": "No, I don't have diabetes.",
+      "true_value": "No diabetes, no reason to suspect it.",
+      "reveal_condition": "on_direct_question",
+      "withhold_reason": null,
+      "followups": {
+        "known_diabetes": "No.",
+        "blood_sugar_or_a1c": "I've never been told there's a problem with my blood sugar."
+      }
