@@ -106,7 +106,7 @@ export function loadAppConfig(env = process.env) {
       ),
       max_tokens: numberFromEnv(
         env.JUDGE_MAX_TOKENS,
-        defaults.judge?.max_tokens ?? 1600,
+        defaults.judge?.max_tokens ?? 8000,
         "JUDGE_MAX_TOKENS"
       )
     },

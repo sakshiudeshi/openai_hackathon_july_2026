@@ -151,6 +151,23 @@ export async function extractEvidenceLlm(events, hierarchy, options = {}, adapte
 
   const contextProvided = options.contextProvidedNodes || [];
   const completion = await adapter.complete(buildJudgePrompt(events, hierarchy, contextProvided));
+
+  // Reasoning models bill reasoning against the completion-token budget. On a
+  // long transcript the model can spend the entire budget thinking and return
+  // empty content with finish_reason "length" — surface that as an actionable
+  // error rather than the opaque "Judge returned no JSON object" downstream.
+  if (!completion.text) {
+    const finishReason = completion.raw?.choices?.[0]?.finish_reason;
+    if (finishReason === "length") {
+      throw new Error(
+        "Judge returned empty output (finish_reason=length): the completion-token budget "
+        + "was exhausted by reasoning before any JSON was produced. Raise judge.max_tokens "
+        + "(config) or JUDGE_MAX_TOKENS."
+      );
+    }
+    throw new Error(`Judge returned empty output (finish_reason=${finishReason ?? "unknown"})`);
+  }
+
   const judgement = parseJudgeJson(completion.text);
   const labels = buildLabelsFromJudgement(judgement, events, hierarchy, contextProvided);
 
