@@ -18,7 +18,7 @@
   "judge": {
     "provider": "openai",
     "model": "gpt-5.5",
-    "temperature": 0,
+    "temperature": 0.001,
     "max_tokens": 1600
   },
   "modelConfigs": {

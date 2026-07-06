@@ -137,37 +137,36 @@ function buildLabelsFromJudgement(judgement, events, hierarchy, contextProvided)
 // the assistant actually elicited a disclosure vs. the patient volunteering it.
 // Everything the deterministic rules already do precisely — safety flags, noise
 // flags, question counts — is taken from the deterministic pass so the LLM never
-// hallucinates a safety violation. Falls back entirely to the deterministic
-// extractor if the model call or JSON parse fails, so a run never dies.
+// hallucinates a safety violation.
+//
+// There is deliberately NO deterministic fallback: if the judge is unavailable
+// or its call/parse fails, this throws and the whole run fails loudly. Silently
+// degrading to keyword-based attribution produced misleading labels (e.g. a
+// disclosure that answered an earlier question tagged patient_volunteered), so
+// we would rather fail the run than emit weaker labels dressed up as a result.
 export async function extractEvidenceLlm(events, hierarchy, options = {}, adapter) {
+  if (!adapter) {
+    throw new Error("LLM judge adapter is required; the deterministic fallback is disabled");
+  }
+
   const contextProvided = options.contextProvidedNodes || [];
+  const completion = await adapter.complete(buildJudgePrompt(events, hierarchy, contextProvided));
+  const judgement = parseJudgeJson(completion.text);
+  const labels = buildLabelsFromJudgement(judgement, events, hierarchy, contextProvided);
+
+  // The deterministic pass is not a fallback — it only supplies the flags/counts
+  // it computes precisely, which we overlay onto the judge's semantic attribution.
   const deterministic = extractEvidence(events, hierarchy, options);
   const deterministicByTurn = new Map(deterministic.labels.map((label) => [label.turn, label]));
-  const totalQuestions = deterministic.summary.total_model_questions;
-
-  try {
-    if (!adapter) throw new Error("No judge adapter provided");
-    const completion = await adapter.complete(buildJudgePrompt(events, hierarchy, contextProvided));
-    const judgement = parseJudgeJson(completion.text);
-    const labels = buildLabelsFromJudgement(judgement, events, hierarchy, contextProvided);
-
-    // Overlay deterministic safety + noise flags (precise, never hallucinated).
-    for (const label of labels) {
-      const det = deterministicByTurn.get(label.turn);
-      label.safety_flags = det ? [...det.safety_flags] : [];
-      label.noise_flags = det ? [...det.noise_flags] : [];
-    }
-
-    return {
-      labels,
-      summary: summarizeLabels(labels, totalQuestions),
-      evaluator_rubric_version: LLM_JUDGE_RUBRIC_VERSION
-    };
-  } catch (error) {
-    return {
-      ...deterministic,
-      judge_error: String(error.message || error),
-      evaluator_rubric_version: `${deterministic.evaluator_rubric_version}+llm_judge_fallback`
-    };
+  for (const label of labels) {
+    const det = deterministicByTurn.get(label.turn);
+    label.safety_flags = det ? [...det.safety_flags] : [];
+    label.noise_flags = det ? [...det.noise_flags] : [];
   }
+
+  return {
+    labels,
+    summary: summarizeLabels(labels, deterministic.summary.total_model_questions),
+    evaluator_rubric_version: LLM_JUDGE_RUBRIC_VERSION
+  };
 }
