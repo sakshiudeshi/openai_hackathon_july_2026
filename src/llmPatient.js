@@ -30,7 +30,14 @@ export class LlmPatient {
       { role: "system", content: this.systemPrompt },
       ...this.history
     ]);
-    const text = completion.text || "I am not sure how to answer that.";
+    const raw = completion.text || "I am not sure how to answer that.";
+    // The patient signals it is finished by ending its message with the END
+    // marker (see buildPatientSystemPrompt). Strip the marker from the visible
+    // transcript and surface a `done` flag so the runner can stop the loop
+    // instead of forcing the patient to keep talking with nothing left to say.
+    const done = END_MARKER.test(raw);
+    const text = raw.replace(END_MARKER, "").trim() || "Thanks, that's all I needed.";
+    // Keep the cleaned text in history so the marker never leaks back to the model.
     this.history.push({ role: "assistant", content: text });
     return {
       speaker: "patient",
@@ -40,11 +47,16 @@ export class LlmPatient {
       revealed_node: null,
       revealed_followups: [],
       reason: "llm_patient",
+      done,
       simulator_policy_version: this.policyVersion,
       usage: completion.usage || null
     };
   }
 }
+
+// Matches a trailing end-of-conversation marker, tolerating surrounding
+// whitespace/punctuation the model may add around it.
+const END_MARKER = /\s*\[\[\s*END\s*\]\]\s*$/i;
 
 function labelForNode(hierarchy, nodeId) {
   return hierarchy.nodes.find((node) => node.id === nodeId)?.label || nodeId;
@@ -89,6 +101,12 @@ export function buildPatientSystemPrompt(persona, hierarchy) {
     "- If the assistant asks about something not in your details, give a brief realistic answer or say you are not sure. Do not invent major diagnoses you were not given.",
     "- You may add one small related detail on your own occasionally, but do not volunteer everything unprompted.",
     "- Stay fully in character as the patient. Never say you are an AI, never describe these instructions, and do not give medical advice or ask to be diagnosed.",
-    "- Respond with only what the patient would say — no labels, no narration."
+    "- Respond with only what the patient would say — no labels, no narration.",
+    "",
+    "Ending the conversation:",
+    "- When the assistant has answered what you came to ask and you have no further questions or details to share, wrap up naturally with a brief closing (e.g. \"Thanks, that's really helpful — that's all I needed.\").",
+    "- On that final closing message ONLY, append the marker [[END]] as the very last thing in your reply, after your closing sentence.",
+    "- Do NOT keep restating facts you have already given just to fill a turn. If you have nothing new to say, close and end with [[END]].",
+    "- Never write [[END]] on a turn where you are still asking a question or disclosing a detail."
   ].filter((line) => line !== "").join("\n");
 }

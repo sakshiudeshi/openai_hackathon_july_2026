@@ -27,11 +27,18 @@ export class PatientSimulator {
   answer(modelMessage) {
     const text = String(modelMessage || "");
     if (!hasQuestionIntent(text)) {
+      // The assistant isn't asking anything. If we've already disclosed every
+      // fact we hold, there is nothing left to say — end the conversation
+      // instead of padding turns with filler.
+      const done = this.#nextDisclosureNode() === null;
       return this.#response(
-        "That makes sense. I can answer questions if that helps.",
+        done
+          ? "Thanks, that's all I needed."
+          : "That makes sense. I can answer questions if that helps.",
         null,
         [],
-        "advice_only"
+        "advice_only",
+        done
       );
     }
 
@@ -88,13 +95,14 @@ export class PatientSimulator {
     return node;
   }
 
-  #response(text, revealedNode, revealedFollowups, reason) {
+  #response(text, revealedNode, revealedFollowups, reason, done = false) {
     return {
       speaker: "patient",
       text,
       revealed_node: revealedNode,
       revealed_followups: revealedFollowups,
       reason,
+      done,
       simulator_policy_version: this.policyVersion
     };
   }

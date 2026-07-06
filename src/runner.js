@@ -86,6 +86,8 @@ export async function runScenario({
   events.push(opening);
   await storage?.recordEvent?.(opening);
 
+  let stopReason = "turn_limit_reached";
+  let assistantTurns = 0;
   for (let turn = 1; turn <= turnLimit; turn += 1) {
     const completion = await adapter.complete(toProviderMessages(systemPrompt, events));
     const assistantEvent = {
@@ -103,6 +105,7 @@ export async function runScenario({
     };
     events.push(assistantEvent);
     await storage?.recordEvent?.(assistantEvent);
+    assistantTurns += 1;
 
     const simulatorResponse = await simulator.answer(completion.text);
     const patientEvent = {
@@ -119,6 +122,14 @@ export async function runScenario({
     };
     events.push(patientEvent);
     await storage?.recordEvent?.(patientEvent);
+
+    // The patient can end the conversation once it has nothing left to ask or
+    // share, rather than being forced to fill every remaining turn (which is
+    // what produced degenerate replies like restating "I'm 61, male").
+    if (simulatorResponse.done) {
+      stopReason = "patient_ended";
+      break;
+    }
   }
 
   const evidence = await extractEvidenceFn(events, hierarchy, {
@@ -157,7 +168,12 @@ export async function runScenario({
     evidence,
     score,
     attributions,
-    progression
+    progression,
+    conversation: {
+      stop_reason: stopReason,
+      assistant_turn_count: assistantTurns,
+      turn_limit: turnLimit
+    }
   };
 
   await storage?.recordRunResult?.(result);

@@ -18,6 +18,7 @@ export function buildRunManifest(result) {
     score: result.score || null,
     event_count: events.length,
     assistant_turn_count: assistantTurns.length,
+    stop_reason: result.conversation?.stop_reason || null,
     started_at: events[0]?.timestamp || null,
     completed_at: events.at(-1)?.timestamp || null,
     artifacts: {
