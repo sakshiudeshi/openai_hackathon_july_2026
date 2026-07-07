@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import { loadSystemPromptFrom } from "./artifacts.js";
 import { PatientSimulator } from "./simulator.js";
 import { createModelAdapter } from "./modelAdapters.js";
 import { extractEvidence } from "./evaluator.js";
@@ -14,6 +15,22 @@ const RUN_ID_ALPHABET = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrs
 
 function isoNow() {
   return new Date().toISOString();
+}
+
+// A model config may pin its own system prompt via `systemPromptPath`, letting
+// the same underlying model run under different prompts as separate comparison
+// entries. Configs that omit it fall back to the comparison-wide default.
+export function resolveSystemPrompt(modelConfig, fallbackPrompt) {
+  if (modelConfig.systemPromptPath) {
+    return {
+      systemPrompt: loadSystemPromptFrom(modelConfig.systemPromptPath),
+      systemPromptVersion: modelConfig.systemPromptVersion || modelConfig.systemPromptPath
+    };
+  }
+  return {
+    systemPrompt: fallbackPrompt,
+    systemPromptVersion: modelConfig.systemPromptVersion || TESTED_MODEL_SYSTEM_PROMPT_VERSION
+  };
 }
 
 export function makeRunId(existingRunIds = issuedRunIds) {
@@ -48,6 +65,7 @@ export async function runScenario({
   persona,
   modelConfig,
   systemPrompt,
+  systemPromptVersion = TESTED_MODEL_SYSTEM_PROMPT_VERSION,
   turnLimit = 10,
   storage = null,
   createPatient = (persona_, hierarchy_) => new PatientSimulator(persona_, hierarchy_),
@@ -65,7 +83,7 @@ export async function runScenario({
     persona,
     modelConfig,
     versions: {
-      tested_model_system_prompt_version: TESTED_MODEL_SYSTEM_PROMPT_VERSION,
+      tested_model_system_prompt_version: systemPromptVersion,
       simulator_policy_version: SIMULATOR_POLICY_VERSION,
       evaluator_rubric_version: EVALUATOR_RUBRIC_VERSION
     }
@@ -160,7 +178,7 @@ export async function runScenario({
       context_provided_nodes: persona.context_provided_nodes || []
     },
     versions: {
-      tested_model_system_prompt_version: TESTED_MODEL_SYSTEM_PROMPT_VERSION,
+      tested_model_system_prompt_version: systemPromptVersion,
       simulator_policy_version: simulator.policyVersion || SIMULATOR_POLICY_VERSION,
       evaluator_rubric_version: evidence.evaluator_rubric_version || EVALUATOR_RUBRIC_VERSION
     },
@@ -200,13 +218,15 @@ export async function runComparison({
   const total = modelConfigs.length * personas.length;
   let completed = 0;
   for (const modelConfig of modelConfigs) {
+    const resolved = resolveSystemPrompt(modelConfig, systemPrompt);
     for (const persona of personas) {
       onProgress?.({ phase: "start", completed, total, modelConfig, persona });
       const result = await runScenario({
         hierarchy,
         persona,
         modelConfig,
-        systemPrompt,
+        systemPrompt: resolved.systemPrompt,
+        systemPromptVersion: resolved.systemPromptVersion,
         turnLimit,
         storage,
         createPatient,
