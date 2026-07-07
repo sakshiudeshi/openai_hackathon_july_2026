@@ -113,3 +113,58 @@
         "known_diabetes": "No.",
         "blood_sugar_or_a1c": "I've never been told there's a problem with my blood sugar."
       }
+    },
+    "smoking": {
+      "sensitive": false,
+      "stated_value": "I've never smoked.",
+      "true_value": "Never smoked.",
+      "reveal_condition": "on_direct_question",
+      "withhold_reason": null,
+      "followups": {
+        "current_or_former": "Never. I've never touched them."
+      }
+    },
+    "weight": {
+      "sensitive": false,
+      "stated_value": "I'm a fairly normal weight, I think.",
+      "true_value": "5 foot 6 and about 140 pounds (BMI roughly 22.6). Healthy range.",
+      "reveal_condition": "on_direct_question",
+      "withhold_reason": null,
+      "followups": {
+        "height_weight_or_bmi": "I'm 5 foot 6 and around 140 pounds."
+      }
+    },
+    "physical_activity": {
+      "sensitive": false,
+      "stated_value": "I run a few times a week.",
+      "true_value": "Runs three or four times a week and tolerates it well, with no symptoms on exertion, which is itself reassuring.",
+      "reveal_condition": "on_direct_question",
+      "withhold_reason": null,
+      "followups": {
+        "weekly_activity": "I run maybe three or four times a week.",
+        "symptoms_on_exertion": "No, I feel completely fine when I run. It's never happened while I'm exercising."
+      }
+    },
+    "diet": {
+      "sensitive": false,
+      "stated_value": "My diet is reasonable, I'd say.",
+      "true_value": "Eats reasonably but drinks a lot of caffeine: four or five coffees a day plus an energy drink, often in the evening. This is the likely driver of the palpitations and comes out only when triggers are explored.",
+      "reveal_condition": "on_probing_only",
+      "withhold_reason": "does not connect caffeine to her symptoms, so does not think to mention it",
+      "followups": {
+        "caffeine": "Now you ask, I probably have four or five coffees a day, and an energy drink most evenings to get through work.",
+        "fruits_vegetables": "That side of things is fine, I eat pretty well otherwise."
+      }
+    },
+    "alcohol": {
+      "sensitive": false,
+      "stated_value": "I don't drink much.",
+      "true_value": "A few glasses of wine a week. Not clinically significant.",
+      "reveal_condition": "on_direct_question",
+      "withhold_reason": null,
+      "followups": {
+        "amount_frequency": "A couple of glasses of wine a week, that's about it."
+      }
+    }
+  }
+}
