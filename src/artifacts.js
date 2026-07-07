@@ -22,6 +22,10 @@ export function loadSystemPrompt() {
   return readText("data/prompts/tested_model_system_prompt_v0.txt").trim();
 }
 
+export function loadPatientHarnessPrompt() {
+  return readText("data/prompts/patient_harness_prompt.txt");
+}
+
 export function loadPersonas() {
   const dir = path.join(PROJECT_ROOT, "data/personas");
   return fs.readdirSync(dir)

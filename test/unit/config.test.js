@@ -9,7 +9,7 @@ test("app config loads central defaults", () => {
   const config = loadAppConfig({ APP_CONFIG_PATH: "config/default.json" });
 
   assert.equal(config.server.port, 5173);
-  assert.equal(config.run.turnLimit, 10);
+  assert.equal(config.run.turnLimit, 20);
   assert.equal(config.modelConfigs.path, "config/model_configs.json");
   assert.equal(config.storage.outputDir, "runs");
   assert.equal(config.storage.latestComparisonFile, "latest-comparison.json");

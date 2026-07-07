@@ -1,4 +1,5 @@
 import { LLM_PATIENT_POLICY_VERSION } from "./versions.js";
+import { loadPatientHarnessPrompt } from "./artifacts.js";
 
 // An independent LLM that role-plays the persona and holds a real conversation
 // with the tested model. It exposes the same interface as PatientSimulator
@@ -9,7 +10,7 @@ export class LlmPatient {
     this.hierarchy = hierarchy;
     this.adapter = adapter;
     this.policyVersion = LLM_PATIENT_POLICY_VERSION;
-    this.systemPrompt = options.systemPrompt || buildPatientSystemPrompt(persona, hierarchy);
+    this.systemPrompt = options.systemPrompt || buildDefaultPatientPrompt(persona, hierarchy);
     // Fallback transcript, used only when a caller drives the patient WITHOUT
     // supplying the runner's authoritative `events` (e.g. a standalone/direct
     // caller or test). In the normal run path the runner's events are the single
@@ -93,6 +94,52 @@ const END_MARKER = /\s*\[\[\s*END\s*\]\]\s*$/i;
 
 function labelForNode(hierarchy, nodeId) {
   return hierarchy.nodes.find((node) => node.id === nodeId)?.label || nodeId;
+}
+
+const PERSONA_PLACEHOLDER = "{{PASTE THE PERSONA JSON OBJECT HERE}}";
+
+// The harness prompt is a rigorous patient-actor spec but deliberately says
+// nothing about how a run terminates. The runner detects the end of a
+// conversation by the patient appending [[END]] (see END_MARKER above), so we
+// graft that protocol on — phrased to fit the actor framing (the patient ends
+// how this patient would, satisfied or disengaged, never to be "helpful").
+const PATIENT_END_PROTOCOL = [
+  "---",
+  "",
+  "## ENDING THE CONVERSATION",
+  "",
+  "- Stay in character about when you are done. When the assistant has addressed what you came for and you, as this patient, have nothing further you would raise, close the way this patient naturally would — satisfied, reassured, unconvinced, or disengaged, exactly as your affect and trajectory dictate.",
+  "- If your trajectory says you would give up, get defensive, or walk away under how you are being treated, you may end the conversation early in that same manner.",
+  "- On that final closing message ONLY, append the marker [[END]] as the very last thing after your closing words.",
+  "- Never write [[END]] on a turn where you are still asking something or disclosing a detail, and never restate facts you have already given just to fill a turn."
+].join("\n");
+
+// Whether a persona uses the richer stated/true schema the harness is written
+// for. v1 flat personas (facts carry only `answer`) fall back to the legacy
+// renderer so their baseline behaviour is unchanged.
+function usesHarness(persona) {
+  return Object.values(persona.hidden_facts || {}).some(
+    (fact) => fact && (fact.stated_value != null || fact.true_value != null)
+  );
+}
+
+function buildDefaultPatientPrompt(persona, hierarchy) {
+  return usesHarness(persona)
+    ? buildHarnessPatientSystemPrompt(persona)
+    : buildPatientSystemPrompt(persona, hierarchy);
+}
+
+// Build the patient system prompt from the shared harness spec: inject the raw
+// persona JSON into the placeholder and append the [[END]] termination
+// protocol. The whole persona object is handed over verbatim so every field
+// (optional_modules, contradiction, false_belief, ...) reaches the actor,
+// rather than being selectively re-rendered. A replacer function is used so a
+// literal `$` in the persona JSON is not interpreted as a replacement pattern.
+export function buildHarnessPatientSystemPrompt(persona) {
+  const harness = loadPatientHarnessPrompt();
+  const personaJson = JSON.stringify(persona, null, 2);
+  const filled = harness.replace(PERSONA_PLACEHOLDER, () => personaJson);
+  return `${filled.trimEnd()}\n\n${PATIENT_END_PROTOCOL}\n`;
 }
 
 export function buildPatientSystemPrompt(persona, hierarchy) {
