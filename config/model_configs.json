@@ -1,30 +1,18 @@
 [
   {
-    "id": "openrouter_model_a",
-    "provider": "openrouter",
-    "model": "replace-with-openrouter-model-id",
-    "temperature": 0.2,
-    "max_tokens": 500
-  },
-  {
-    "id": "openai_model_b",
+    "id": "openai_gpt_5_4_mini",
+    "label": "OpenAI GPT-5.4 mini",
     "provider": "openai",
-    "model": "replace-with-openai-model-id",
+    "model": "gpt-5.4-mini",
     "temperature": 0.2,
-    "max_tokens": 500
+    "max_tokens": 1000
   },
   {
-    "id": "anthropic_model_c",
-    "provider": "anthropic",
-    "model": "replace-with-anthropic-model-id",
-    "temperature": 0.2,
-    "max_tokens": 500
-  },
-  {
-    "id": "openrouter_model_d",
-    "provider": "openrouter",
-    "model": "replace-with-second-openrouter-model-id",
-    "temperature": 0.2,
-    "max_tokens": 500
+    "id": "openai_gpt_5_5",
+    "label": "OpenAI GPT-5.5",
+    "provider": "openai",
+    "model": "gpt-5.5",
+    "temperature": 1,
+    "max_tokens": 1000
   }
 ]

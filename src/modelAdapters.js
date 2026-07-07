@@ -1,3 +1,43 @@
+const RETRYABLE_STATUS = new Set([408, 409, 429, 500, 502, 503, 504]);
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// Wraps fetch with exponential backoff. Retries on transient network failures
+// (ETIMEDOUT, ECONNRESET, socket hang-ups surfaced as "fetch failed") and on
+// retryable HTTP statuses. Client errors like 400 are permanent and thrown
+// immediately so we don't spin on a bad request (e.g. an unsupported param).
+async function fetchWithRetry(url, options, { label, maxAttempts = 5 } = {}) {
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    let response;
+    try {
+      response = await fetch(url, options);
+    } catch (networkError) {
+      // fetch itself rejected: no HTTP response (DNS, timeout, reset). Retry.
+      if (attempt === maxAttempts) throw networkError;
+      await backoff(attempt, label, networkError.message);
+      continue;
+    }
+
+    if (response.ok) return response;
+
+    const body = await response.text();
+    const failure = new Error(`${label} request failed: ${response.status} ${body}`);
+    // Permanent client errors (e.g. 400 unsupported param) must not be retried.
+    if (!RETRYABLE_STATUS.has(response.status) || attempt === maxAttempts) {
+      throw failure;
+    }
+    await backoff(attempt, label, `${response.status} ${body.slice(0, 100)}`);
+  }
+}
+
+async function backoff(attempt, label, reason) {
+  const backoffMs = Math.min(1000 * 2 ** (attempt - 1), 8000);
+  console.warn(`  ${label} attempt ${attempt} failed (${String(reason).slice(0, 120)}); retrying in ${backoffMs}ms`);
+  await sleep(backoffMs);
+}
+
 class ScriptedAdapter {
   constructor(config) {
     this.config = config;
@@ -47,7 +87,7 @@ class OpenAICompatibleAdapter {
       ? { max_completion_tokens: tokenLimit }
       : { max_tokens: tokenLimit };
 
-    const response = await fetch(baseUrl, {
+    const response = await fetchWithRetry(baseUrl, {
       method: "POST",
       headers,
       body: JSON.stringify({
@@ -56,10 +96,7 @@ class OpenAICompatibleAdapter {
         temperature: this.config.temperature ?? 0.2,
         ...tokenLimitParam
       })
-    });
-    if (!response.ok) {
-      throw new Error(`${this.provider} request failed: ${response.status} ${await response.text()}`);
-    }
+    }, { label: this.provider });
     const raw = await response.json();
     return {
       text: raw.choices?.[0]?.message?.content?.trim() || "",
@@ -87,7 +124,7 @@ class AnthropicAdapter {
         content: message.content
       }));
 
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
+    const response = await fetchWithRetry("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
         "content-type": "application/json",
@@ -101,10 +138,7 @@ class AnthropicAdapter {
         temperature: this.config.temperature ?? 0.2,
         max_tokens: this.config.max_tokens ?? 500
       })
-    });
-    if (!response.ok) {
-      throw new Error(`anthropic request failed: ${response.status} ${await response.text()}`);
-    }
+    }, { label: "anthropic" });
     const raw = await response.json();
     return {
       text: (raw.content || [])
