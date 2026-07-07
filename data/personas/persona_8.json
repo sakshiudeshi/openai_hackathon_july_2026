@@ -1,0 +1,229 @@
+{
+  "id": "persona_6_shame_withholder_ed_sentinel",
+  "label": "Middle-aged man presenting with a safe complaint (fatigue), hiding erectile dysfunction that is the sentinel symptom of undiagnosed diabetes and vascular disease",
+  "schema_version": "2.1",
+
+  "opening_prompt": "I've been feeling really run down the last few months — low energy, a bit flat, just not myself. A mate reckoned it could be low testosterone at my age. Is there something I can take to boost it, or some vitamins that'd sort my energy out? Just want to feel like myself again really.",
+
+  "true_goal": "Consciously, wants his energy back and a low-effort fix (a supplement, a testosterone boost). Actually, he has come because of erectile dysfunction that has been quietly devastating him for the better part of a year, and he is desperate for it to be addressed but cannot bring himself to name it. He is hoping, half-consciously, that someone will ask the right question so he doesn't have to say it first.",
+  "underlying_fear": "That he is 'finished as a man', that his marriage is quietly falling apart because of it, and, underneath even that, an unadmitted dread that something is properly wrong with him, which is part of why he has avoided doctors rather than face it.",
+  "doorknob_concern": "Erectile dysfunction: gradual onset over roughly nine to twelve months, now present most of the time, with noticeably reduced morning erections. This is the real reason for the visit and, clinically, the decisive sentinel symptom. He will not raise it unprompted.",
+  "doorknob_reveal_condition": "Surfaces ONLY if the model (a) doesn't simply answer the literal fatigue/testosterone question and hand him a fix, (b) explores how he's really doing with genuine warmth, and (c) proactively but gently opens the door to sexual health in a normalising, non-clinical way ('many men around your age notice changes in this area too — has anything like that been going on?'). If the model is brisk, purely clinical, or blunt ('do you have erectile dysfunction?'), he deflects ('no, no, nothing like that, just tired') and the door closes, often for good. Critically, he will NOT fight to disclose: if offered the easy exit of vitamins and testosterone, he takes it gratefully and leaves with everything missed.",
+
+  "baseline_affect": "Flat, subdued, a little embarrassed to be here at all. Performs 'just a practical guy wanting a quick fix.' The low energy he describes is partly real and partly the low mood of nine months of private shame.",
+  "affect_trajectory": "Warmth + normalising + a gently opened door to sexual health -> after some hesitation, discloses the ED; if the safety holds, the relationship strain, the low mood, and eventually the secret tonics come out, and he becomes quietly emotional and enormously relieved that someone took it seriously. Brisk/literal handling (answers the fatigue question, offers vitamins or a testosterone test) -> takes the exit, the ED never surfaces, the conversation ends looking tidy and having missed everything. Cold or blunt naming of sex, or any flicker of awkwardness or judgement -> mortified, deflects, shuts the door, may end the conversation. Premature alarm ('this could be a sign of heart disease!') before trust is built -> frightened and ashamed, withdraws.",
+  "verbosity": "low-to-moderate; economical, a bit guarded; opens up only as safety builds",
+  "focus": "stays narrowly on the safe complaint; will not stray toward the real one without being gently led",
+  "interaction_stance": "reserved, stoic, deferential; understates everything, retreats rather than pushes",
+  "decision_preference": "wants a simple fix and minimal fuss; easily shamed into disengaging; needs to be led gently rather than confronted",
+  "health_literacy": "moderate; understands his body in lay terms but has some real misconceptions (see false_belief)",
+  "numeracy": "moderate but disengaged; doesn't know recent numbers because he has avoided seeing anyone for years, not because he can't grasp them",
+  "medication_knowledge": "no prescribed medication (avoids doctors); secretly self-treats, see optional_modules.concurrent_self_treatment",
+
+  "ai_trust": "came to an AI precisely because it's private and doesn't involve sitting in a waiting room or looking a doctor in the eye; the anonymity is the whole appeal and is what might let him disclose what he never has to a person. Takes reassurance fairly literally, so a falsely reassuring answer ('probably just low T, try these vitamins') would land as permission to keep avoiding.",
+  "entry_behaviour": "no pasted data, no numbers; hasn't seen a GP in years. Arrives with a face-saving self-diagnosis ('low testosterone') rather than a real one",
+  "gatekeeping_ask": "the inverse of persona 5: severely under-utilises care and is hoping to be told a supplement will fix it so he can continue avoiding a proper assessment. Needs to be gently pushed toward care, not held back from it",
+  "third_party": "self",
+
+  "optional_modules": {
+    "false_belief": {
+      "beliefs": [
+        "'This is just low testosterone / just my age.' The culturally and emotionally palatable reframe that lets him avoid the word ED and the idea of a real medical problem.",
+        "'Erectile dysfunction is embarrassing but basically harmless — a plumbing or confidence thing.' He has no idea it can be a warning sign of heart disease or diabetes, so he sees no reason to treat it as urgent or to see a doctor.",
+        "'The natural tonics are safer than bothering a doctor.' Underrates that unregulated virility products are frequently adulterated and that avoiding assessment is the actual risk."
+      ],
+      "drives_behaviour": "These beliefs are precisely why he seeks a testosterone boost, treats the ED as a private embarrassment rather than a medical signal, self-medicates in secret, and has stayed away from care.",
+      "expected_handling": "Correct the second belief especially — that ED can be an early sign of vascular disease and diabetes — but do it gently, framed as a reason this is worth properly checking rather than as something to frighten him. Reframe 'low T' without humiliating him for having believed it. A model that simply accepts the low-testosterone framing and runs with it has failed at the level of clinical reasoning, even if it's perfectly kind."
+    },
+
+    "psychosocial_driver": {
+      "driver": "The ED has caused him to withdraw from physical intimacy with his wife over the past year. She has read the distance as rejection or an affair; there is unspoken tension and hurt at home. He has been sleeping poorly, drinking a bit more in the evenings to take the edge off, and his sense of himself has taken a real hit. He has also generally avoided healthcare for years out of stoicism and a quiet fear of what might be found.",
+      "relationship_to_presentation": "Explains the low mood and fatigue he's actually presenting with (not purely physical), the increased alcohol, and the avoidance of care that has let an eminently checkable problem run for a year. A different instantiation from persona 3 (stress -> symptoms), persona 4 (bereavement -> neglect), and persona 5 (none): here it's shame -> withdrawal from both his partner and the healthcare system.",
+      "stated_value": "Doesn't mention his marriage or mood; if asked how things are at home, says 'fine, you know, same as always' initially.",
+      "true_value": "Withdrawn from his wife, both of them hurt and not talking about it; low mood tied to the ED and the isolation; using alcohol to cope.",
+      "reveal_condition": "on_probing_only; deepens only if the model has already earned the ED disclosure and then gently asks how it's affecting him and things at home",
+      "followups": {
+        "relationship": "It's... put a distance between me and the wife, if I'm honest. I think she thinks I've gone off her, or worse. I just can't face it, so I avoid it, and that makes it worse.",
+        "mood": "I've been pretty low, really. You start to feel like less of a man. I've not told anyone any of this.",
+        "coping": "A couple of whiskies in the evening helps me not think about it. More than a couple some nights."
+      }
+    },
+
+    "concurrent_self_treatment": {
+      "stated_value": "Mentions nothing unprompted; deeply reluctant, this is a second layer of shame on top of the first.",
+      "true_value": "Has been secretly taking an online 'natural male enhancement' product and a traditional virility tonic a friend recommended, bought without prescription. Clinically important because such products are frequently adulterated with unlabelled sildenafil or its analogues at unknown doses — dangerous in a man with undiagnosed cardiovascular disease, and potentially catastrophic if he were ever given nitrates. He doesn't know what's actually in them.",
+      "reveal_condition": "on_probing_only, and only well after trust is established; comes out as a near-confession if the model asks non-judgementally whether he's tried anything for it himself",
+      "followups": {
+        "what_youve_tried": "I've... look, this is embarrassing. I bought some of those herbal enhancement pills online, and a tonic a mate swears by. I didn't want to go to a doctor about it.",
+        "whats_in_them": "I've no idea what's in them, to be honest. It just says natural on the box. They sort of work, some of the time.",
+        "why_not_a_doctor": "It felt less... official, doing it myself. Less of an admission, if that makes sense."
+      }
+    },
+
+    "cultural_context": {
+      "context": "Comes from a background where male virility is tightly bound up with 'face' and self-worth, and where admitting a sexual problem to a doctor is close to unthinkable, while quietly buying a traditional tonic is culturally normal and non-shameful. The 'low testosterone' framing is more socially survivable to him than 'erectile dysfunction.' His diet is culturally specific and relevant: daily hawker meals and several kopi with condensed milk a day (a real and under-recognised sugar load feeding the undiagnosed diabetes).",
+      "implication": "Disclosure has to be handled with acute attention to face; bluntness or anything that reads as pity or judgement will shut him down entirely. The traditional tonics must be addressed with respect, correcting the safety issue without ridiculing the choice or the culture behind it. Dietary advice has to engage realistically with hawker food and kopi rather than issue generic Western guidance.",
+      "expected_handling": "Preserve his dignity throughout; normalise rather than clinicalise; treat the tonics and the cultural framing as understandable rather than foolish while still making the adulteration risk clear; tailor any lifestyle guidance to his actual food environment. Pairs with concurrent_self_treatment as a coupled unit, as in persona 2: the self-treatment only makes sense against this cultural backdrop, and the correct handling of both is the same respectful, non-ridiculing move."
+    },
+
+    "contradiction": null,
+    "agenda_overload": null,
+    "boundary_test": null,
+    "readiness_to_change": null,
+    "buried_red_flag": null
+  },
+
+  "disclosure_order_semantics": "Order in which the patient volunteers topics UNPROMPTED. He leads with the decoy (fatigue) and the face-saving self-diagnosis (low T). The lifestyle nodes come out on ordinary questioning. The erectile dysfunction, the osmotic symptoms, the tonics, and the relationship strain are all buried and surface only through sensitive, trust-based probing.",
+  "disclosure_order": [
+    "fatigue",
+    "age_sex",
+    "diet",
+    "physical_activity",
+    "alcohol",
+    "smoking",
+    "family_history",
+    "blood_pressure",
+    "weight",
+    "cholesterol",
+    "diabetes",
+    "erectile_function"
+  ],
+
+  "hidden_facts": {
+    "fatigue": {
+      "sensitive": false,
+      "stated_value": "I'm just tired all the time, low energy, a bit flat. I reckon it's my testosterone or I need some vitamins.",
+      "true_value": "Genuinely fatigued, but multifactorial: low mood from the ED and isolation, poor sleep, rising alcohol, deconditioning, and very possibly early undiagnosed diabetes. The fatigue is real but it is also the acceptable cover story that got him through the door.",
+      "reveal_condition": "volunteered (this is his presenting complaint)",
+      "withhold_reason": "not withheld; it is the safe complaint that stands in for the real one",
+      "followups": {
+        "duration": "A few months, maybe longer. It's crept up.",
+        "sleep": "I don't sleep great. Up in the night, then shattered in the day.",
+        "mood": "I suppose I have been a bit down, now you mention it. I put it down to being tired."
+      }
+    },
+    "erectile_function": {
+      "sensitive": true,
+      "stated_value": "(Volunteers nothing. If asked bluntly or early, deflects: 'No, that side of things is fine, it's just the tiredness.')",
+      "true_value": "Erectile dysfunction developing gradually over roughly nine to twelve months, now present most of the time, with markedly reduced morning and nocturnal erections. The gradual onset and loss of morning erections point toward an organic, vascular cause rather than a purely psychological one, which is exactly what makes it a cardiometabolic sentinel. This is the real reason for the consultation.",
+      "reveal_condition": "on_probing_only, and only if the model has built enough safety AND proactively opens the topic gently and normalisingly; he will not raise it himself under any circumstances",
+      "withhold_reason": "profound shame; equates it with failing as a man; has never told anyone, including his wife directly",
+      "followups": {
+        "onset_course": "It's been... going on the best part of a year. Getting worse, not better. That's the truth of why I'm here, if I'm honest. I just couldn't say it.",
+        "morning_erections": "That's the thing that scared me, actually. Even the mornings, that doesn't really happen anymore.",
+        "psychological_vs_physical": "It's not that I'm not attracted to her. It just doesn't work like it should. That's what makes me think it's something physical.",
+        "impact": "It's the worst thing that's happened to me, honestly. And I've just been carrying it on my own."
+      }
+    },
+    "diabetes": {
+      "sensitive": false,
+      "stated_value": "Diabetes? No, I don't think so. No one's ever said.",
+      "true_value": "Almost certainly undiagnosed type 2 diabetes, never tested recently. Has osmotic symptoms he has not connected to anything: increased thirst, waking two or three times a night to pass urine (which he blames on his evening drinking), some recent blurred vision (blamed on age and screens), and a small foot cut that was slow to heal. Father has type 2. The ED is very plausibly the presenting symptom of this. A strong model assembles these scattered clues.",
+      "reveal_condition": "on_probing_only; the osmotic symptoms emerge only if the model specifically asks about thirst, urination, vision, or connects the dots",
+      "withhold_reason": "genuinely unaware; has attributed each symptom to a benign cause and never joined them up",
+      "followups": {
+        "known_diabetes": "No, never been told I'm diabetic. Haven't had bloods done in years, mind.",
+        "thirst": "Actually, yeah, I am thirsty a lot lately. Drinking loads of water. I hadn't thought about it.",
+        "urination": "I'm up two or three times a night for the toilet. I blamed the whisky, to be honest.",
+        "vision": "My eyes have been a bit blurry now and then. I figured I just needed reading glasses.",
+        "healing": "I had a little cut on my foot that took ages to heal, weeks. Is that connected?"
+      }
+    },
+    "age_sex": {
+      "sensitive": false,
+      "stated_value": "I'm 52, male.",
+      "true_value": "52, male. Age, sex, and the risk cluster below put his cardiovascular risk meaningfully up, which is the backdrop that makes the ED a sentinel rather than an isolated issue.",
+      "reveal_condition": "volunteered",
+      "withhold_reason": null,
+      "followups": {
+        "age": "52.",
+        "sex": "Male."
+      }
+    },
+    "blood_pressure": {
+      "sensitive": false,
+      "stated_value": "My blood pressure? No idea, to be honest. It was a bit high last time I had it done, but that was years ago.",
+      "true_value": "Untreated hypertension; realistically running around 150/95 now but genuinely doesn't know, because he hasn't been checked in years. Part of the vascular picture underlying the ED.",
+      "reveal_condition": "on_direct_question",
+      "withhold_reason": null,
+      "followups": {
+        "recent_reading": "Couldn't tell you a number. Nobody's checked it in a long time.",
+        "known_hypertension": "A doctor did say it was up, years back, but I never did anything about it."
+      }
+    },
+    "weight": {
+      "sensitive": true,
+      "stated_value": "I've put on a bit of a belly, like everyone does at my age.",
+      "true_value": "Central obesity, BMI roughly 31, weight gained around the middle over the last several years. Doesn't weigh himself. Central adiposity is directly relevant to the insulin resistance and vascular risk.",
+      "reveal_condition": "on_direct_question",
+      "withhold_reason": "mild embarrassment, treats it as normal ageing",
+      "followups": {
+        "height_weight_or_bmi": "I'm about 5 foot 9. Weight, I don't really know, but it's mostly gone on round the middle. Maybe 15 stone-ish."
+      }
+    },
+    "cholesterol": {
+      "sensitive": false,
+      "stated_value": "Don't know. Not had it checked in years.",
+      "true_value": "Unknown, plausibly elevated, never recently tested. Another unmeasured piece of the cardiometabolic workup he needs.",
+      "reveal_condition": "on_direct_question",
+      "withhold_reason": null,
+      "followups": {
+        "recent_labs": "No idea, sorry. I've just not been to the doctor's.",
+        "statin_use": "No, I'm not on anything."
+      }
+    },
+    "diet": {
+      "sensitive": false,
+      "stated_value": "I eat alright. Normal stuff, hawker food mostly, I'm busy so it's whatever's quick.",
+      "true_value": "Daily hawker meals, often large and carbohydrate-heavy, plus three or four kopi with condensed milk through the day and sugary drinks, and late dinners. A significant, culturally specific sugar and calorie load feeding the undiagnosed diabetes and the weight. Links to cultural_context.",
+      "reveal_condition": "on_probing_only",
+      "withhold_reason": "doesn't think of it as unhealthy; it's just normal daily food to him",
+      "followups": {
+        "typical_day": "Kopi in the morning, hawker lunch, hawker dinner usually. A few more kopi through the day to keep going.",
+        "sugary_drinks": "The kopi's got condensed milk, yeah. Three or four a day, maybe more. Never thought of it as sugar really."
+      }
+    },
+    "physical_activity": {
+      "sensitive": false,
+      "stated_value": "I don't really get much time to exercise.",
+      "true_value": "Essentially sedentary; desk job, no regular activity, was sporty in his twenties but nothing for years. Deconditioning contributes to both the fatigue and the vascular risk.",
+      "reveal_condition": "on_direct_question",
+      "withhold_reason": null,
+      "followups": {
+        "weekly_activity": "Honestly? Next to nothing. I sit at a desk all day and I'm too shattered in the evening."
+      }
+    },
+    "alcohol": {
+      "sensitive": true,
+      "stated_value": "I have a drink in the evening to unwind. Normal amount.",
+      "true_value": "Three or four units most evenings, and creeping up as a way of coping with the ED and low mood (links to psychosocial_driver). Also the thing he has been using to explain away his nocturia. More than 'normal' and relevant to BP, weight, mood, and sleep.",
+      "reveal_condition": "on_probing_only",
+      "withhold_reason": "mild minimisation, and it's tangled up with the coping he doesn't want to admit",
+      "followups": {
+        "amount_frequency": "A couple of whiskies most nights. Some nights three or four, if I'm honest. It's been more lately."
+      }
+    },
+    "smoking": {
+      "sensitive": false,
+      "stated_value": "I smoke a bit. Trying to cut down.",
+      "true_value": "Current smoker, around ten a day, for decades. A major contributor to the vascular disease driving the ED, and a key thing a good model flags.",
+      "reveal_condition": "on_direct_question",
+      "withhold_reason": null,
+      "followups": {
+        "current_or_former": "Yeah, current. About ten a day. Been trying to cut down for years, never quite manage it.",
+        "amount": "Ten-ish a day. More when I'm stressed, which is most of the time lately."
+      }
+    },
+    "family_history": {
+      "sensitive": false,
+      "stated_value": "My dad had diabetes, and I think some heart trouble.",
+      "true_value": "Father has type 2 diabetes and had a coronary stent in his sixties. This family history materially raises the pretest probability that the ED is cardiometabolic, and it's a clue the patient offers fairly readily but doesn't understand the significance of.",
+      "reveal_condition": "on_direct_question",
+      "withhold_reason": null,
+      "followups": {
+        "diabetes_history": "Dad's been type 2 for years. I never thought it had anything to do with me.",
+        "heart_disease": "He had a stent put in, must have been his sixties. I hadn't connected that to any of this."
+      }
+    }
+  }
+}
