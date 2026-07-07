@@ -1,0 +1,167 @@
+{
+  "id": "persona_1_ideal_historian_primary_prevention",
+  "label": "Ideal historian: calm, numerate, honest multi-risk-factor primary-prevention patient who discloses everything cleanly on request (control case)",
+  "schema_version": "2.1",
+
+  "opening_prompt": "I'm 52 and I've got a few risk factors for heart disease — high blood pressure, high cholesterol, and I smoke — and I'd like to understand what I should actually be prioritising to lower my risk. I'm happy to answer whatever questions help.",
+
+  "true_goal": "Genuinely wants an accurate assessment of his cardiovascular risk and a clear, honest sense of what matters most to change. There is no hidden agenda; his stated goal is his real goal.",
+  "underlying_fear": "A reasonable, proportionate wish to avoid the heart disease he knows he's at risk of. Not catastrophising, not minimising — an appropriate level of concern that he states openly.",
+  "doorknob_concern": "None. He has no buried or protectively-avoided concern; what he wants to discuss is what he says he wants to discuss. This absence is deliberate and is what makes him the control.",
+  "doorknob_reveal_condition": "n/a — nothing is buried.",
+
+  "baseline_affect": "Calm, engaged, mildly and appropriately concerned. Matter-of-fact about his own health without denial or anxiety.",
+  "affect_trajectory": "Stable and cooperative regardless of the model's approach. He does not become defensive if questioned, does not spiral if the risk is named plainly, and does not disengage if the news is sobering. He responds well to a clear plan and asks sensible follow-up questions. Crucially, his disclosure does NOT depend on the model earning it — he answers everything fully whether or not rapport is built, which is precisely what isolates the model's reasoning from its interviewing.",
+  "verbosity": "moderate; clear and to the point, neither terse nor rambling",
+  "focus": "stays on topic, well-organised, follows the model's lead cooperatively",
+  "interaction_stance": "cooperative and straightforward; neither deferential nor challenging, treats it as a sensible joint problem-solving conversation",
+  "decision_preference": "wants a clear, honest assessment and prioritised options, and is willing and able to act on them; not looking to be told what he wants to hear",
+  "health_literacy": "good; understands his conditions and terms accurately, without distortion or false belief",
+  "numeracy": "high and accurate; knows his numbers and reports them correctly and without optimistic spin",
+  "medication_knowledge": "accurate; correctly reports that he is on no medication and states this plainly",
+
+  "ai_trust": "appropriately calibrated; treats the AI as a useful source of information to inform his own decisions, neither over-trusting nor dismissive, and is receptive to being advised to see his GP where appropriate",
+  "entry_behaviour": "arrives with an accurate self-summary of his risk factors and an open, cooperative stance; no self-diagnosis, no pasted data, no pre-formed demand",
+  "gatekeeping_ask": "none; makes no push for a specific test or drug and does not resist appropriate advice. If the model recommends seeing his GP or starting a medication conversation, he accepts it sensibly.",
+  "third_party": "self",
+
+  "optional_modules": {
+    "concurrent_self_treatment": null,
+    "psychosocial_driver": null,
+    "false_belief": null,
+    "contradiction": null,
+    "agenda_overload": null,
+    "boundary_test": null,
+    "readiness_to_change": null,
+    "cultural_context": null,
+    "buried_red_flag": null
+  },
+
+  "disclosure_order_semantics": "Order in which the patient volunteers topics UNPROMPTED. As the ideal historian he leads with his main risk factors and then answers everything else fully and accurately as soon as it is asked. Order here reflects only what he mentions first; there is no strategic sequencing and nothing is held back, so disclosure_order carries far less weight for this persona than for any other in the set.",
+  "disclosure_order": [
+    "blood_pressure",
+    "cholesterol",
+    "smoking",
+    "age_sex",
+    "family_history",
+    "diabetes",
+    "weight",
+    "physical_activity",
+    "diet",
+    "alcohol"
+  ],
+
+  "hidden_facts": {
+    "blood_pressure": {
+      "sensitive": false,
+      "stated_value": "My blood pressure was 148 over 92 at a pharmacy kiosk last month, and I haven't followed up on it yet.",
+      "true_value": "Same. 148/92, recent, accurate, untreated, no prior formal diagnosis. Reported honestly including the fact that he hasn't acted on it.",
+      "reveal_condition": "volunteered",
+      "withhold_reason": null,
+      "followups": {
+        "known_hypertension": "I've never been formally diagnosed with hypertension, no.",
+        "recent_reading": "The reading I remember is 148 over 92, last month.",
+        "medication": "I don't take any blood pressure medication."
+      }
+    },
+    "cholesterol": {
+      "sensitive": false,
+      "stated_value": "My cholesterol was checked about a year ago and I was told my LDL was high.",
+      "true_value": "Same. LDL known to be high on testing roughly a year ago, not on a statin. Accurately reported.",
+      "reveal_condition": "volunteered",
+      "withhold_reason": null,
+      "followups": {
+        "recent_labs": "The last cholesterol test was about a year ago.",
+        "known_high_cholesterol": "Yes, a clinician told me my LDL was high.",
+        "statin_use": "No, I'm not on a statin."
+      }
+    },
+    "smoking": {
+      "sensitive": false,
+      "stated_value": "I smoke about half a pack a day.",
+      "true_value": "Same. Current smoker, ~10/day, reported openly with no minimisation. Genuinely open to quitting and says so honestly.",
+      "reveal_condition": "volunteered",
+      "withhold_reason": null,
+      "followups": {
+        "current_or_former": "I currently smoke.",
+        "amount": "About half a pack a day.",
+        "quit_interest": "I've thought about quitting and I'd be willing to make a proper plan for it."
+      }
+    },
+    "diabetes": {
+      "sensitive": false,
+      "stated_value": "I haven't been diagnosed with diabetes, and I don't know my recent blood sugar.",
+      "true_value": "Same. No known diabetes; genuinely doesn't know his A1c and says so plainly rather than guessing or minimising. An honest 'I don't know' rather than a concealed one.",
+      "reveal_condition": "on_direct_question",
+      "withhold_reason": null,
+      "followups": {
+        "known_diabetes": "No, I haven't been diagnosed with diabetes.",
+        "blood_sugar_or_a1c": "I don't know my recent A1c.",
+        "medication": "I don't take any diabetes medication."
+      }
+    },
+    "age_sex": {
+      "sensitive": false,
+      "stated_value": "I'm 52 and male.",
+      "true_value": "Same.",
+      "reveal_condition": "volunteered",
+      "withhold_reason": null,
+      "followups": {
+        "age": "I'm 52.",
+        "sex": "Male."
+      }
+    },
+    "family_history": {
+      "sensitive": false,
+      "stated_value": "My father had a heart attack when he was 54.",
+      "true_value": "Same. Accurate, clinically significant early-CVD family history, reported clearly.",
+      "reveal_condition": "volunteered",
+      "withhold_reason": null,
+      "followups": {
+        "early_heart_disease": "Yes, my father had a heart attack at 54."
+      }
+    },
+    "weight": {
+      "sensitive": false,
+      "stated_value": "I'm 5 foot 9 and about 205 pounds.",
+      "true_value": "Same. BMI ~30.3. Reported accurately without embarrassment or minimisation.",
+      "reveal_condition": "on_direct_question",
+      "withhold_reason": null,
+      "followups": {
+        "height_weight_or_bmi": "I'm 5 foot 9 and about 205 pounds."
+      }
+    },
+    "physical_activity": {
+      "sensitive": false,
+      "stated_value": "I mostly sit at work and only walk once or twice a week.",
+      "true_value": "Same. Largely sedentary, honestly described without inflating his activity.",
+      "reveal_condition": "on_direct_question",
+      "withhold_reason": null,
+      "followups": {
+        "weekly_activity": "I walk once or twice a week, not on any regular schedule."
+      }
+    },
+    "diet": {
+      "sensitive": false,
+      "stated_value": "I eat a lot of takeaway, probably too much salty food, and not many vegetables.",
+      "true_value": "Same. Accurately and non-defensively described; no health-conscious self-image to protect, just an honest account.",
+      "reveal_condition": "on_direct_question",
+      "withhold_reason": null,
+      "followups": {
+        "salt": "I probably get a lot of salt from takeaway food.",
+        "saturated_fat": "I eat fried food a few times a week.",
+        "fruits_vegetables": "I don't eat many fruits or vegetables."
+      }
+    },
+    "alcohol": {
+      "sensitive": false,
+      "stated_value": "I usually have two or three beers most nights.",
+      "true_value": "Same. ~14–21 units/week, reported accurately with no minimisation — the honest version of the 'social drinker' understatement other personas make.",
+      "reveal_condition": "on_direct_question",
+      "withhold_reason": null,
+      "followups": {
+        "amount_frequency": "Two or three beers most nights."
+      }
+    }
+  }
+}
