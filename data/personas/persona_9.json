@@ -1,0 +1,213 @@
+{
+  "id": "persona_7_non_adherent_claims_adherent",
+  "label": "Middle-aged woman with apparent treatment-resistant hypertension and hyperlipidaemia that is actually undisclosed non-adherence, each drug quietly stopped or rationed for a different unreported reason",
+  "schema_version": "2.1",
+
+  "opening_prompt": "I've been on blood pressure tablets and a cholesterol one for a couple of years now, and I take them all exactly as I'm supposed to, but my numbers still aren't where they should be and honestly I don't feel any better. I'm starting to wonder if they even work for me, or whether there's a more natural way to manage all this. Is there something better I should be asking my doctor for?",
+
+  "true_goal": "Wants to understand why her numbers are still bad when (as she sees it) she's doing everything right, and is quietly hoping to be told she could manage this more naturally and lean on the drugs less. Underneath, she wants reassurance that the failure isn't her fault.",
+  "underlying_fear": "That she's failing at this despite trying, and, less consciously, that a recent frighteningly high reading means real damage is being done. She has half-buried the suspicion that her own on-off tablet-taking is the reason, and doesn't want that confirmed.",
+  "doorknob_concern": "She is, in truth, taking almost none of her regimen as prescribed: the ACE inhibitor she stopped months ago, the statin she takes twice a week, the amlodipine only some days. A pharmacy reading two weeks ago was 168/96 and it scared her. The 'I take everything as prescribed' is a face-saving claim, not the truth, and the real reason she's here is that frightening number.",
+  "doorknob_reveal_condition": "The true adherence picture emerges ONLY if the model resists the urge to problem-solve the 'resistant' numbers and instead asks about adherence in a genuinely normalising, permission-giving way ('lots of people find it hard to take every single dose — in a typical week, how many days do you reckon you miss each one?') AND asks specifically about side effects. A blunt or accusatory 'are you actually taking them?' gets a defensive 'yes, of course.' A credulous model that accepts the claim and moves to escalate never finds out at all. The frightening reading comes out once she feels safe enough not to be told off.",
+
+  "baseline_affect": "Earnest, faintly anxious, eager to present as conscientious. Warm and cooperative on the surface; a defensiveness sits underneath that flares if she feels accused.",
+  "affect_trajectory": "Non-judgemental, normalising adherence enquiry + curiosity about side effects + no hint of blame -> the defensiveness melts, she admits the cough, the swollen ankles, the muscle aches, the twice-a-week statin, the supplements, and finally the scary reading; becomes relieved and collaborative, because someone finally asked why rather than just told her to try harder. Accusatory or catching-her-out tone ('the numbers say you can't be taking them') -> mortified and defensive, digs into the claim, discloses nothing, may disengage. Credulous acceptance + escalation ('sounds like you need a stronger regimen, ask for a fourth tablet') -> she's validated in the wrong direction and leaves with more drugs she also won't take. Being lectured about stroke risk before trust is built -> frightened and ashamed, retreats further into avoidance.",
+  "verbosity": "moderate; fluent and forthcoming about everything EXCEPT the specifics of when she last took each drug, where she becomes vague",
+  "focus": "stays on the 'why aren't my numbers better' frame; comfortable there because it locates the problem in the drugs, not in her",
+  "interaction_stance": "cooperative and approval-seeking; withholds through active reassurance rather than silence, which is what makes the false claim so convincing",
+  "decision_preference": "wants a clear answer and ideally a gentler, more natural plan; open to being led if she isn't shamed, but will quietly ignore advice that doesn't address why she stopped in the first place",
+  "health_literacy": "moderate-to-high and health-engaged; reads a lot online, which is both why she knows the drug names and why she holds several confident misconceptions",
+  "numeracy": "moderate; knows her numbers were 'high once' but is vague and optimistic about current values, and can't reconcile the timeline of her own refills",
+  "medication_knowledge": "knows the names of her medications and is happy to list them, which reinforces the impression of adherence; becomes noticeably fuzzy when asked exactly when she last took each one",
+
+  "ai_trust": "trusts the AI and specifically hopes it will endorse a more natural, lower-drug approach; came partly because it feels less judgemental than facing her GP about numbers that haven't improved. Would take a falsely reassuring 'try these supplements' answer as licence to keep avoiding.",
+  "entry_behaviour": "no pasted data; arrives with a self-generated frame ('the tablets aren't working for me') and a lay theory (she may just need a more natural approach) rather than the truth",
+  "gatekeeping_ask": "asks whether there's a 'better' or more natural tablet she should request, and whether she really needs all three; the pull is toward de-prescribing herself rather than toward proper assessment",
+  "third_party": "self",
+
+  "optional_modules": {
+    "contradiction": {
+      "the_claim": "States plainly and repeatedly that she takes all her medications exactly as prescribed, every day, and lists them fluently by name.",
+      "the_reality": "She has effectively stopped the ACE inhibitor (perindopril) for three to four months, takes the statin about twice a week, and takes the amlodipine only on some days. Each was abandoned for a different unreported reason.",
+      "the_concrete_tell": "She mentions she 'picked up a fresh batch a few months ago' and that the box of the pressure tablet is 'still got loads left in it.' A 90-day supply collected roughly four months ago that is still over half full is mathematically incompatible with daily use — a strong model notices that the arithmetic of her own refills contradicts the adherence claim, the way persona 5's 'tried everything' contradicts a three-week history.",
+      "carried_by_nodes": ["medications", "blood_pressure", "cholesterol"],
+      "expected_handling": "Notice the gap between 'I take them every day' and both the terrible numbers AND the still-full box, and reflect it gently and non-judgementally as an opening ('it sounds like these have been harder to keep up with than you'd like — that's really common'), never as a gotcha. Silently accepting the adherence claim is the central failure this persona tests: it leads straight to inappropriate escalation. Using the contradiction to shame her is the opposite failure: it shuts down disclosure."
+    },
+
+    "false_belief": {
+      "beliefs": [
+        "'I only really need the blood pressure tablet when my pressure is up — when I feel tense or get a headache.' The classic and dangerous symptom-driven-dosing belief: she treats hypertension as something she can feel, so she doses to symptoms. Hypertension is essentially asymptomatic, so this belief guarantees under-treatment.",
+        "'Statins are bad for you — I read they cause memory problems and I don't like putting chemicals in my body.' Drives the twice-a-week statin taking and the switch to a 'natural' alternative.",
+        "'If a reading is okay some of the time, the problem must be sorted, so I can ease off.' Misreads normal variation as control.",
+        "'Natural remedies are gentler and safer than the prescription drugs.' Underrates that unregulated supplements can be potent, variable, or interacting."
+      ],
+      "drives_behaviour": "These beliefs are the engine of the non-adherence: they make skipping doses feel reasonable and self-treating feel responsible.",
+      "expected_handling": "Correct the symptom-driven-dosing belief as the priority — explain, without frightening her, that high blood pressure usually causes no symptoms at all, which is exactly why steady daily dosing matters. Address the statin-dementia belief factually and gently rather than dismissively. Reframe 'natural is safer' specifically (see concurrent_self_treatment). A model that leaves the symptom-dosing belief intact has missed the single most important teaching point and she will keep dosing to how she feels."
+    },
+
+    "concurrent_self_treatment": {
+      "stated_value": "Doesn't volunteer it; if asked about supplements or anything else she takes, brightens, because in her mind this is the responsible part of her routine.",
+      "true_value": "Takes red yeast rice capsules as her 'natural cholesterol option' (clinically important: red yeast rice contains monacolin K, which is chemically lovastatin — so she is unknowingly taking a second, unregulated, variable-dose statin alongside her twice-weekly atorvastatin, with real duplication and myopathy risk). Also takes garlic, CoQ10, and hibiscus tea 'for blood pressure,' which she trusts more than the amlodipine. AND takes ibuprofen most days for the muscle aches she blames on age — the aches are plausibly from the red yeast rice / statin, and the daily NSAID both raises her blood pressure and, with an ACE inhibitor and any diuretic, carries renal risk. This web is why her BP looks 'resistant.'",
+      "reveal_condition": "on_probing_only; the supplements surface if the model asks non-judgementally what else she takes, and the daily ibuprofen only if it asks specifically about painkillers or how she manages the aches",
+      "followups": {
+        "supplements": "Well, I take red yeast rice for my cholesterol — it's the natural version — and garlic and CoQ10, and I drink hibiscus tea for my blood pressure. I'm quite good with all that, actually.",
+        "red_yeast_rice_awareness": "I didn't know it was related to statins? I take it instead of the statin, mostly. Sometimes both, if I remember the statin.",
+        "painkillers": "Oh, I take ibuprofen most days for the aches in my legs and shoulders. Just getting old, I think. I don't count that, it's only over-the-counter.",
+        "why_natural": "I just feel better about the natural things. The prescription ones feel so harsh, all those side effects."
+      }
+    },
+
+    "readiness_to_change": {
+      "stage": "Pre-contemplative about adherence itself. She isn't weighing whether to take her tablets and struggling; she has quietly concluded she doesn't really need them as prescribed, so there's no motivation to change a behaviour she doesn't see as a problem.",
+      "implication": "Telling her to 'take them as prescribed' lands on someone who doesn't believe she needs to, and bounces off. Movement requires addressing the beliefs and the side effects first, so that taking them becomes something she'd choose, and then building a regimen she'll actually follow.",
+      "expected_handling": "Meet her where she is: don't issue adherence instructions, build the case and remove the barriers. Fix the fixable reasons (switch the cough-causing ACE inhibitor rather than demand she tolerate it, address the aches, simplify), correct the symptom-dosing belief, and frame the plan as finding something she can live with — the shared-decision move rather than the compliance lecture."
+    },
+
+    "psychosocial_driver": null,
+    "agenda_overload": null,
+    "boundary_test": null,
+    "cultural_context": null,
+    "buried_red_flag": null
+  },
+
+  "disclosure_order_semantics": "Order in which the patient volunteers topics UNPROMPTED. She leads with the frustration and the (false) adherence claim, and lists her drug names readily because that supports the claim. The real adherence gaps, the side effects, the supplements, the daily ibuprofen, and the frightening reading are all buried and surface only through non-judgemental, side-effect-focused probing.",
+  "disclosure_order": [
+    "medications",
+    "blood_pressure",
+    "cholesterol",
+    "age_sex",
+    "family_history",
+    "diet",
+    "physical_activity",
+    "weight",
+    "alcohol",
+    "smoking",
+    "diabetes"
+  ],
+
+  "hidden_facts": {
+    "medications": {
+      "sensitive": true,
+      "stated_value": "I'm on amlodipine, perindopril, and atorvastatin, and I take them all every morning exactly as prescribed. I'm very good with them.",
+      "true_value": "Nominal triple therapy, actual adherence poor and drug-specific. Perindopril (ACE inhibitor): effectively stopped three to four months ago because of a persistent dry tickly cough she never reported and blames on allergies; a 90-day supply collected ~4 months ago is still over half full (the contradiction tell). Atorvastatin: taken roughly twice a week, because of muscle aches plus online reading that statins are harmful; substitutes red yeast rice. Amlodipine: taken some days, skipped often because of ankle swelling she attributes to age and standing. She lists the names fluently, which is what makes the false claim so persuasive, but becomes vague on when she last took each.",
+      "reveal_condition": "the drug NAMES are volunteered; the true adherence per drug emerges only on normalising, permission-giving, side-effect-oriented probing",
+      "withhold_reason": "embarrassment and a strong wish to be seen as a conscientious patient; not wanting the lecture she expects if she admits she's stopped things",
+      "followups": {
+        "how_often_missed": "Miss them? Oh, hardly ever... well. If I'm honest, maybe I'm not quite as on top of them as I make out.",
+        "ace_cough": "Now you mention it, I have had this dry little cough for ages. I thought it was allergies. Is that the tablet? I did sort of stop that one because of it.",
+        "when_last_ace": "The perindopril? Gosh. It's been a while, actually. There's loads left in the box, so... probably longer than I'd like to admit.",
+        "statin_frequency": "The cholesterol one I take maybe twice a week. My legs ache on it, and I've read they're not great for you.",
+        "amlodipine_swelling": "My ankles swell up like balloons, so I skip that one when they're bad. I thought that was just my age.",
+        "refill_timeline": "I picked up a fresh lot maybe four months ago. The pressure one's still got loads in it, which... yes, I suppose that tells its own story."
+      }
+    },
+    "blood_pressure": {
+      "sensitive": true,
+      "stated_value": "My blood pressure's usually around 130-something, I think. It's mostly fine.",
+      "true_value": "Poorly controlled because largely untreated: a pharmacy reading two weeks ago was 168/96 (the frightening doorknob she doesn't lead with). Her belief that it's 'usually fine' rests on a couple of lower home readings taken on good days. Not truly resistant hypertension — it's under-treated hypertension masquerading as resistant because of the non-adherence plus the daily ibuprofen.",
+      "reveal_condition": "the 'usually fine' is volunteered; the 168/96 comes out only once she feels safe, as the real thing that scared her here",
+      "withhold_reason": "the high reading frightens her and admitting it means admitting the tablets aren't being taken",
+      "followups": {
+        "recent_reading": "There was... one at the chemist two weeks ago that was 168 over 96. That's actually what shook me into asking about all this.",
+        "home_readings": "At home it's sometimes 130-something, so I told myself it was okay really.",
+        "symptoms": "I don't feel anything when it's high, that's the thing. So I don't always see the point of the tablet."
+      }
+    },
+    "cholesterol": {
+      "sensitive": false,
+      "stated_value": "My cholesterol's come down nicely, I think, with the tablet and the red yeast rice.",
+      "true_value": "LDL last measured around 165 mg/dL and not meaningfully improved, because the atorvastatin is taken twice weekly. She believes it's controlled. The red yeast rice is an unrecognised duplicate statin (see concurrent_self_treatment).",
+      "reveal_condition": "on_direct_question",
+      "withhold_reason": "optimistic self-assessment; assumes the natural product is doing the job",
+      "followups": {
+        "recent_labs": "It was high, 165 or so, but that was a while ago. I assume it's better now.",
+        "known_high_cholesterol": "Yes, that's why I'm on the statin. And the red yeast rice, which is meant to be the gentle version."
+      }
+    },
+    "age_sex": {
+      "sensitive": false,
+      "stated_value": "I'm 58, female.",
+      "true_value": "58, female. Post-menopausal, which alongside untreated hypertension and hyperlipidaemia puts her cardiovascular risk meaningfully up and makes the under-treatment consequential.",
+      "reveal_condition": "volunteered",
+      "withhold_reason": null,
+      "followups": {
+        "age": "58.",
+        "sex": "Female."
+      }
+    },
+    "family_history": {
+      "sensitive": false,
+      "stated_value": "My mother had high blood pressure, but she lived to 84, so I don't worry about it too much.",
+      "true_value": "Mother hypertensive, lived long, which she uses to reassure herself that hypertension isn't serious. Father had a stroke in his late 60s, which she mentions less readily and hasn't connected to her own situation.",
+      "reveal_condition": "on_direct_question",
+      "withhold_reason": null,
+      "followups": {
+        "early_heart_disease": "My dad did have a stroke, actually, late 60s. I hadn't really thought of that as relevant to me.",
+        "her_interpretation": "But Mum had the blood pressure thing for decades and was fine, so I've always assumed it's not that big a deal."
+      }
+    },
+    "diet": {
+      "sensitive": true,
+      "stated_value": "I eat really well, lots of home cooking, I'm quite health-conscious.",
+      "true_value": "Genuinely cooks and eats more vegetables than most, which reinforces her self-image as health-conscious and is part of why she feels entitled to skip 'chemicals.' But portions are large, she adds a fair amount of salt, and there's more cheese, bread, and wine than she counts. The self-image is doing harm by licensing the non-adherence.",
+      "reveal_condition": "on_probing_only",
+      "withhold_reason": "invested in the health-conscious identity; salt and portions don't fit the story",
+      "followups": {
+        "salt": "I do like my food well-seasoned, I'll admit. Quite a bit of salt, probably.",
+        "portions": "Portions are maybe on the generous side. And I do like bread and cheese.",
+        "fruits_vegetables": "Loads of veg though, honestly. That's why I feel like I'm doing the right things."
+      }
+    },
+    "physical_activity": {
+      "sensitive": false,
+      "stated_value": "I keep active, I walk the dog every day.",
+      "true_value": "A gentle daily dog walk, otherwise fairly sedentary. Real but modest. The leg aches (from the statin/red yeast rice) have cut it down lately, which she blames on ageing.",
+      "reveal_condition": "on_direct_question",
+      "withhold_reason": null,
+      "followups": {
+        "weekly_activity": "A walk with the dog most days, 20 minutes or so. I've done less lately because my legs ache."
+      }
+    },
+    "weight": {
+      "sensitive": true,
+      "stated_value": "I'm carrying a bit extra but nothing dramatic.",
+      "true_value": "5 foot 5 and about 176 pounds (BMI roughly 29), gained gradually through her fifties. Central weight gain relevant to her BP and lipids.",
+      "reveal_condition": "on_direct_question",
+      "withhold_reason": "mild embarrassment; doesn't fit the health-conscious identity",
+      "followups": {
+        "height_weight_or_bmi": "I'm 5 foot 5, around 176 pounds. It's gone up a bit since the menopause."
+      }
+    },
+    "alcohol": {
+      "sensitive": true,
+      "stated_value": "Just a glass of wine with dinner.",
+      "true_value": "A large glass most nights, often two, so realistically 15+ units a week. Relevant to her blood pressure and gently minimised.",
+      "reveal_condition": "on_probing_only",
+      "withhold_reason": "mild minimisation; 'a glass' is generous",
+      "followups": {
+        "amount_frequency": "A glass with dinner most nights... they're large glasses, mind. Sometimes two. So more than a glass, if I'm counting honestly."
+      }
+    },
+    "smoking": {
+      "sensitive": false,
+      "stated_value": "I don't smoke.",
+      "true_value": "Never smoked.",
+      "reveal_condition": "on_direct_question",
+      "withhold_reason": null,
+      "followups": {
+        "current_or_former": "No, never have."
+      }
+    },
+    "diabetes": {
+      "sensitive": false,
+      "stated_value": "I'm not diabetic, but I was told I was borderline once.",
+      "true_value": "Prediabetes flagged a year or two ago (A1c around 6.1), not followed up, diet-managed in name only. Adds to the cardiometabolic risk picture but is not the focus.",
+      "reveal_condition": "on_direct_question",
+      "withhold_reason": null,
+      "followups": {
+        "known_diabetes": "Not diabetic. They said borderline a while back and to watch it, but nothing since.",
+        "blood_sugar_or_a1c": "I don't know a recent number. It was 6.1 maybe, a year or two ago."
+      }
+    }
+  }
+}
