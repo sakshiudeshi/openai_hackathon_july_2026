@@ -7,11 +7,38 @@
     <link rel="stylesheet" href="/styles.css">
   </head>
   <body>
+    <div class="seaGlow" aria-hidden="true"></div>
     <header class="topbar">
-      <div class="topbarMain">
-        <a href="#/" class="homeLink"><h1>Cardiovascular Risk Hierarchy Evaluation</h1></a>
-        <p>Audit dashboard for model elicitation, evidence, scoring, and evaluator validation.</p>
-      </div>
+      <a href="#/" class="homeLink">
+        <span class="brandMark" aria-hidden="true">
+          <svg viewBox="0 0 64 72" role="img" width="46" height="52">
+            <defs>
+              <linearGradient id="jellyBell" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#7df9ff"/>
+                <stop offset="0.55" stop-color="#43d9c9"/>
+                <stop offset="1" stop-color="#b57bff"/>
+              </linearGradient>
+              <radialGradient id="jellyCore" cx="0.5" cy="0.42" r="0.6">
+                <stop offset="0" stop-color="#eafffd"/>
+                <stop offset="1" stop-color="#43d9c9" stop-opacity="0"/>
+              </radialGradient>
+            </defs>
+            <g class="jellyTentacles" stroke="url(#jellyBell)" stroke-width="2.4" stroke-linecap="round" fill="none" opacity="0.85">
+              <path d="M20 34 C18 46 22 54 19 66"/>
+              <path d="M26 36 C25 48 27 58 26 68"/>
+              <path d="M32 37 C32 49 32 60 32 70"/>
+              <path d="M38 36 C39 48 37 58 38 68"/>
+              <path d="M44 34 C46 46 42 54 45 66"/>
+            </g>
+            <path class="jellyBell" d="M8 34 C8 16 22 6 32 6 C42 6 56 16 56 34 C56 37 53 38 49 36 C46 34.5 43 34.5 40 36 C37 37.4 34 37.4 32 36 C30 37.4 27 37.4 24 36 C21 34.5 18 34.5 15 36 C11 38 8 37 8 34 Z" fill="url(#jellyBell)"/>
+            <ellipse class="jellyCore" cx="32" cy="24" rx="15" ry="13" fill="url(#jellyCore)"/>
+          </svg>
+        </span>
+        <span class="brandText">
+          <span class="wordmark">dohrnii</span>
+          <span class="tagline">cardiovascular risk, surfaced &middot; the immortal jellyfish</span>
+        </span>
+      </a>
       <div class="statusCluster">
         <div id="sourceBadge" class="badge source">Loading</div>
         <div id="validationBadge" class="badge">Loading</div>
