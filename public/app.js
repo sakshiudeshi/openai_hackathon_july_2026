@@ -388,7 +388,9 @@ function renderPatientList() {
     return `
       <div class="patientCard">
         <div class="patientHead">
-          <div class="patientName">${patient.scenario.label}</div>
+          <div class="patientName">${patient.scenario.label}
+            <span class="patientId">${esc(patient.scenario.id)}</span>
+          </div>
           <div class="patientMeta">${patient.runs.length} model run${multiModel ? "s" : ""}</div>
         </div>
         <div class="patientRuns">${rows}</div>
@@ -447,7 +449,9 @@ function renderDetailPage(runId) {
           ${run.model_config.label}
           <span class="provider">${run.model_config.provider}</span>
         </div>
-        <div class="runScenario">${run.scenario.label}</div>
+        <div class="runScenario">${run.scenario.label}
+          <span class="patientId">${esc(run.scenario.id)}</span>
+        </div>
       </div>
       <div class="detailScore">
         <span class="headlineValue ${headLevel}">${score(run.score.bottom_to_roof_score)}</span>

@@ -306,6 +306,20 @@ button:focus-visible {
   letter-spacing: -0.01em;
 }
 
+.patientId {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 7px;
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--muted);
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
 .patientMeta {
   color: var(--muted);
   font-size: 12px;
@@ -416,6 +430,11 @@ button:focus-visible {
 
 .detailTitle .runModel {
   font-size: 18px;
+}
+
+.detailHeader .runScenario {
+  white-space: normal;
+  overflow: visible;
 }
 
 .detailTitle .runScenario {
