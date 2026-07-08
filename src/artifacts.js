@@ -40,6 +40,23 @@ export function loadPersonas() {
     .map((file) => JSON.parse(fs.readFileSync(path.join(dir, file), "utf8")));
 }
 
+// Loads every persona together with a stable `key` (its source filename stem,
+// e.g. "persona_6") and `profileNumber`. Personas are keyed by filename because
+// their internal `id` fields can collide across files, whereas the filename —
+// which is also the "patient profile" number the runs are scoped by — is unique.
+export function loadPersonasDetailed() {
+  const dir = path.join(PROJECT_ROOT, "data/personas");
+  return fs.readdirSync(dir)
+    .filter((file) => file.endsWith(".json"))
+    .map((file) => ({ file, number: Number(file.match(/\d+/)?.[0] ?? 0) }))
+    .sort((a, b) => a.number - b.number)
+    .map(({ file, number }) => ({
+      key: file.replace(/\.json$/, ""),
+      profileNumber: number,
+      persona: JSON.parse(fs.readFileSync(path.join(dir, file), "utf8"))
+    }));
+}
+
 // Selects personas by the numeric suffix of their source filename
 // (persona_<N>.json), e.g. [3,4,5] -> persona_3.json, persona_4.json,
 // persona_5.json. Used to run the evaluation on a subset of patient profiles.

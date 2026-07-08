@@ -27,6 +27,7 @@ const DIST_DIR = path.join(PROJECT_ROOT, "dist");
 const PUBLIC_DIR = path.join(PROJECT_ROOT, "public");
 const DATA_DIR = path.join(DIST_DIR, "data");
 const RESULTS_FILE = path.join(DATA_DIR, "results.json");
+const PERSONAS_FILE = path.join(DATA_DIR, "personas.json");
 
 const argv = process.argv.slice(2);
 const args = new Set(argv);
@@ -38,12 +39,13 @@ function log(message) {
   console.log(`[build-pages] ${message}`);
 }
 
-// Ask the server's own request resolver for the exact `/api/results` payload,
-// so the static snapshot stays in sync with what the live dashboard serves.
-async function snapshotResults() {
-  const resolved = await resolveRequest({ url: "/api/results", headers: { host: "localhost" } });
+// Ask the server's own request resolver for the exact payload behind an API
+// route, so the static snapshot stays in sync with what the live dashboard
+// serves. Used for both /api/results and /api/personas.
+async function snapshotRoute(route) {
+  const resolved = await resolveRequest({ url: route, headers: { host: "localhost" } });
   if (resolved.status !== 200) {
-    throw new Error(`/api/results returned status ${resolved.status}`);
+    throw new Error(`${route} returned status ${resolved.status}`);
   }
   return typeof resolved.body === "string" ? resolved.body : resolved.body.toString("utf8");
 }
@@ -58,7 +60,9 @@ function patchAsset(name, contents) {
       .replaceAll('src="/app.js"', 'src="./app.js"');
   }
   if (name === "app.js") {
-    return contents.replaceAll('fetch("/api/results")', 'fetch("./data/results.json")');
+    return contents
+      .replaceAll('fetch("/api/results")', 'fetch("./data/results.json")')
+      .replaceAll('fetch("/api/personas")', 'fetch("./data/personas.json")');
   }
   return contents;
 }
@@ -113,9 +117,13 @@ async function main() {
   fs.rmSync(DIST_DIR, { recursive: true, force: true });
   fs.mkdirSync(DATA_DIR, { recursive: true });
 
-  const results = await snapshotResults();
+  const results = await snapshotRoute("/api/results");
   fs.writeFileSync(RESULTS_FILE, results);
   log(`wrote ${path.relative(PROJECT_ROOT, RESULTS_FILE)} (${(results.length / 1024).toFixed(1)} KiB)`);
+
+  const personas = await snapshotRoute("/api/personas");
+  fs.writeFileSync(PERSONAS_FILE, personas);
+  log(`wrote ${path.relative(PROJECT_ROOT, PERSONAS_FILE)} (${(personas.length / 1024).toFixed(1)} KiB)`);
 
   copyPublicAssets();
   log(`static site ready in ${path.relative(PROJECT_ROOT, DIST_DIR)}/`);

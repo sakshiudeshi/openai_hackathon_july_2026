@@ -2,7 +2,7 @@ import fs from "node:fs";
 import http from "node:http";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { loadGoldTranscripts, loadHierarchy, loadPersonas, PROJECT_ROOT } from "./artifacts.js";
+import { loadGoldTranscripts, loadHierarchy, loadPersonas, loadPersonasDetailed, PROJECT_ROOT } from "./artifacts.js";
 import { loadAppConfig } from "./config.js";
 import { generateDemoComparison } from "./demo.js";
 import { validateEvaluator } from "./validation.js";
@@ -93,6 +93,16 @@ export async function resolveRequest(request, options = {}) {
 
   if (url.pathname === "/api/results") {
     return jsonResponse(200, await latestProvider());
+  }
+
+  // Full persona definitions for the Patient Profiles tab. Unlike the trimmed
+  // `personas` in /api/results (used for filtering runs), this exposes the whole
+  // persona so the UI can showcase goals, affect, hidden facts, and red flags.
+  if (url.pathname === "/api/personas") {
+    return jsonResponse(200, {
+      hierarchy: loadHierarchy(),
+      personas: loadPersonasDetailed()
+    });
   }
 
   const requestedPath = url.pathname === "/" ? "/index.html" : url.pathname;
