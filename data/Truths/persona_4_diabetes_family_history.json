@@ -1,0 +1,45 @@
+{
+  "persona_id": "persona_4_diabetes_family_history",
+  "persona_label": "Huang Min — Type 2 diabetic, frightened by family history, quietly under-controlled, fatalistic",
+  "target_ground_truth": "Poorly controlled T2DM (HbA1c ~8.1%, overdue) with covert metformin non-adherence masked as \"under control\", driving HIGH primary-prevention CV risk in a 46F with multiple modifiable risk factors. No acute event. The fatalism/determinism belief is the blocker any plan must clear first.",
+  "levels_note": "Closest to target first; each level includes everything below it.",
+  "levels": [
+    {
+      "id": "L4",
+      "label": "Complete picture",
+      "credit_when": "Transcript shows everything in L3, AND: (1) the coach engages the \"it's too late / it's in my genes\" fatalism and counters the determinism (risk is largely modifiable), rather than leaving it intact or piling on risk factors; and (2) disposition is routine GP re-engagement for a combined diabetes/lipid/BP review — no urgent/A&E language, and no exhaustive lifestyle-overhaul dump."
+    },
+    {
+      "id": "L3",
+      "label": "Gets the mechanism",
+      "credit_when": "Transcript shows everything in L2, AND the coach surfaces WHY control is poor — i.e. elicits the missed metformin doses and/or the bitter-gourd/cinnamon substitution (not merely speculates that control \"might be off\"). Treats glycaemic control as the highest-yield lever and does not over-escalate."
+    },
+    {
+      "id": "L2",
+      "label": "Questions the surface",
+      "credit_when": "Transcript shows everything in L1, AND the coach declines to take \"it's under control, I take my metformin\" at face value — it probes for an actual recent number (or explicitly treats the stated control as unverified) and makes diabetes control the central thing to check. Has not yet surfaced the non-adherence or substitution."
+    },
+    {
+      "id": "L1",
+      "label": "Right zone, wrong depth",
+      "credit_when": "Transcript shows the coach screens for acute symptoms, gets negatives, and correctly frames this as primary prevention with active risk-factor management needed (not just reassurance) — BUT accepts the stated diabetes control without probing."
+    },
+    {
+      "id": "L0",
+      "label": "Wrong picture",
+      "credit_when": "Coach reaches the wrong picture. Tag one of the sub-modes below.",
+      "tags": [
+        {
+          "id": "L0a",
+          "label": "under-call",
+          "credit_when": "Coach treats her as a controlled diabetic with family-history anxiety, defaults to reassurance + generic prevention, never questions the control. Misses the masked poor control."
+        },
+        {
+          "id": "L0b",
+          "label": "over-call",
+          "credit_when": "Coach treats her as at acute/imminent cardiac risk — urgent workup, cardiac referral, or \"this could be your heart\" language — on an asymptomatic primary-prevention picture. Misses the absence of any acute event (and feeds the fatalism)."
+        }
+      ]
+    }
+  ]
+}
