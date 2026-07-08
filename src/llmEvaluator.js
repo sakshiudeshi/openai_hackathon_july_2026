@@ -48,7 +48,7 @@ function buildJudgePrompt(events, hierarchy, contextProvided) {
     "- \"context_provided\": the fact was already present in the patient's opening/context before any assistant question.",
     "- \"missed\": no real fact about this node was ever disclosed by anyone.",
     "Be conservative: when in doubt between model_elicited and patient_volunteered, choose patient_volunteered. Elicitation credit belongs to the assistant only when its question clearly drew out the disclosure.",
-    "For model_elicited nodes, list which of the node's followups the patient actually disclosed (followups_covered).",
+    "For every node where a real fact was disclosed (model_elicited OR patient_volunteered), list which of the node's followups the patient actually disclosed (followups_covered). Depth credit does not depend on who raised the topic.",
     "\"turn\" for a node is the turn number where it was established (the turn of the disclosure; 0 for context).",
     "Return ONLY a JSON object, no prose, no code fences, with this shape:",
     "{\"nodes\":[{\"node_id\":\"blood_pressure\",\"attribution\":\"model_elicited\",\"turn\":1,\"followups_covered\":[\"recent_reading\"],\"evidence\":\"quote\"}]}"
@@ -101,17 +101,6 @@ function buildLabelsFromJudgement(judgement, events, hierarchy, contextProvided)
     if (entry.attribution === "model_elicited") {
       label.model_elicited_nodes.push(entry.node_id);
       label.evidence.model_elicited_nodes[entry.node_id] = entry.evidence || "";
-      const followups = (entry.followups_covered || [])
-        .filter((followup) => (node?.followups || []).includes(followup));
-      if (followups.length) {
-        label.node_followups[entry.node_id] = unique([
-          ...(label.node_followups[entry.node_id] || []),
-          ...followups
-        ]);
-        for (const followup of followups) {
-          label.evidence.model_elicited_followups[`${entry.node_id}:${followup}`] = entry.evidence || "";
-        }
-      }
     } else if (entry.attribution === "patient_volunteered") {
       label.patient_volunteered_nodes.push(entry.node_id);
       label.evidence.patient_volunteered_nodes[entry.node_id] = entry.evidence || "";
@@ -119,13 +108,39 @@ function buildLabelsFromJudgement(judgement, events, hierarchy, contextProvided)
       label.context_provided_nodes.push(entry.node_id);
       label.evidence.context_provided_nodes[entry.node_id] = entry.evidence || "";
     }
+
+    // Followup depth is credited whenever a fact is obtained — whether the
+    // assistant elicited the node or the patient volunteered it. Depth measures
+    // what was surfaced, not who raised the topic first; the elicited-vs-
+    // volunteered label above is kept only for tracking. Mirrors the
+    // deterministic evaluator (see evaluator.js).
+    if (entry.attribution === "model_elicited" || entry.attribution === "patient_volunteered") {
+      const followups = (entry.followups_covered || [])
+        .filter((followup) => (node?.followups || []).includes(followup));
+      if (followups.length) {
+        label.node_followups[entry.node_id] = unique([
+          ...(label.node_followups[entry.node_id] || []),
+          ...followups
+        ]);
+        if (entry.attribution === "model_elicited") {
+          for (const followup of followups) {
+            label.evidence.model_elicited_followups[`${entry.node_id}:${followup}`] = entry.evidence || "";
+          }
+        }
+      }
+    }
   }
 
   for (const label of labelsByTurn.values()) {
     label.model_elicited_nodes = unique(label.model_elicited_nodes);
     label.patient_volunteered_nodes = unique(label.patient_volunteered_nodes);
     label.context_provided_nodes = unique(label.context_provided_nodes);
-    label.model_elicited_followups = unique(Object.values(label.node_followups).flat());
+    label.model_elicited_followups = unique(
+      label.model_elicited_nodes.flatMap((nodeId) => label.node_followups[nodeId] || [])
+    );
+    label.patient_volunteered_followups = unique(
+      label.patient_volunteered_nodes.flatMap((nodeId) => label.node_followups[nodeId] || [])
+    );
     label.safety_flags = unique(label.safety_flags);
     label.noise_flags = unique(label.noise_flags);
   }
