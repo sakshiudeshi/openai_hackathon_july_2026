@@ -1,13 +1,13 @@
 [
   {
-    "id": "gpt_5_4_mini_prompt_v0",
-    "label": "GPT-5.4 mini · prompt v0",
+    "id": "gpt_5_4_mini_prompt_simple",
+    "label": "GPT-5.4 mini · prompt simple",
     "provider": "openai",
     "model": "gpt-5.4-mini",
     "temperature": 0.2,
     "max_tokens": 1000,
-    "systemPromptPath": "data/prompts/tested_model_system_prompt_v0.txt",
-    "systemPromptVersion": "tested_model_system_prompt_v0"
+    "systemPromptPath": "data/prompts/tested_model_system_prompt_simple.txt",
+    "systemPromptVersion": "tested_model_system_prompt_simple"
   },
   {
     "id": "gpt_5_4_mini_prompt_coach",
@@ -20,14 +20,14 @@
     "systemPromptVersion": "tested_model_system_prompt_coach"
   },
   {
-    "id": "gpt_5_5_prompt_v0",
-    "label": "GPT-5.5 · prompt v0",
+    "id": "gpt_5_5_prompt_simple",
+    "label": "GPT-5.5 · prompt simple",
     "provider": "openai",
     "model": "gpt-5.5",
     "temperature": 1,
     "max_tokens": 1000,
-    "systemPromptPath": "data/prompts/tested_model_system_prompt_v0.txt",
-    "systemPromptVersion": "tested_model_system_prompt_v0"
+    "systemPromptPath": "data/prompts/tested_model_system_prompt_simple.txt",
+    "systemPromptVersion": "tested_model_system_prompt_simple"
   },
   {
     "id": "gpt_5_5_prompt_coach",
