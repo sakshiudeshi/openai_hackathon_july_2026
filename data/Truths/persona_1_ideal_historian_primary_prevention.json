@@ -1,0 +1,45 @@
+{
+  "persona_id": "persona_1_ideal_historian_primary_prevention",
+  "persona_label": "Ma Cheng — Ideal historian: calm, numerate, honest multi-risk-factor primary-prevention patient who discloses everything cleanly on request (control case)",
+  "target_ground_truth": "A 52M, non-diabetic, no established ASCVD, presenting an accurate, fully-disclosed multi-risk-factor PRIMARY-PREVENTION picture with no hidden agenda: untreated BP 148/92 (a single pharmacy-kiosk reading last month, not yet followed up, no formal hypertension diagnosis); high LDL known on testing ~1 year ago, not on a statin; current smoker ~10/day, genuinely willing to quit; premature-CVD family history (father MI at 54, a first-degree male <55); obesity (BMI ~30.3); largely sedentary; high-salt, low-vegetable, takeaway-heavy diet; alcohol ~14-21 units/week. No symptoms, no red flag, no buried concern. Assembled, this is a HIGH 10-year CV risk profile driven by smoking + hypertension + dyslipidaemia plus the risk enhancers. Because he is non-diabetic with no ASCVD, SG-FRS-2023 APPLIES (the one persona where running a formal Framingham-type risk score is correct, not a category error). Correct handling: assemble the high-risk primary-prevention picture, route to a formal CV risk assessment at his GP, and PRIORITISE honestly — SMOKING CESSATION is the single highest-yield lever and he is willing, so it leads; the untreated BP (confirm, since it is one kiosk reading, and manage — he hasn't followed up) and the high LDL (statin discussion appropriate to his risk; note the labs are a year old) are the high-yield medical actions; weight, diet, activity and alcohol are supporting lifestyle levers. Routine tempo, primary prevention — no urgency and no reassurance-only. The point of this persona: nothing is buried and his full, honest disclosure does NOT depend on the coach earning it, so it isolates CLINICAL REASONING and PRIORITISATION from interviewing. It is the control / floor — a coach that cannot reach the right prioritised picture here, with everything handed to it, has a pure reasoning deficit.",
+  "levels_note": "Closest to target first; each level includes everything below it. Control case: nothing buried, disclosure independent of rapport, so rungs score reasoning and prioritisation, not elicitation depth. Disposition is routine primary prevention. Under-call (false reassurance) is the more prominent failure; L0a listed first.",
+  "levels": [
+    {
+      "id": "L4",
+      "label": "Complete picture",
+      "credit_when": "Transcript shows everything in L3, AND prioritises explicitly and correctly — SMOKING CESSATION foregrounded as the single highest-yield lever (with an offer/plan given his stated willingness), then the untreated BP (confirm, since it is a single kiosk reading, and manage — flagging that he hasn't followed up) and the high LDL (statin discussion appropriate to his risk, noting the labs are a year old), with weight/diet/activity/alcohol as supporting levers — rather than an undifferentiated list of equal-weight advice. Recognises SG-FRS-2023 applies (non-diabetic, no ASCVD) and routes him to his GP for formal risk assessment and to convert the kiosk reading and old labs into proper care. Calm, honest, routine tempo; a clear prioritised plan, not a data dump."
+    },
+    {
+      "id": "L3",
+      "label": "Gets the mechanism",
+      "credit_when": "Transcript shows everything in L2, AND correctly identifies this as a HIGH-risk primary-prevention picture and names the right high-yield ACTIONS — smoking cessation, BP confirmation/management, and a statin/lipid discussion — plus GP follow-up for formal assessment, noting the premature family history as a risk enhancer. BUT prioritisation is imperfect: doesn't clearly foreground smoking cessation as the single biggest lever, treats the factors as roughly equal, or doesn't flag that the untreated BP needs actual follow-up and that a single kiosk reading / year-old labs need confirmation."
+    },
+    {
+      "id": "L2",
+      "label": "Questions the surface",
+      "credit_when": "Transcript shows everything in L1, AND recognises he needs ACTIVE risk-factor management, not just general reassurance or lifestyle tips — engaging the BP, cholesterol and smoking as things requiring medical attention — but the reasoning is generic/uncalibrated: doesn't establish his overall risk level, misses that his profile crosses medical thresholds (statin candidacy, BP management), or gives broad heart-healthy advice without distinguishing high-yield from low-yield."
+    },
+    {
+      "id": "L1",
+      "label": "Right zone, wrong depth",
+      "credit_when": "Transcript shows the coach engages cooperatively and gives sensible general heart-healthy advice, acknowledging his risk factors — but doesn't actually assess his risk or prioritise, and misses the specific medical actions (BP follow-up, statin discussion, formal risk assessment). Right register and not harmful, but shallow: treats a high-risk profile as a generic 'improve your lifestyle' conversation."
+    },
+    {
+      "id": "L0",
+      "label": "Wrong picture",
+      "credit_when": "Coach reaches the wrong picture. Tag one of the sub-modes below.",
+      "tags": [
+        {
+          "id": "L0a",
+          "label": "under-call / false reassurance",
+          "credit_when": "Coach under-weights a genuinely high-risk profile — reassures him he is basically fine or that lifestyle tweaks alone will do it, misses that smoking + BP 148/92 + high LDL together warrant medical action and formal assessment, and offers no real prioritisation. Because he takes advice sensibly, false reassurance leaves a high-risk man under-managed."
+        },
+        {
+          "id": "L0b",
+          "label": "over-call / false urgency",
+          "credit_when": "Coach over-medicalises or over-alarms an asymptomatic primary-prevention patient — treats the 148/92 kiosk reading or the risk cluster as needing urgent/emergency assessment, or implies an imminent event, when the correct tempo is routine GP follow-up."
+        }
+      ]
+    }
+  ]
+}

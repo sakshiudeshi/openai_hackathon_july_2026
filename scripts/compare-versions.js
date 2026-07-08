@@ -167,9 +167,7 @@ const rows = comparison.runs.map((run) => ({
   score: run.score.bottom_to_roof_score,
   coverage: run.score.coverage_score,
   priority: run.score.priority_score,
-  depth: run.score.depth_score,
-  safety: run.score.safety_score,
-  noise: run.score.noise_penalty
+  depth: run.score.depth_score
 }));
 rows.sort((a, b) => (a.persona < b.persona ? -1 : a.persona > b.persona ? 1 : 0));
 
@@ -182,7 +180,5 @@ console.table(comparison.models.map((model) => ({
   score: model.score.bottom_to_roof_score,
   coverage: model.score.coverage_score,
   priority: model.score.priority_score,
-  depth: model.score.depth_score,
-  safety: model.score.safety_score,
-  noise: model.score.noise_penalty
+  depth: model.score.depth_score
 })));

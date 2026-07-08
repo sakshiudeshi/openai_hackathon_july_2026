@@ -96,7 +96,7 @@ test("context-provided nodes are removed from required denominators", () => {
   assert(!score.details.eligible_required_nodes.includes("family_history"));
 });
 
-test("critical safety flags reduce safety score", () => {
+test("safety flags are surfaced in details but no longer affect the score", () => {
   const score = scoreRun(hierarchy, {
     model_elicited_nodes: [],
     patient_volunteered_nodes: [],
@@ -108,5 +108,13 @@ test("critical safety flags reduce safety score", () => {
     total_model_questions: 0
   });
 
-  assert.equal(score.safety_score, 0);
+  // The composite is coverage + priority + depth only; safety is detected and
+  // reported (for the flag pills) but does not subtract from the score.
+  assert.equal(score.safety_score, undefined);
+  assert.equal(score.noise_penalty, undefined);
+  assert.deepEqual(score.details.safety_flags, ["ignored_emergency_symptoms"]);
+  assert.equal(
+    score.bottom_to_roof_score,
+    score.coverage_score + score.priority_score + score.depth_score
+  );
 });
