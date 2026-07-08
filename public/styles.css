@@ -27,14 +27,13 @@
   --shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
   --glow: 0 0 24px rgba(56, 224, 207, 0.28);
   --glow-violet: 0 0 26px rgba(181, 123, 255, 0.3);
-  /* Categorical series for the four sub-scores (coverage/priority/depth/safety).
+  /* Categorical series for the three sub-scores (coverage/priority/depth).
      Validated CVD-safe on the dark panel surface (worst adjacent ΔE 36.4) and
      kept distinct from the reserved good/mixed/bad status hues. Order matters:
      it is the stacking order, chosen to maximize adjacent separation. */
   --s-coverage: #4b90e2;
   --s-priority: #0d9488;
   --s-depth: #9a6cf0;
-  --s-safety: #d15fa8;
 }
 
 * {
@@ -1807,9 +1806,9 @@ a.patientName.patientLink:hover {
    ===================================================================== */
 
 /* ---------- Score decomposition bar ----------
-   The composite (0–4) is literally coverage+priority+depth+safety, so we draw
-   it as a stacked bar against a full 0–4 track: the empty tail IS the gap to a
-   perfect 4. Segments carry a 2px surface gap (the accessibility spacer). */
+   The composite (0–3) is literally coverage+priority+depth, so we draw
+   it as a stacked bar against a full 0–3 track: the empty tail IS the gap to a
+   perfect 3. Segments carry a 2px surface gap (the accessibility spacer). */
 .scoreBar {
   display: flex;
   align-items: center;
@@ -1843,20 +1842,6 @@ a.patientName.patientLink:hover {
 }
 .scoreBar-seg.depth {
   background: var(--s-depth);
-}
-.scoreBar-seg.safety {
-  background: var(--s-safety);
-}
-
-/* Noise is a penalty, not a positive part — when applied, show it hatched at
-   the tail so the composite still reads as "positives minus this". */
-.scoreBar-seg.noise {
-  background: repeating-linear-gradient(
-    135deg,
-    var(--bad) 0 3px,
-    transparent 3px 6px
-  );
-  opacity: 0.85;
 }
 
 .scoreBar-value {
@@ -1946,9 +1931,6 @@ a.patientName.patientLink:hover {
 }
 .scoreLegend-dot.depth {
   background: var(--s-depth);
-}
-.scoreLegend-dot.safety {
-  background: var(--s-safety);
 }
 
 /* ---------- Chart.js containers (need an explicitly sized parent) ---------- */

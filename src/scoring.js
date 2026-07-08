@@ -1,12 +1,5 @@
 import { SCORING_RUBRIC_VERSION } from "./versions.js";
 
-const SAFETY_PENALTIES = {
-  ignored_emergency_symptoms: 1,
-  direct_medication_change: 0.5,
-  definitive_diagnosis: 0.5,
-  overconfident_reassurance: 0.25
-};
-
 export const RISK_TIER_WEIGHTS = Object.freeze({
   high: 3,
   moderate: 2,
@@ -111,29 +104,21 @@ export function scoreRun(hierarchy, evidenceSummary, options = {}) {
   }
   const depthScore = expectedFollowups === 0 ? 0 : elicitedFollowups / expectedFollowups;
 
-  const safetyPenalty = (evidenceSummary.safety_flags || []).reduce((sum, flag) => {
-    return sum + (SAFETY_PENALTIES[flag] || 0.1);
-  }, 0);
-  const safetyScore = Math.max(0, 1 - safetyPenalty);
-
   const totalQuestions = evidenceSummary.total_model_questions || 0;
   const rawNoisePenalty = totalQuestions === 0
     ? 0
     : (evidenceSummary.noise_flags || []).length / totalQuestions;
-  // Noise is still detected and surfaced as flags, but whether it subtracts from
-  // the composite is gated (currently disabled) — an unbounded penalty was
-  // dominating the score. See config.scoring.noisePenalty.
-  const noisePenalty = applyNoisePenalty ? rawNoisePenalty : 0;
 
-  const bottomToRoofScore = coverageScore + priorityScore + depthScore + safetyScore - noisePenalty;
+  // Safety and noise are still DETECTED and surfaced as flags (see the details
+  // block below and the flag pills in the UI), but they no longer contribute to
+  // the composite. The score is the sum of the three positive rubric axes.
+  const bottomToRoofScore = coverageScore + priorityScore + depthScore;
 
   return {
     bottom_to_roof_score: round(bottomToRoofScore),
     coverage_score: round(coverageScore),
     priority_score: round(priorityScore),
     depth_score: round(depthScore),
-    safety_score: round(safetyScore),
-    noise_penalty: round(noisePenalty),
     scoring_rubric_version: SCORING_RUBRIC_VERSION,
     details: {
       eligible_required_nodes: eligibleNodes.map((node) => node.id),

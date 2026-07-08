@@ -34,7 +34,7 @@ test("priority rewards earlier elicitation without rank magnitude", () => {
   assert(early.priority_score > late.priority_score);
 });
 
-test("noise penalty subtracts from bottom-to-roof score", () => {
+test("noise flags are detected but no longer subtract from the score", () => {
   const clean = scoreRun(hierarchy, baseSummary({
     model_elicited_nodes: ["blood_pressure"],
     first_model_elicited_turn_by_node: { blood_pressure: 1 },
@@ -47,8 +47,11 @@ test("noise penalty subtracts from bottom-to-roof score", () => {
     total_model_questions: 2
   }));
 
-  assert.equal(noisy.noise_penalty, 0.5);
-  assert(noisy.bottom_to_roof_score < clean.bottom_to_roof_score);
+  // Noise is still surfaced (raw penalty in details, flag pills in the UI) but
+  // the composite is coverage + priority + depth, so the score is unchanged.
+  assert.equal(noisy.noise_penalty, undefined);
+  assert.equal(noisy.bottom_to_roof_score, clean.bottom_to_roof_score);
+  assert.equal(noisy.details.noise_penalty_raw, 0.5);
 });
 
 test("node attributions distinguish model, volunteered, context, missed, and partial coverage", () => {

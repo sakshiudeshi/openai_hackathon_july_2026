@@ -287,9 +287,7 @@ export function summarizeComparison(runs) {
         bottom_to_roof_score: 0,
         coverage_score: 0,
         priority_score: 0,
-        depth_score: 0,
-        safety_score: 0,
-        noise_penalty: 0
+        depth_score: 0
       }
     };
     current.runs.push(run);

@@ -189,34 +189,12 @@ const METRIC_INFO = {
       bad: "Risk-factor follow-up depth was thin.",
     },
   },
-  safety_score: {
-    label: "Safety",
-    dir: "up",
-    def: "Starts at full marks and drops when the model gives unsafe or inappropriate guidance.",
-    read: {
-      good: "No safety violations detected.",
-      mixed: "Some safety issues were detected.",
-      bad: "Safety issues materially reduced the score.",
-    },
-  },
-  noise_penalty: {
-    label: "Noise",
-    dir: "down",
-    def: "A penalty subtracted from the total for repeated or unfocused questions. Lower is better.",
-    read: {
-      good: "Little noise: questions stayed focused.",
-      mixed: "Some repeated or unfocused questions were detected.",
-      bad: "High noise: repeated or unfocused questions reduced the total.",
-    },
-  },
 };
 
 const METRIC_ORDER = [
   "coverage_score",
   "priority_score",
   "depth_score",
-  "safety_score",
-  "noise_penalty",
 ];
 
 function levelFor(key, value) {
@@ -312,14 +290,7 @@ function renderStatus() {
   badge.className = `badge ${validation.passed ? "pass" : "fail"}`;
 }
 
-function noiseState(run) {
-  const details = run.score.details || {};
-  const applied = details.noise_penalty_applied !== false;
-  const raw = details.noise_penalty_raw ?? run.score.noise_penalty;
-  return { applied, raw, flags: (details.noise_flags || []).length };
-}
-
-// The composite is a sum (roughly 0–4), so color it relative to the best run
+// The composite is a sum (roughly 0–3), so color it relative to the best run
 // in the dataset rather than against a fixed 0–1 threshold.
 function compositeLevel(value) {
   const best = Math.max(
@@ -333,17 +304,16 @@ function compositeLevel(value) {
 }
 
 /* =====================================================================
-   DATA VIZ — the composite (0–4) is literally coverage+priority+depth+safety,
-   so we show that decomposition directly. Four categorical series (validated
-   CVD-safe on the dark surface); the composite max is 4.
+   DATA VIZ — the composite (0–3) is literally coverage+priority+depth,
+   so we show that decomposition directly. Three categorical series (validated
+   CVD-safe on the dark surface); the composite max is 3.
    ===================================================================== */
-const COMPOSITE_MAX = 4;
+const COMPOSITE_MAX = 3;
 
 const SUBSCORE_SERIES = [
   { key: "coverage_score", cls: "coverage", label: "Coverage" },
   { key: "priority_score", cls: "priority", label: "Priority" },
   { key: "depth_score", cls: "depth", label: "Depth" },
-  { key: "safety_score", cls: "safety", label: "Safety" },
 ];
 
 // Read a design token off :root so canvas charts (which can't use CSS vars) and
@@ -379,7 +349,6 @@ function chartTheme() {
       coverage: cssVar("--s-coverage"),
       priority: cssVar("--s-priority"),
       depth: cssVar("--s-depth"),
-      safety: cssVar("--s-safety"),
     },
   };
 }
@@ -405,28 +374,21 @@ function makeChart(canvasId, config) {
   charts.set(canvasId, new window.Chart(canvas, config));
 }
 
-// Horizontal stacked bar: the composite (0–4) split into its four parts, one
+// Horizontal stacked bar: the composite (0–3) split into its three parts, one
 // row per model, best-first (models[] is already sorted). Reuses the shared
 // series palette so this reads the same as the inline score bars.
 function scoreBar(run, size = "") {
   const s = run.score;
-  const noise = noiseState(run);
   const composite = s.bottom_to_roof_score;
   const level = compositeLevel(composite);
   const segs = SUBSCORE_SERIES.map(({ key, cls, label }) => {
     const value = Math.max(0, Number(s[key] || 0));
     return `<span class="scoreBar-seg ${cls}" style="width:${(value / COMPOSITE_MAX) * 100}%" title="${label}: ${score(value)}"></span>`;
   }).join("");
-  const noiseValue = noise.applied
-    ? Math.max(0, Number(s.noise_penalty || 0))
-    : 0;
-  const noiseSeg = noiseValue
-    ? `<span class="scoreBar-seg noise" style="width:${(noiseValue / COMPOSITE_MAX) * 100}%" title="Noise penalty: &minus;${score(noiseValue)}"></span>`
-    : "";
   return `
     <div class="scoreBar ${size}">
-      <div class="scoreBar-track" role="img" aria-label="Composite ${score(composite)} of 4">${segs}${noiseSeg}</div>
-      <div class="scoreBar-value ${level}">${score(composite)}<span class="den"> / 4</span></div>
+      <div class="scoreBar-track" role="img" aria-label="Composite ${score(composite)} of 3">${segs}</div>
+      <div class="scoreBar-value ${level}">${score(composite)}<span class="den"> / 3</span></div>
     </div>`;
 }
 
@@ -497,25 +459,21 @@ function renderModelLeaderboardChart() {
   });
 }
 
-// Chart.js radar: the run's shape across the four sub-scores plus Focus (1−noise),
-// all on a 0–1 scale. One series, so no legend — the title names it.
+// Chart.js radar: the run's shape across the three sub-scores, all on a 0–1
+// scale. One series, so no legend — the title names it.
 function renderRadarChart(run) {
   const s = run.score;
   const t = chartTheme();
-  const noise = noiseState(run);
-  const focus = Math.max(0, 1 - Math.min(1, Number(noise.raw || 0)));
   makeChart("radarChart", {
     type: "radar",
     data: {
-      labels: ["Coverage", "Priority", "Depth", "Safety", "Focus"],
+      labels: ["Coverage", "Priority", "Depth"],
       datasets: [
         {
           data: [
             s.coverage_score,
             s.priority_score,
             s.depth_score,
-            s.safety_score,
-            focus,
           ].map((v) => Number(v || 0)),
           fill: true,
           backgroundColor: hexA(t.accent, 0.18),
@@ -551,7 +509,7 @@ function renderRadarChart(run) {
   });
 }
 
-// Chart.js area line: running composite after each turn (0–4). One series.
+// Chart.js area line: running composite after each turn (0–3). One series.
 function renderProgressionChart(run) {
   const progression = run.progression || [];
   if (!progression.length) return;
@@ -690,7 +648,7 @@ function renderListPage() {
       <div class="sectionHeader">
         <div>
           <h2>Model leaderboard</h2>
-          <p class="sectionHint">Composite score (0&ndash;4), broken into its four parts &mdash; longer bars are better. Best model on top.</p>
+          <p class="sectionHint">Composite score (0&ndash;3), broken into its three parts &mdash; longer bars are better. Best model on top.</p>
         </div>
       </div>
       <div class="chartBox leaderboard"><canvas id="leaderboardChart"></canvas></div>
@@ -1002,10 +960,6 @@ function renderRunBody(run) {
 
 function renderScoreBreakdown(run) {
   const s = run.score;
-  const noise = noiseState(run);
-  const noiseTerm = noise.applied
-    ? `<span class="op">&minus;</span><span class="term">${score(s.noise_penalty)}<small> noise</small></span>`
-    : "";
   const formula = `
     <div class="formulaBox">
       <span class="term">${score(s.coverage_score)}<small> cov</small></span>
@@ -1013,27 +967,11 @@ function renderScoreBreakdown(run) {
       <span class="term">${score(s.priority_score)}<small> pri</small></span>
       <span class="op">+</span>
       <span class="term">${score(s.depth_score)}<small> dep</small></span>
-      <span class="op">+</span>
-      <span class="term">${score(s.safety_score)}<small> saf</small></span>
-      ${noiseTerm}
       <span class="op">=</span>
       <span class="result">${score(s.bottom_to_roof_score)}</span>
-    </div>
-    ${noise.applied ? "" : `<div class="formulaNote">Noise penalty is disabled — noise is still detected and shown below, but does not subtract from the score.</div>`}`;
+    </div>`;
 
   const rows = METRIC_ORDER.map((key) => {
-    if (key === "noise_penalty" && !noise.applied) {
-      return `
-        <div class="metricRow">
-          <div class="metricTop">
-            <div class="metricName">Noise<span class="dir">penalty disabled</span></div>
-            <div class="metricVal off">${score(noise.raw)}</div>
-          </div>
-          <div class="track"><div class="fill off" style="width:${pct(noise.raw)}"></div></div>
-          <div class="metricDef">${METRIC_INFO.noise_penalty.def}</div>
-          <div class="metricRead">&rarr; ${noise.flags} repeated/unfocused-question flag(s) detected, but the noise penalty is currently disabled, so it did not reduce the score.</div>
-        </div>`;
-    }
     const value = s[key];
     const level = levelFor(key, value);
     const info = METRIC_INFO[key];
