@@ -1172,16 +1172,25 @@ function labelTagsForTurn(run, turn, speaker) {
 }
 
 function renderTranscript(run) {
+  // Name the patient in each of their turns (falling back to the scenario
+  // label) so the transcript reads as a real person rather than an anonymous
+  // "patient". Same persona lookup the patient list uses.
+  const persona = personaByScenario(run.scenario);
+  const patientName = persona?.persona.name || run.scenario.label;
   return `<div class="transcript">${run.events
-    .map(
-      (event) => `
+    .map((event) => {
+      const who =
+        event.speaker === "patient"
+          ? `${event.speaker} &middot; ${esc(patientName)}`
+          : event.speaker;
+      return `
     <div class="message ${event.speaker}">
-      <div class="speaker">${event.speaker} &middot; turn ${event.turn}</div>
+      <div class="speaker">${who} &middot; turn ${event.turn}</div>
       <div class="messageText">${event.text}</div>
       ${labelTagsForTurn(run, event.turn, event.speaker)}
     </div>
-  `,
-    )
+  `;
+    })
     .join("")}</div>`;
 }
 
