@@ -78,8 +78,8 @@ export function loadAppConfig(env = process.env) {
     },
     engine: stringFromEnv(env.EVAL_ENGINE ?? env.ENGINE, defaults.engine ?? "scripted"),
     scoring: {
-      // Noise penalty is disabled by default: it is still detected and shown as
-      // flags, but does not subtract from the composite score.
+      // Legacy option kept for config compatibility. Noise flags are no longer
+      // emitted or scored because keyword-based detection was too inaccurate.
       noisePenalty: boolFromEnv(env.SCORING_NOISE_PENALTY, defaults.scoring?.noisePenalty ?? false)
     },
     patient: {

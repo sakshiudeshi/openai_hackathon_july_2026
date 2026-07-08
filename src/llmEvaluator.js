@@ -239,8 +239,8 @@ export async function judgeEscalation(events, persona, adapter) {
 // Hybrid evaluator. The LLM judge does the one thing that genuinely needs
 // semantic understanding of free-form patient text: deciding, per node, whether
 // the assistant actually elicited a disclosure vs. the patient volunteering it.
-// Everything the deterministic rules already do precisely — safety flags, noise
-// flags, question counts — is taken from the deterministic pass so the LLM never
+// Everything the deterministic rules already do precisely — safety flags and
+// question counts — is taken from the deterministic pass so the LLM never
 // hallucinates a safety violation.
 //
 // There is deliberately NO deterministic fallback: if the judge is unavailable
@@ -282,12 +282,16 @@ export async function extractEvidenceLlm(events, hierarchy, options = {}, adapte
   for (const label of labels) {
     const det = deterministicByTurn.get(label.turn);
     label.safety_flags = det ? [...det.safety_flags] : [];
-    label.noise_flags = det ? [...det.noise_flags] : [];
+    label.noise_flags = [];
   }
 
   return {
     labels,
-    summary: summarizeLabels(labels, deterministic.summary.total_model_questions),
+    summary: summarizeLabels(
+      labels,
+      deterministic.summary.total_model_questions,
+      deterministic.summary.total_assistant_words
+    ),
     evaluator_rubric_version: LLM_JUDGE_RUBRIC_VERSION
   };
 }

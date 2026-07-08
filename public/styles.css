@@ -660,17 +660,6 @@ a.patientName.patientLink:hover {
   min-width: 0;
 }
 
-.chevron {
-  color: var(--muted);
-  font-size: 12px;
-  transition: transform 0.15s ease;
-  flex: none;
-}
-
-.collapsibleHeader[aria-expanded="true"] .chevron {
-  transform: rotate(90deg);
-}
-
 /* ---------- Detail page ---------- */
 .backLink {
   display: inline-flex;
@@ -1231,6 +1220,44 @@ a.patientName.patientLink:hover {
   color: var(--ink-dim);
 }
 
+.messageText.plain {
+  white-space: pre-wrap;
+}
+
+.messageText.formatted p {
+  margin: 0 0 8px;
+}
+
+.messageText.formatted p:last-child,
+.messageText.formatted ul:last-child,
+.messageText.formatted ol:last-child {
+  margin-bottom: 0;
+}
+
+.messageText.formatted ul,
+.messageText.formatted ol {
+  margin: 0 0 8px 18px;
+  padding: 0;
+}
+
+.messageText.formatted li + li {
+  margin-top: 4px;
+}
+
+.messageText.formatted strong {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.messageText.formatted code {
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 1px 4px;
+  background: var(--panel-2);
+  color: var(--ink);
+  font-size: 12.5px;
+}
+
 .evidenceTags {
   display: flex;
   flex-wrap: wrap;
@@ -1241,35 +1268,6 @@ a.patientName.patientLink:hover {
 .evidenceTags .pill {
   font-size: 10.5px;
   font-weight: 600;
-}
-
-/* ---------- Validation panel ---------- */
-.collapsibleHeader {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  width: 100%;
-  border: 0;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  cursor: pointer;
-  padding: 2px 0;
-}
-
-.collapsibleHint {
-  color: var(--muted);
-  font-size: 13px;
-}
-
-.collapsibleBody {
-  margin-top: 16px;
-}
-
-.validationGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 10px;
 }
 
 /* ---------- Responsive ---------- */

@@ -131,6 +131,7 @@ export class SupabaseStore {
       coverage_score: result.score.coverage_score,
       priority_score: result.score.priority_score,
       depth_score: result.score.depth_score,
+      coverage_efficiency_score: result.score.coverage_efficiency_score,
       details: result.score.details
     });
 

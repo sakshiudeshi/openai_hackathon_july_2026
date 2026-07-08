@@ -48,9 +48,8 @@ test("dashboard root serves the JS app shell", async () => {
   assert.match(response.headers["content-type"], /text\/html/);
   assert.match(body, /Cardiovascular Risk Hierarchy Evaluation/);
   // The dashboard is a client-rendered SPA: the shell only ships a mount point
-  // and the app script, which renders the run list and validation panel.
+  // and the app script, which renders the run list.
   assert.match(body, /<main id="app">/);
-  assert.match(body, /id="validationBadge"/);
   assert.match(body, /\/app.js/);
 });
 

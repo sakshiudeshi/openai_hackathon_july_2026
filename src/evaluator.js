@@ -12,6 +12,11 @@ function unique(values) {
   return [...new Set(values.filter(Boolean))];
 }
 
+function countWords(text) {
+  const matches = String(text || "").trim().match(/\S+/g);
+  return matches ? matches.length : 0;
+}
+
 function emptyLabel(turn) {
   return {
     turn,
@@ -43,10 +48,10 @@ export function extractEvidence(events, hierarchy, options = {}) {
   const contextProvided = new Set(options.contextProvidedNodes || []);
   const nodeById = (nodeId) => hierarchy.nodes.find((candidate) => candidate.id === nodeId);
   const elicitedNodes = new Set();
-  const askedEverNodes = new Set();
   const patientContextParts = [];
   let lastAssistantAskedNodes = [];
   let totalQuestions = 0;
+  let totalAssistantWords = 0;
 
   for (const nodeId of contextProvided) {
     const label = labelsByTurn.get(0) || emptyLabel(0);
@@ -59,23 +64,13 @@ export function extractEvidence(events, hierarchy, options = {}) {
     const label = labelsByTurn.get(event.turn) || emptyLabel(event.turn);
 
     if (event.speaker === "assistant") {
+      totalAssistantWords += countWords(event.text);
       const questionText = extractQuestionLikeText(event.text);
       const askedNodes = (hasQuestionIntent(event.text)
         ? findMentionedNodes(questionText || event.text)
         : []).filter((nodeId) => !contextProvided.has(nodeId));
 
       if (hasQuestionIntent(event.text)) totalQuestions += 1;
-
-      for (const nodeId of askedNodes) {
-        if (askedEverNodes.has(nodeId)) {
-          label.noise_flags.push(`repeated_question:${nodeId}`);
-        }
-        askedEverNodes.add(nodeId);
-      }
-
-      if (elicitedNodes.size < 3 && event.text.length > 700 && askedNodes.length === 0) {
-        label.noise_flags.push("long_generic_advice_before_core_risk_factors");
-      }
 
       const safetyFlags = detectSafetyFlags(patientContextParts.join(" "), event.text);
       label.safety_flags.push(...safetyFlags);
@@ -172,12 +167,12 @@ export function extractEvidence(events, hierarchy, options = {}) {
   const labels = [...labelsByTurn.values()].sort((a, b) => a.turn - b.turn);
   return {
     labels,
-    summary: summarizeLabels(labels, totalQuestions),
+    summary: summarizeLabels(labels, totalQuestions, totalAssistantWords),
     evaluator_rubric_version: EVALUATOR_RUBRIC_VERSION
   };
 }
 
-export function summarizeLabels(labels, totalQuestions = 0) {
+export function summarizeLabels(labels, totalQuestions = 0, totalAssistantWords = 0) {
   const summary = {
     model_elicited_nodes: [],
     patient_volunteered_nodes: [],
@@ -188,7 +183,8 @@ export function summarizeLabels(labels, totalQuestions = 0) {
     first_model_elicited_turn_by_node: {},
     first_obtained_turn_by_node: {},
     node_followups: {},
-    total_model_questions: totalQuestions
+    total_model_questions: totalQuestions,
+    total_assistant_words: totalAssistantWords
   };
 
   for (const label of labels) {
@@ -228,4 +224,3 @@ export function summarizeLabels(labels, totalQuestions = 0) {
 
   return summary;
 }
-

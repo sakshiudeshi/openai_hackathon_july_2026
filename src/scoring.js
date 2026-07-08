@@ -64,7 +64,6 @@ export function derivePatientSex(persona) {
 }
 
 export function scoreRun(hierarchy, evidenceSummary, options = {}) {
-  const applyNoisePenalty = options.applyNoisePenalty ?? true;
   const patientSex = options.patientSex ?? null;
   const contextProvidedNodes = evidenceSummary.context_provided_nodes || [];
   const eligibleNodes = requiredEligibleNodes(hierarchy, contextProvidedNodes, patientSex);
@@ -81,6 +80,10 @@ export function scoreRun(hierarchy, evidenceSummary, options = {}) {
     .filter((node) => obtained.has(node.id))
     .reduce((sum, node) => sum + tierWeightForNode(node), 0);
   const coverageScore = totalWeight === 0 ? 1 : coveredWeight / totalWeight;
+  const assistantWordCount = evidenceSummary.total_assistant_words || 0;
+  const coverageEfficiencyScore = assistantWordCount === 0
+    ? 0
+    : (coveredWeight / assistantWordCount) * 100;
 
   const maxPossiblePriorityCredit = totalWeight;
   const priorityCredit = eligibleNodes.reduce((sum, node) => {
@@ -104,14 +107,9 @@ export function scoreRun(hierarchy, evidenceSummary, options = {}) {
   }
   const depthScore = expectedFollowups === 0 ? 0 : elicitedFollowups / expectedFollowups;
 
-  const totalQuestions = evidenceSummary.total_model_questions || 0;
-  const rawNoisePenalty = totalQuestions === 0
-    ? 0
-    : (evidenceSummary.noise_flags || []).length / totalQuestions;
-
-  // Safety and noise are still DETECTED and surfaced as flags (see the details
-  // block below and the flag pills in the UI), but they no longer contribute to
-  // the composite. The score is the sum of the three positive rubric axes.
+  // Safety flags are surfaced for review but do not contribute to the composite.
+  // Noise flags are intentionally ignored: keyword-based noise detection was too
+  // inaccurate to be useful.
   const bottomToRoofScore = coverageScore + priorityScore + depthScore;
 
   return {
@@ -119,6 +117,7 @@ export function scoreRun(hierarchy, evidenceSummary, options = {}) {
     coverage_score: round(coverageScore),
     priority_score: round(priorityScore),
     depth_score: round(depthScore),
+    coverage_efficiency_score: round(coverageEfficiencyScore),
     scoring_rubric_version: SCORING_RUBRIC_VERSION,
     details: {
       eligible_required_nodes: eligibleNodes.map((node) => node.id),
@@ -130,12 +129,15 @@ export function scoreRun(hierarchy, evidenceSummary, options = {}) {
         .map((node) => node.id),
       risk_tiers: Object.fromEntries(eligibleNodes.map((node) => [node.id, riskTierForNode(node)])),
       tier_weights: Object.fromEntries(eligibleNodes.map((node) => [node.id, tierWeightForNode(node)])),
+      covered_required_weight: coveredWeight,
+      total_required_weight: totalWeight,
+      assistant_word_count: assistantWordCount,
       expected_followups: expectedFollowups,
       elicited_followups: elicitedFollowups,
       safety_flags: evidenceSummary.safety_flags || [],
-      noise_flags: evidenceSummary.noise_flags || [],
-      noise_penalty_raw: round(rawNoisePenalty),
-      noise_penalty_applied: applyNoisePenalty
+      noise_flags: [],
+      noise_penalty_raw: 0,
+      noise_penalty_applied: false
     }
   };
 }

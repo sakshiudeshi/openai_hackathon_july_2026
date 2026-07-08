@@ -16,6 +16,59 @@ function esc(value) {
     .replaceAll(">", "&gt;");
 }
 
+function formatInline(value) {
+  return esc(value)
+    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+    .replace(/`([^`]+)`/g, "<code>$1</code>");
+}
+
+function formatAssistantText(value) {
+  const lines = String(value ?? "").replace(/\r\n/g, "\n").split("\n");
+  const blocks = [];
+  let paragraph = [];
+  let listType = null;
+  let listItems = [];
+
+  const flushParagraph = () => {
+    if (!paragraph.length) return;
+    blocks.push(`<p>${paragraph.join(" ")}</p>`);
+    paragraph = [];
+  };
+  const flushList = () => {
+    if (!listType || !listItems.length) return;
+    blocks.push(`<${listType}>${listItems.map((item) => `<li>${item}</li>`).join("")}</${listType}>`);
+    listType = null;
+    listItems = [];
+  };
+
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+    if (!line) {
+      flushParagraph();
+      flushList();
+      continue;
+    }
+
+    const bullet = line.match(/^[-*]\s+(.+)$/);
+    const numbered = line.match(/^\d+[.)]\s+(.+)$/);
+    if (bullet || numbered) {
+      flushParagraph();
+      const nextType = bullet ? "ul" : "ol";
+      if (listType && listType !== nextType) flushList();
+      listType = nextType;
+      listItems.push(formatInline((bullet || numbered)[1]));
+      continue;
+    }
+
+    flushList();
+    paragraph.push(formatInline(line));
+  }
+
+  flushParagraph();
+  flushList();
+  return blocks.length ? blocks.join("") : "<p></p>";
+}
+
 // "buried_red_flag" -> "Buried red flag"
 function titleize(key) {
   const spaced = String(key).replaceAll("_", " ").trim();
@@ -24,6 +77,10 @@ function titleize(key) {
 
 function score(value) {
   return Number(value || 0).toFixed(3);
+}
+
+function whole(value) {
+  return String(Math.round(Number(value || 0)));
 }
 
 /* ---------- Inline SVG icons ----------
@@ -189,15 +246,31 @@ const METRIC_INFO = {
       bad: "Risk-factor follow-up depth was thin.",
     },
   },
+  coverage_efficiency_score: {
+    label: "Efficiency",
+    dir: "up",
+    def: "Tier-weighted required coverage extracted per 100 assistant words. This is informational and does not change the composite.",
+    read: {
+      good: "Extracted a lot of weighted coverage for the amount of assistant text used.",
+      mixed: "Extracted some coverage, but with moderate assistant verbosity.",
+      bad: "Used many assistant words for relatively little weighted coverage.",
+    },
+  },
 };
 
 const METRIC_ORDER = [
   "coverage_score",
   "priority_score",
   "depth_score",
+  "coverage_efficiency_score",
 ];
 
 function levelFor(key, value) {
+  if (key === "coverage_efficiency_score") {
+    if (value >= 4) return "good";
+    if (value >= 2) return "mixed";
+    return "bad";
+  }
   const info = METRIC_INFO[key];
   if (info && info.dir === "down") {
     if (value <= 0.15) return "good";
@@ -215,6 +288,13 @@ function metricRead(key, value) {
 
 function pct(value) {
   return `${Math.max(0, Math.min(1, Number(value || 0))) * 100}%`;
+}
+
+function metricPct(key, value) {
+  if (key === "coverage_efficiency_score") {
+    return `${Math.max(0, Math.min(1, Number(value || 0) / 5)) * 100}%`;
+  }
+  return pct(value);
 }
 
 function labelForNode(nodeId) {
@@ -278,16 +358,10 @@ function findRun(runId) {
 
 /* ---------- Header / source ---------- */
 function renderStatus() {
-  const validation = state.data.validation;
   const source = state.data.source || { label: "Scripted demo", path: null };
   $("sourceBadge").textContent = source.path
     ? `${source.label}: ${source.path}`
     : source.label;
-  const badge = $("validationBadge");
-  badge.textContent = validation.passed
-    ? "Validation passed"
-    : "Validation failed";
-  badge.className = `badge ${validation.passed ? "pass" : "fail"}`;
 }
 
 // The composite is a sum (roughly 0–3), so color it relative to the best run
@@ -669,21 +743,11 @@ function renderListPage() {
       <div id="runList" class="runList"></div>
     </section>
 
-    <section class="band">
-      <button id="validationToggle" class="collapsibleHeader" type="button" aria-expanded="false">
-        <span class="chevron">&#9656;</span>
-        <h2>Evaluator Validation</h2>
-        <span class="collapsibleHint">How much to trust the evaluator itself</span>
-      </button>
-      <div id="validationPanel" class="collapsibleBody" hidden></div>
-    </section>
   `;
 
   renderFilters();
   renderPatientList();
   renderModelLeaderboardChart();
-  renderValidation();
-  wireValidationToggle();
 }
 
 // Compact per-model averages, shown above the run list. Each model entry in
@@ -759,7 +823,6 @@ function renderFilters() {
 function runFlagPills(run) {
   const missed = (run.score.details.missed_required_nodes || []).length;
   const safety = (run.score.details.safety_flags || []).length;
-  const noise = (run.score.details.noise_flags || []).length;
   const pills = [];
   pills.push(
     missed
@@ -768,7 +831,6 @@ function runFlagPills(run) {
   );
   if (safety)
     pills.push(`<span class="flagPill alert">${safety} safety</span>`);
-  if (noise) pills.push(`<span class="flagPill">${noise} noise</span>`);
   return pills.join("");
 }
 
@@ -845,40 +907,6 @@ function renderPatientList() {
     .join("");
 }
 
-/* ---------- Validation panel ---------- */
-function renderValidation() {
-  const validation = state.data.validation;
-  const metrics = validation.aggregate;
-  $("validationPanel").innerHTML = `
-    <p style="margin-bottom:12px">These numbers describe how closely the automated evaluator matches human gold labels. High precision and recall mean the scores above can be trusted.</p>
-    <div class="validationGrid">
-      ${[
-        ["Model-elicited precision", metrics.model_elicited_nodes.precision],
-        ["Model-elicited recall", metrics.model_elicited_nodes.recall],
-        ["Volunteered precision", metrics.patient_volunteered_nodes.precision],
-        ["Volunteered recall", metrics.patient_volunteered_nodes.recall],
-        ["Safety precision", metrics.safety_flags.precision],
-        ["Safety recall", metrics.safety_flags.recall],
-        ["Self-consistency", validation.self_consistency],
-      ]
-        .map(
-          ([label, value]) =>
-            `<div class="metricBox"><strong>${label}</strong><span>${score(value)}</span></div>`,
-        )
-        .join("")}
-    </div>`;
-}
-
-function wireValidationToggle() {
-  const toggle = $("validationToggle");
-  const panel = $("validationPanel");
-  toggle.addEventListener("click", () => {
-    const open = toggle.getAttribute("aria-expanded") === "true";
-    toggle.setAttribute("aria-expanded", String(!open));
-    panel.hidden = open;
-  });
-}
-
 /* =====================================================================
    DETAIL PAGE — a single run
    ===================================================================== */
@@ -922,7 +950,7 @@ function renderRunBody(run) {
       <div class="detailGrid">
         <div class="subPanel">
           <h3>${icon("bars")}Score breakdown</h3>
-          <div class="subPanelHint">The run's shape across all five dimensions, then how the composite is built.</div>
+          <div class="subPanelHint">The run's score dimensions, then how the composite is built.</div>
           <div class="chartBox radar"><canvas id="radarChart"></canvas></div>
           ${renderScoreBreakdown(run)}
         </div>
@@ -942,8 +970,8 @@ function renderRunBody(run) {
           ${renderHierarchy(run)}
         </div>
         <div class="subPanel">
-          <h3>${icon("shield")}Safety &amp; noise flags</h3>
-          <div class="subPanelHint">Evaluator-detected issues that moved the score.</div>
+          <h3>${icon("shield")}Safety flags</h3>
+          <div class="subPanelHint">Evaluator-detected safety issues.</div>
           ${renderFlags(run)}
           <h3 style="margin-top:16px">${icon("info")}Run metadata</h3>
           ${renderMetadata(run)}
@@ -982,7 +1010,7 @@ function renderScoreBreakdown(run) {
           <div class="metricName">${info.label}<span class="dir">${dir}</span></div>
           <div class="metricVal ${level}">${score(value)}</div>
         </div>
-        <div class="track"><div class="fill ${level}" style="width:${pct(value)}"></div></div>
+        <div class="track"><div class="fill ${level}" style="width:${metricPct(key, value)}"></div></div>
         <div class="metricDef">${info.def}</div>
         <div class="metricRead">&rarr; ${metricRead(key, value)}</div>
       </div>`;
@@ -1036,10 +1064,9 @@ function renderFlags(run) {
       flag,
       "alert",
     ]),
-    ...(run.score.details.noise_flags || []).map((flag) => ["Noise", flag, ""]),
   ];
   if (!flags.length) {
-    return `<div class="empty">No safety or noise flags for this run.</div>`;
+    return `<div class="empty">No safety flags for this run.</div>`;
   }
   return `<div class="stackGrid">${flags
     .map(
@@ -1055,6 +1082,11 @@ function renderMetadata(run) {
     ["Model", `${run.model_config.provider}/${run.model_config.model}`],
     ["Temperature", run.sampling_settings?.temperature ?? "—"],
     ["Max tokens", run.sampling_settings?.max_tokens ?? "—"],
+    ["Assistant words", whole(run.score.details.assistant_word_count)],
+    [
+      "Covered weight",
+      `${whole(run.score.details.covered_required_weight)} / ${whole(run.score.details.total_required_weight)}`,
+    ],
     ["Rubric version", run.versions?.evaluator_rubric_version ?? "—"],
   ];
   return `<div class="stackGrid">${meta
@@ -1087,9 +1119,6 @@ function labelTagsForTurn(run, turn, speaker) {
     tags.push(
       ...label.safety_flags.map((flag) => ["missed", `Safety ${flag}`]),
     );
-    tags.push(
-      ...label.noise_flags.map((flag) => ["context_provided", `Noise ${flag}`]),
-    );
   } else {
     tags.push(
       ...label.patient_volunteered_nodes.map((nodeId) => [
@@ -1121,10 +1150,14 @@ function renderTranscript(run) {
         event.speaker === "patient"
           ? `${event.speaker} &middot; ${esc(patientName)}`
           : event.speaker;
+      const textClass = event.speaker === "assistant" ? "formatted" : "plain";
+      const text = event.speaker === "assistant"
+        ? formatAssistantText(event.text)
+        : esc(event.text);
       return `
     <div class="message ${event.speaker}">
       <div class="speaker">${who} &middot; turn ${event.turn}</div>
-      <div class="messageText">${event.text}</div>
+      <div class="messageText ${textClass}">${text}</div>
       ${labelTagsForTurn(run, event.turn, event.speaker)}
     </div>
   `;

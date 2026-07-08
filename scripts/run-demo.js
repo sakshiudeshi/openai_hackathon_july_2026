@@ -15,5 +15,6 @@ console.log(JSON.stringify(demo.comparison.models.map((model) => ({
   score: model.score.bottom_to_roof_score,
   coverage: model.score.coverage_score,
   priority: model.score.priority_score,
-  depth: model.score.depth_score
+  depth: model.score.depth_score,
+  efficiency: model.score.coverage_efficiency_score
 })), null, 2));
