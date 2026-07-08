@@ -1,102 +1,149 @@
-# Cardiovascular Risk Hierarchy Evaluation v0
+# CardioNAVIX
 
-This is a local-first prototype for comparing how LLMs elicit adult primary-care cardiovascular risk factors in a normal conversation. The tested model is not shown the hierarchy, rubric, or scoring rules.
+CardioNAVIX is the cardiovascular context engine that helps health AI detect risk, ask the right questions, and route patients safely.
 
-## What is included
+It evaluates health AI conversations against simulated cardiovascular patient personas. Each run checks whether the AI surfaced important risk context, matched the patient's true clinical picture, and handled safety-sensitive routing correctly.
 
-- Compact hierarchy artifact: `data/hierarchy/cardiovascular_risk_v0.yaml`
-- Standardized tested-model system prompt: `data/prompts/tested_model_system_prompt_simple.txt`
-- Three fixed patient personas with hidden facts and disclosure order: `data/personas/`
-- Deterministic simulator with conformance tests
-- Provider adapter layer for OpenRouter, OpenAI, Anthropic, and offline scripted runs
-- Evidence extraction, evaluator validation, deterministic scoring, and demo run generation
-- Every run receives a 12-character alphanumeric `run_id`
-- Postgres/Supabase schema: `db/schema.sql`
-- Local dashboard served by a dependency-free Node backend
+## What Is Included
 
-## Run locally
+- Cardiovascular risk hierarchy: `data/hierarchy/cardiovascular_risk_v0.yaml`
+- Patient personas: `data/personas/`
+- Ground-truth rubrics: `data/Truths/`
+- Tested AI prompts: `data/prompts/`
+- Model/version config: `config/model_configs.json`
+- Local dashboard: `public/` served by `src/server.js`
+- Run artifacts: `runs/`
+
+## Demo
+
+To try a demo of how it works, run the app (as outlined in setup), click **Navix Demo** and watch a simulated cardiovascular-risk conversation and evaluation flow.
+
+## Setup
+
+Requires Node.js 20 or newer.
 
 ```bash
-npm test
+npm install
+```
+
+For real model runs, add API keys to `.env` or export them in your shell. Start from:
+
+```bash
+cp .env.example .env
+```
+
+## Run The Dashboard
+
+```bash
 npm run dev
 ```
 
-Then open `http://localhost:5173`.
+Open `http://localhost:5173`.
 
-The dashboard uses offline scripted comparator models by default. These are not real leaderboard results; they exist so the scoring and audit UI can be reviewed without API keys.
+The dashboard reads the latest comparison from `runs/latest-comparison.json`.
 
-## Run a real model comparison
+## Run Evaluations
 
-1. Copy `.env.example` values into your shell environment.
-2. Edit `config/model_configs.json` with the four provider/model IDs you want to compare.
-3. Run:
+### Coverage Evaluation
 
 ```bash
-npm run run:evaluation
+node --env-file=.env scripts/run-evaluation.js
 ```
 
-Results are written to `runs/` by default. Each run is stored under `runs/<run_id>/` with a compact `manifest.json` and the full `run.json` transcript/evidence payload. If `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are set, the storage layer can stream rows to Supabase's PostgREST API after `db/schema.sql` has been applied.
+Runs the configured AI versions against the personas and scores cardiovascular risk-factor coverage, priority, depth, and efficiency.
 
-For a one-model OpenAI run with `gpt-5.4-mini`, put `OPENAI_API_KEY` in `.env` or export it in your shell, then run:
+Useful variants:
 
 ```bash
-npm run run:evaluation -- --config config/openai_single_model.json
+node --env-file=.env scripts/run-evaluation.js --personas 3,4,5
+node --env-file=.env scripts/run-evaluation.js --config config/model_configs.json --turn-limit 10
 ```
 
-The CLI loads `.env` automatically and never writes API keys into run artifacts.
-
-## Runtime config
-
-Central defaults live in `config/default.json`.
-
-Environment overrides:
+### Ground Truth Evaluation
 
 ```bash
-APP_CONFIG_PATH=config/default.json
-PORT=5173
-RUN_TURN_LIMIT=10
-MODEL_CONFIG_PATH=config/model_configs.json
-RUN_OUTPUT_DIR=runs
-LATEST_COMPARISON_FILE=latest-comparison.json
-DEMO_COMPARISON_FILE=demo-results.json
+node --env-file=.env scripts/judge-truth-match.js
 ```
 
-CLI overrides still work for one-off runs:
+Re-judges saved dashboard runs against the ground-truth rubrics in `data/Truths/` and writes `truth_match` results back into `runs/latest-comparison.json`.
+
+Useful variants:
 
 ```bash
-npm run run:evaluation -- --config config/model_configs.json --turn-limit 6
+node --env-file=.env scripts/judge-truth-match.js --concurrency 8
+node --env-file=.env scripts/judge-truth-match.js <run_id_1> <run_id_2>
 ```
 
-## Validate the evaluator
+### Safety Evaluation
 
 ```bash
-npm run validate:evaluator
+node --env-file=.env scripts/check-escalation.js --dashboard
 ```
 
-The v0 gate is intentionally simple: at least 0.90 precision and recall for model-elicited node coverage on the small gold set, plus deterministic self-consistency across repeated evaluator runs.
+Runs the escalation personas and checks whether the tested AI routed urgent cardiovascular cases to the correct level of care. With `--dashboard`, results are added to the dashboard data.
 
-## Test and validation suite
+Useful variants:
 
 ```bash
+node --env-file=.env scripts/check-escalation.js --tested-model gpt_5_4_mini_prompt_simple --dashboard
+node --env-file=.env scripts/check-escalation.js --tested-provider openai --tested-model-name gpt-5.5 --dashboard
+```
+
+## Add A New AI Version To Evaluate
+
+1. Add the new system prompt in `data/prompts/`, for example:
+
+```text
+data/prompts/tested_model_system_prompt_v3.txt
+```
+
+2. Add a new entry to `config/model_configs.json`:
+
+```json
+{
+  "id": "gpt_5_5_prompt_v3",
+  "label": "GPT-5.5 · prompt v3",
+  "provider": "openai",
+  "model": "gpt-5.5",
+  "temperature": 1,
+  "max_tokens": 1000,
+  "systemPromptPath": "data/prompts/tested_model_system_prompt_v3.txt",
+  "systemPromptVersion": "tested_model_system_prompt_v3"
+}
+```
+
+3. Run coverage, ground truth, and safety again:
+
+```bash
+node --env-file=.env scripts/run-evaluation.js
+node --env-file=.env scripts/judge-truth-match.js
+node --env-file=.env scripts/check-escalation.js --tested-model gpt_5_5_prompt_v3 --dashboard
+```
+
+## Validation And Tests
+
+```bash
+npm test
 npm run test:unit
 npm run test:integration
+npm run validate:evaluator
 npm run validate:all
 ```
 
-`validate:all` runs unit tests, integration tests, evaluator validation, and demo generation. The integration tests validate full runner outputs, audit invariants, comparison sorting, and the dashboard request resolver without binding a local port.
+`validate:all` runs unit tests, integration tests, evaluator validation, and demo generation.
 
-## Docker
+## Outputs
 
-```bash
-docker compose up --build
+Each evaluation run is saved under:
+
+```text
+runs/<run_id>/
 ```
 
-This starts Postgres and the dashboard service. Apply `db/schema.sql` to the database before using Postgres-backed storage.
+The dashboard comparison file is:
 
-## Clinical review checklist for Arun
+```text
+runs/latest-comparison.json
+```
 
-- Verify whether the v0 nodes belong in the hierarchy.
-- Verify rank order, risk tier, required flags, and follow-up fields.
-- Treat rank as conversation order only; risk tier is the scoring magnitude for missed required nodes.
-- Review the simulator policy for fairness and realism.
-- Review the evaluator rubric and scoring formulas before using real model comparison numbers.
+That file is updated by coverage runs, then enriched by ground-truth and safety scripts.
