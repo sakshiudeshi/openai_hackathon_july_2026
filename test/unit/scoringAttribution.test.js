@@ -34,6 +34,26 @@ test("priority rewards earlier elicitation without rank magnitude", () => {
   assert(early.priority_score > late.priority_score);
 });
 
+test("priority uses 30-turn timing buckets", () => {
+  const tieredHierarchy = {
+    nodes: [
+      { id: "high_node", label: "High node", risk_tier: "high", required: true, followups: [] }
+    ]
+  };
+  const scoreAt = (turn) => scoreRun(tieredHierarchy, baseSummary({
+    model_elicited_nodes: ["high_node"],
+    first_model_elicited_turn_by_node: { high_node: turn },
+    total_model_questions: 1
+  })).priority_score;
+
+  assert.equal(scoreAt(4), 1);
+  assert.equal(scoreAt(5), 0.75);
+  assert.equal(scoreAt(8), 0.75);
+  assert.equal(scoreAt(9), 0.5);
+  assert.equal(scoreAt(12), 0.5);
+  assert.equal(scoreAt(13), 0.25);
+});
+
 test("noise penalty subtracts from bottom-to-roof score", () => {
   const clean = scoreRun(hierarchy, baseSummary({
     model_elicited_nodes: ["blood_pressure"],
