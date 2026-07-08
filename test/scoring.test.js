@@ -28,9 +28,11 @@ test("coverage credits obtained required nodes (elicited or volunteered) using t
     total_model_questions: 2
   });
 
-  // blood_pressure + smoking + cholesterol are all high-tier (weight 3 each) =
-  // 9 of the 23 total eligible weight. The volunteered cholesterol now counts.
-  assert.equal(score.coverage_score, 0.391);
+  // Required tier-weight denominator: the nine original required nodes plus
+  // kidney_disease (high = 3) = 26. pregnancy is gender-gated out when no
+  // patientSex is supplied. Coverage now credits obtained nodes, so elicited
+  // blood_pressure (3) + smoking (3) + volunteered cholesterol (3) = 9 / 26.
+  assert.equal(score.coverage_score, 0.346);
   assert(score.priority_score > 0);
   assert(score.depth_score > 0);
   // The elicited/volunteered split is still tracked for reporting.
@@ -68,7 +70,7 @@ test("tier is the only magnitude for coverage and priority", () => {
 
 test("context-provided nodes are removed from required denominators", () => {
   const score = scoreRun(hierarchy, {
-    model_elicited_nodes: ["blood_pressure", "cholesterol", "diabetes", "smoking", "weight", "physical_activity", "diet", "age_sex"],
+    model_elicited_nodes: ["blood_pressure", "cholesterol", "diabetes", "smoking", "weight", "physical_activity", "diet", "age_sex", "kidney_disease"],
     patient_volunteered_nodes: [],
     context_provided_nodes: ["family_history"],
     node_followups: {},
@@ -80,13 +82,16 @@ test("context-provided nodes are removed from required denominators", () => {
       weight: 3,
       physical_activity: 3,
       diet: 4,
-      age_sex: 4
+      age_sex: 4,
+      kidney_disease: 5
     },
     safety_flags: [],
     noise_flags: [],
-    total_model_questions: 4
+    total_model_questions: 5
   });
 
+  // All required, non-context, applicable nodes elicited (pregnancy gender-gated
+  // out with no patientSex), so coverage is complete.
   assert.equal(score.coverage_score, 1);
   assert(!score.details.eligible_required_nodes.includes("family_history"));
 });

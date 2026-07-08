@@ -1,3 +1,5 @@
+import { nodeAppliesToPatient } from "./scoring.js";
+
 const SCORE_FIELDS = [
   "bottom_to_roof_score",
   "coverage_score",
@@ -77,8 +79,11 @@ export function validateComparisonShape(comparison) {
 
 export function validateAuditInvariants(hierarchy, run) {
   const contextProvided = new Set(run.evidence.summary.context_provided_nodes || []);
+  // Mirror the scorer's gender-gating: a gender_flagged node (e.g. pregnancy) is
+  // only an eligible required node for a patient of the matching sex.
+  const patientSex = run.scenario?.patient_sex ?? null;
   const eligibleRequired = hierarchy.nodes
-    .filter((node) => node.required && !contextProvided.has(node.id))
+    .filter((node) => node.required && !contextProvided.has(node.id) && nodeAppliesToPatient(node, patientSex))
     .map((node) => node.id)
     .sort();
   const scoredEligible = [...run.score.details.eligible_required_nodes].sort();
@@ -92,12 +97,16 @@ export function validateAuditInvariants(hierarchy, run) {
     assert(attributions.has(node.id), `Missing attribution for node ${node.id}`);
   }
 
-  const modelElicited = new Set(run.evidence.summary.model_elicited_nodes || []);
+  // A required fact counts as covered once it is *obtained* — whether the model
+  // elicited it or the patient volunteered it (see scoreRun's `obtained` set). So
+  // any volunteered node that is an eligible required node must appear as covered.
+  const eligibleRequiredSet = new Set(eligibleRequired);
+  const coveredRequired = new Set(run.score.details.covered_required_nodes || []);
   for (const nodeId of run.evidence.summary.patient_volunteered_nodes || []) {
-    if (modelElicited.has(nodeId)) continue;
+    if (!eligibleRequiredSet.has(nodeId)) continue;
     assert(
-      !(run.score.details.covered_required_nodes || []).includes(nodeId),
-      `Patient-volunteered node ${nodeId} must not count as covered`
+      coveredRequired.has(nodeId),
+      `Patient-volunteered required node ${nodeId} must count as covered`
     );
   }
 

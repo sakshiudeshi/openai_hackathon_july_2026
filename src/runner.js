@@ -3,7 +3,7 @@ import { loadSystemPromptFrom } from "./artifacts.js";
 import { PatientSimulator } from "./simulator.js";
 import { createModelAdapter } from "./modelAdapters.js";
 import { extractEvidence } from "./evaluator.js";
-import { buildNodeAttributions, scoreProgression, scoreRun } from "./scoring.js";
+import { buildNodeAttributions, derivePatientSex, scoreProgression, scoreRun } from "./scoring.js";
 import {
   EVALUATOR_RUBRIC_VERSION,
   SIMULATOR_POLICY_VERSION,
@@ -157,9 +157,12 @@ export async function runScenario({
   const evidence = await extractEvidenceFn(events, hierarchy, {
     contextProvidedNodes: persona.context_provided_nodes || []
   });
-  const score = scoreRun(hierarchy, evidence.summary, scoreOptions);
+  // Gender-gate scoring: pass the patient's sex so gender_flagged nodes (e.g.
+  // pregnancy) are only required for the sex they apply to.
+  const effectiveScoreOptions = { ...scoreOptions, patientSex: derivePatientSex(persona) };
+  const score = scoreRun(hierarchy, evidence.summary, effectiveScoreOptions);
   const attributions = buildNodeAttributions(hierarchy, evidence.summary);
-  const progression = scoreProgression(hierarchy, evidence.labels, scoreOptions);
+  const progression = scoreProgression(hierarchy, evidence.labels, effectiveScoreOptions);
 
   const result = {
     run_id: runId,
@@ -175,7 +178,9 @@ export async function runScenario({
       id: persona.id,
       label: persona.label,
       opening_prompt: persona.opening_prompt,
-      context_provided_nodes: persona.context_provided_nodes || []
+      context_provided_nodes: persona.context_provided_nodes || [],
+      // Carried so scoring/audit can gender-gate nodes (e.g. pregnancy) consistently.
+      patient_sex: effectiveScoreOptions.patientSex
     },
     versions: {
       tested_model_system_prompt_version: systemPromptVersion,

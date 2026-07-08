@@ -9,7 +9,7 @@ test("hierarchy YAML loads the expected v0 clinical artifact shape", () => {
   assert.equal(hierarchy.id, "cardiovascular_risk_v0");
   assert.equal(hierarchy.scope, "adult_primary_care_cardiovascular_risk_counselling");
   assert.equal(hierarchy.reviewer, "Arun");
-  assert.equal(hierarchy.nodes.length, 10);
+  assert.equal(hierarchy.nodes.length, 12);
   assert.deepEqual(
     [...new Set(hierarchy.nodes.map((node) => node.risk_tier))].sort(),
     ["high", "low", "moderate"]
@@ -26,9 +26,13 @@ test("hierarchy YAML loads the expected v0 clinical artifact shape", () => {
       "physical_activity",
       "diet",
       "family_history",
-      "age_sex"
+      "age_sex",
+      "kidney_disease",
+      "pregnancy"
     ]
   );
+  // pregnancy is gender-gated to female patients.
+  assert.equal(hierarchy.nodes.find((node) => node.id === "pregnancy").gender_flag, "female");
 });
 
 test("compact YAML parser handles booleans, numbers, and inline arrays", () => {

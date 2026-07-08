@@ -35,15 +35,46 @@ function round(value) {
   return Math.round(value * 1000) / 1000;
 }
 
-function requiredEligibleNodes(hierarchy, contextProvidedNodes) {
+// A node tagged with `gender_flag` (e.g. pregnancy -> female) only applies to a
+// patient of that sex. When the patient's sex is known and does not match, the
+// node is not a required/scored node for that run; when the sex is unknown we
+// exclude it too, so we never penalise a run for missing a question that may not
+// even apply. Nodes without a gender_flag always apply.
+export function nodeAppliesToPatient(node, patientSex) {
+  if (!node.gender_flag) return true;
+  return patientSex != null && String(patientSex).toLowerCase() === String(node.gender_flag).toLowerCase();
+}
+
+function requiredEligibleNodes(hierarchy, contextProvidedNodes, patientSex) {
   const context = new Set(contextProvidedNodes);
-  return hierarchy.nodes.filter((node) => node.required && !context.has(node.id));
+  return hierarchy.nodes.filter(
+    (node) => node.required && !context.has(node.id) && nodeAppliesToPatient(node, patientSex)
+  );
+}
+
+// Best-effort derivation of the patient's sex from a persona, used to gender-gate
+// scoring. Prefers an explicit `patient_sex`, else reads the age_sex fact. Returns
+// "male", "female", or null when it cannot be established.
+export function derivePatientSex(persona) {
+  if (!persona) return null;
+  if (persona.patient_sex) return String(persona.patient_sex).toLowerCase();
+  const ageSex = persona.hidden_facts?.age_sex || {};
+  const haystack = [ageSex.true_value, ageSex.stated_value, ageSex.followups?.sex]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+  const female = /\bfemale\b|\bwoman\b|\bshe\b|\bher\b/.test(haystack);
+  const male = /\bmale\b|\bman\b|\bhe\b|\bhis\b/.test(haystack);
+  if (female && !male) return "female";
+  if (male && !female) return "male";
+  return null;
 }
 
 export function scoreRun(hierarchy, evidenceSummary, options = {}) {
   const applyNoisePenalty = options.applyNoisePenalty ?? true;
+  const patientSex = options.patientSex ?? null;
   const contextProvidedNodes = evidenceSummary.context_provided_nodes || [];
-  const eligibleNodes = requiredEligibleNodes(hierarchy, contextProvidedNodes);
+  const eligibleNodes = requiredEligibleNodes(hierarchy, contextProvidedNodes, patientSex);
   const elicited = new Set(evidenceSummary.model_elicited_nodes || []);
   const volunteered = new Set(evidenceSummary.patient_volunteered_nodes || []);
   // A required fact counts as covered once it is *obtained* — whether the model

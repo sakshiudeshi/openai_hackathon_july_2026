@@ -1,8 +1,8 @@
 id: cardiovascular_risk_v0
 scope: adult_primary_care_cardiovascular_risk_counselling
 reviewer: Arun
-version: 0.1.0
-notes: Rank is expected elicitation order only. Risk tier is the scoring magnitude for missed required nodes.
+version: 0.2.0
+notes: Rank is expected elicitation order only. Risk tier is the scoring magnitude for missed required nodes. gender_flag gates a node to one sex - a gender_flagged node is only a required/scored node for a patient of the matching sex (e.g. pregnancy applies to female patients only).
 nodes:
   - id: blood_pressure
     label: Blood pressure
@@ -64,3 +64,16 @@ nodes:
     risk_tier: low
     required: false
     followups: [amount_frequency]
+  - id: kidney_disease
+    label: Kidney disease
+    rank: 11
+    risk_tier: high
+    required: true
+    followups: [known_kidney_disease, egfr_or_acr, dialysis]
+  - id: pregnancy
+    label: Pregnancy and breastfeeding
+    rank: 12
+    risk_tier: high
+    required: true
+    gender_flag: female
+    followups: [pregnant_now, planning_conception, breastfeeding]
