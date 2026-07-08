@@ -70,7 +70,11 @@ export async function runScenario({
   storage = null,
   createPatient = (persona_, hierarchy_) => new PatientSimulator(persona_, hierarchy_),
   extractEvidence: extractEvidenceFn = extractEvidence,
-  scoreOptions = {}
+  scoreOptions = {},
+  // Optional per-turn hook, fired at the START of each turn (before the tested
+  // model is called) so callers can render live turn-by-turn progress. No-op by
+  // default, keeping the existing runComparison path unchanged.
+  onTurn = null
 }) {
   const runId = makeRunId();
   const simulator = createPatient(persona, hierarchy);
@@ -104,10 +108,20 @@ export async function runScenario({
   events.push(opening);
   await storage?.recordEvent?.(opening);
 
+  // Wall-clock timing so a saved run shows where its seconds went: per-turn
+  // tested-model vs patient latency, plus the judge call and the total. The
+  // event timestamps alone can't reveal judge time (the judge runs after the
+  // last event), which is usually the single biggest call.
+  const runStartedAt = Date.now();
+  const turnTimings = [];
+
   let stopReason = "turn_limit_reached";
   let assistantTurns = 0;
   for (let turn = 1; turn <= turnLimit; turn += 1) {
+    onTurn?.({ runId, persona, modelConfig, turn, turnLimit });
+    const modelStartedAt = Date.now();
     const completion = await adapter.complete(toProviderMessages(systemPrompt, events));
+    const modelMs = Date.now() - modelStartedAt;
     const assistantEvent = {
       run_id: runId,
       scenario_id: persona.id,
@@ -129,7 +143,10 @@ export async function runScenario({
     // includes this turn's assistant message, so the patient reads the exact
     // recorded conversation rather than keeping a parallel copy. The scripted
     // PatientSimulator ignores the second argument.
+    const patientStartedAt = Date.now();
     const simulatorResponse = await simulator.answer(completion.text, events);
+    const patientMs = Date.now() - patientStartedAt;
+    turnTimings.push({ turn, model_ms: modelMs, patient_ms: patientMs });
     const patientEvent = {
       run_id: runId,
       scenario_id: persona.id,
@@ -154,9 +171,11 @@ export async function runScenario({
     }
   }
 
+  const judgeStartedAt = Date.now();
   const evidence = await extractEvidenceFn(events, hierarchy, {
     contextProvidedNodes: persona.context_provided_nodes || []
   });
+  const judgeMs = Date.now() - judgeStartedAt;
   // Gender-gate scoring: pass the patient's sex so gender_flagged nodes (e.g.
   // pregnancy) are only required for the sex they apply to.
   const effectiveScoreOptions = { ...scoreOptions, patientSex: derivePatientSex(persona) };
@@ -200,6 +219,17 @@ export async function runScenario({
       stop_reason: stopReason,
       assistant_turn_count: assistantTurns,
       turn_limit: turnLimit
+    },
+    // Where the seconds went. model/patient totals are the sums of per-turn
+    // latency; judge_ms is the single post-conversation judge call. The gap
+    // between total_ms and (model+patient+judge) is scoring/overhead and, under
+    // concurrency, time this run spent waiting on shared rate-limit backoff.
+    timings: {
+      total_ms: Date.now() - runStartedAt,
+      model_ms_total: turnTimings.reduce((sum, t) => sum + t.model_ms, 0),
+      patient_ms_total: turnTimings.reduce((sum, t) => sum + t.patient_ms, 0),
+      judge_ms: judgeMs,
+      turns: turnTimings
     }
   };
 
