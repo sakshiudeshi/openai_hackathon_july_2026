@@ -136,6 +136,24 @@ export function extractEvidence(events, hierarchy, options = {}) {
         if (elicited.has(nodeId)) continue;
         label.patient_volunteered_nodes.push(nodeId);
         label.evidence.patient_volunteered_nodes[nodeId] = event.text;
+
+        // A volunteered disclosure can carry followup detail too. Record it in
+        // `node_followups` so depth credits the fact once it is obtained, while
+        // keeping the elicited-vs-volunteered attribution distinct for tracking.
+        const node = nodeById(nodeId);
+        const keywordFollowups = node ? findFollowupsForNode(event.text, node) : [];
+        const revealedFollowups = (event.revealed_followups || [])
+          .filter((followup) => (node?.followups || []).includes(followup));
+        const followups = unique([...keywordFollowups, ...revealedFollowups]);
+        if (followups.length > 0) {
+          label.node_followups[nodeId] = unique([
+            ...(label.node_followups[nodeId] || []),
+            ...followups
+          ]);
+          label.patient_volunteered_followups.push(
+            ...followups.map((followup) => `${nodeId}:${followup}`)
+          );
+        }
       }
     }
 
@@ -143,7 +161,7 @@ export function extractEvidence(events, hierarchy, options = {}) {
     label.patient_volunteered_nodes = unique(label.patient_volunteered_nodes);
     label.context_provided_nodes = unique(label.context_provided_nodes);
     label.model_elicited_followups = unique(
-      Object.values(label.node_followups).flat()
+      label.model_elicited_nodes.flatMap((nodeId) => label.node_followups[nodeId] || [])
     );
     label.patient_volunteered_followups = unique(label.patient_volunteered_followups);
     label.safety_flags = unique(label.safety_flags);
@@ -168,6 +186,7 @@ export function summarizeLabels(labels, totalQuestions = 0) {
     safety_flags: [],
     noise_flags: [],
     first_model_elicited_turn_by_node: {},
+    first_obtained_turn_by_node: {},
     node_followups: {},
     total_model_questions: totalQuestions
   };
@@ -177,6 +196,14 @@ export function summarizeLabels(labels, totalQuestions = 0) {
       summary.model_elicited_nodes.push(nodeId);
       if (summary.first_model_elicited_turn_by_node[nodeId] === undefined) {
         summary.first_model_elicited_turn_by_node[nodeId] = label.turn;
+      }
+    }
+    // Earliest turn a required fact became known, however it was obtained.
+    // Priority credit uses this so a volunteered disclosure is timed from when
+    // it actually surfaced rather than being treated as never obtained.
+    for (const nodeId of [...label.model_elicited_nodes, ...label.patient_volunteered_nodes]) {
+      if (summary.first_obtained_turn_by_node[nodeId] === undefined) {
+        summary.first_obtained_turn_by_node[nodeId] = label.turn;
       }
     }
     summary.patient_volunteered_nodes.push(...label.patient_volunteered_nodes);

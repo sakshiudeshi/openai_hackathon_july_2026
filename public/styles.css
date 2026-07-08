@@ -231,10 +231,106 @@ button:focus-visible {
   font-size: 12px;
 }
 
+/* ---------- Model summary table (above run list) ---------- */
+.modelSummary {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 16px;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+  font-size: 14px;
+}
+
+.modelSummary th,
+.modelSummary td {
+  text-align: left;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.modelSummary thead th {
+  color: var(--muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+}
+
+.modelSummary tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.modelSummary .msRuns,
+.modelSummary .msCoverage,
+.modelSummary .msScore {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.modelSummary .msModel {
+  font-weight: 600;
+}
+
+.modelSummary .headlineValue {
+  font-size: 16px;
+}
+
 /* ---------- Run list (clickable rows) ---------- */
 .runList {
   display: grid;
   gap: 10px;
+}
+
+/* ---------- Patient cards (each patient, every model run) ---------- */
+.patientCard {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel);
+  padding: 14px;
+}
+
+.patientHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+  padding: 0 2px;
+}
+
+.patientName {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.patientMeta {
+  color: var(--muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.patientRuns {
+  display: grid;
+  gap: 8px;
+}
+
+.bestTag {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--good, #34d399);
+  background: color-mix(in srgb, var(--good, #34d399) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--good, #34d399) 40%, transparent);
 }
 
 .runRow {

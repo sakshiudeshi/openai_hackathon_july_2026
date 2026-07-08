@@ -107,9 +107,33 @@ function allRuns() {
 function visibleRuns() {
   return allRuns().filter((run) => {
     if (state.filterModel !== "all" && run.model_config.id !== state.filterModel) return false;
-    if (state.filterScenario !== "all" && run.scenario.id !== state.filterScenario) return false;
+    // Group/filter patients by label, not id: the results file can carry a
+    // duplicate scenario id (a persona-data bug), but labels stay distinct.
+    if (state.filterScenario !== "all" && run.scenario.label !== state.filterScenario) return false;
     return true;
   });
+}
+
+// Group runs by patient (scenario label). Each patient holds every model's run
+// for that scenario, ordered to match the comparison's model order (v0, v1, …).
+function runsByPatient(runs) {
+  const modelOrder = new Map(
+    (state.data.comparison.models || []).map((model, index) => [model.model_config.id, index])
+  );
+  const patients = new Map();
+  for (const run of runs) {
+    const key = run.scenario.label;
+    if (!patients.has(key)) {
+      patients.set(key, { label: key, scenario: run.scenario, runs: [] });
+    }
+    patients.get(key).runs.push(run);
+  }
+  const rank = (run) => modelOrder.get(run.model_config.id) ?? Number.MAX_SAFE_INTEGER;
+  const groups = [...patients.values()];
+  for (const group of groups) {
+    group.runs.sort((a, b) => rank(a) - rank(b));
+  }
+  return groups.sort((a, b) => a.label.localeCompare(b.label));
 }
 
 function findRun(runId) {
@@ -181,14 +205,15 @@ function renderListPage() {
     <section class="band">
       <div class="sectionHeader">
         <div>
-          <h2>Runs</h2>
-          <p class="sectionHint">One row per model &times; scenario. Click a run to open the full breakdown.</p>
+          <h2>Patients</h2>
+          <p class="sectionHint">One card per patient, showing how each model run performed. Click a model to open its full breakdown.</p>
         </div>
         <div class="filters">
           <label>Model <select id="filterModel"></select></label>
-          <label>Scenario <select id="filterScenario"></select></label>
+          <label>Patient <select id="filterScenario"></select></label>
         </div>
       </div>
+      ${renderModelSummary()}
       <div id="runList" class="runList"></div>
     </section>
 
@@ -203,25 +228,63 @@ function renderListPage() {
   `;
 
   renderFilters();
-  renderRunList();
+  renderPatientList();
   renderValidation();
   wireValidationToggle();
+}
+
+// Compact per-model averages, shown above the run list. Each model entry in
+// the comparison already carries an aggregated `score`, so this is just a
+// small readout of the composite (and its coverage component) per model.
+function renderModelSummary() {
+  const models = state.data.comparison.models || [];
+  if (!models.length) return "";
+  const rows = models.map((model) => {
+    const composite = model.score.bottom_to_roof_score;
+    const level = compositeLevel(composite);
+    const runCount = (model.runs || []).length;
+    return `
+      <tr>
+        <td class="msModel">${model.model_config.label}
+          <span class="provider">${model.model_config.provider}</span>
+        </td>
+        <td class="msRuns">${runCount}</td>
+        <td class="msCoverage">${score(model.score.coverage_score)}</td>
+        <td class="msScore"><span class="headlineValue ${level}">${score(composite)}</span></td>
+      </tr>`;
+  }).join("");
+  return `
+    <table class="modelSummary">
+      <thead>
+        <tr>
+          <th>Model</th>
+          <th>Runs</th>
+          <th>Avg coverage</th>
+          <th>Avg score</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>`;
 }
 
 function renderFilters() {
   const modelOptions = ['<option value="all">All models</option>']
     .concat(state.data.comparison.models.map((model) =>
       `<option value="${model.model_config.id}">${model.model_config.label}</option>`));
-  const scenarioOptions = ['<option value="all">All scenarios</option>']
-    .concat(state.data.personas.map((persona) =>
-      `<option value="${persona.id}">${persona.label}</option>`));
+  // Patient options come from the runs' distinct scenario labels (keyed by
+  // label, matching how patients are grouped) so the filter stays consistent
+  // even when the results file has a duplicate scenario id.
+  const patientLabels = [...new Set(allRuns().map((run) => run.scenario.label))]
+    .sort((a, b) => a.localeCompare(b));
+  const scenarioOptions = ['<option value="all">All patients</option>']
+    .concat(patientLabels.map((label) => `<option value="${label}">${label}</option>`));
 
   const modelSelect = $("filterModel");
   modelSelect.innerHTML = modelOptions.join("");
   modelSelect.value = state.filterModel;
   modelSelect.onchange = (event) => {
     state.filterModel = event.target.value;
-    renderRunList();
+    renderPatientList();
   };
 
   const scenarioSelect = $("filterScenario");
@@ -229,7 +292,7 @@ function renderFilters() {
   scenarioSelect.value = state.filterScenario;
   scenarioSelect.onchange = (event) => {
     state.filterScenario = event.target.value;
-    renderRunList();
+    renderPatientList();
   };
 }
 
@@ -268,7 +331,9 @@ function runFlagPills(run) {
   return pills.join("");
 }
 
-function renderRunList() {
+// One card per patient; inside it, one clickable row per model run for that
+// patient, so runs can be compared model-to-model within a single scenario.
+function renderPatientList() {
   const runs = visibleRuns();
   const list = $("runList");
   if (!runs.length) {
@@ -276,29 +341,42 @@ function renderRunList() {
     return;
   }
 
-  list.innerHTML = runs.map((run) => {
-    const headLevel = compositeLevel(run.score.bottom_to_roof_score);
-    return `
-      <a class="runRow" href="#/run/${encodeURIComponent(run.run_id)}">
-        <div class="runIdent">
-          <div>
+  const patients = runsByPatient(runs);
+  list.innerHTML = patients.map((patient) => {
+    const best = Math.max(...patient.runs.map((run) => run.score.bottom_to_roof_score));
+    const multiModel = patient.runs.length > 1;
+    const rows = patient.runs.map((run) => {
+      const headLevel = compositeLevel(run.score.bottom_to_roof_score);
+      const isBest = multiModel && run.score.bottom_to_roof_score === best;
+      return `
+        <a class="runRow patientRun" href="#/run/${encodeURIComponent(run.run_id)}">
+          <div class="runIdent">
             <div class="runModel">
               ${run.model_config.label}
               <span class="provider">${run.model_config.provider}</span>
+              ${isBest ? `<span class="bestTag">best</span>` : ""}
             </div>
-            <div class="runScenario">${run.scenario.label}</div>
           </div>
+          <div class="headline">
+            <span class="headlineValue ${headLevel}">${score(run.score.bottom_to_roof_score)}</span>
+            <span class="headlineMeta">Bottom&#8209;to&#8209;roof</span>
+          </div>
+          <div class="miniMetrics">
+            ${METRIC_ORDER.map((key) => miniChip(key, run.score[key], run)).join("")}
+          </div>
+          <div class="runFlags">${runFlagPills(run)}</div>
+          <span class="rowGo" aria-hidden="true">&#9656;</span>
+        </a>`;
+    }).join("");
+
+    return `
+      <div class="patientCard">
+        <div class="patientHead">
+          <div class="patientName">${patient.scenario.label}</div>
+          <div class="patientMeta">${patient.runs.length} model run${multiModel ? "s" : ""}</div>
         </div>
-        <div class="headline">
-          <span class="headlineValue ${headLevel}">${score(run.score.bottom_to_roof_score)}</span>
-          <span class="headlineMeta">Bottom&#8209;to&#8209;roof</span>
-        </div>
-        <div class="miniMetrics">
-          ${METRIC_ORDER.map((key) => miniChip(key, run.score[key], run)).join("")}
-        </div>
-        <div class="runFlags">${runFlagPills(run)}</div>
-        <span class="rowGo" aria-hidden="true">&#9656;</span>
-      </a>`;
+        <div class="patientRuns">${rows}</div>
+      </div>`;
   }).join("");
 }
 
