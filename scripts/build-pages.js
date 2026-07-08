@@ -32,8 +32,11 @@ const PERSONAS_FILE = path.join(DATA_DIR, "personas.json");
 const argv = process.argv.slice(2);
 const args = new Set(argv);
 const shouldDeploy = args.has("--deploy");
-const projectArg = argv.find((arg) => arg.startsWith("--project="))?.split("=")[1];
-const CF_PROJECT = projectArg || process.env.CF_PAGES_PROJECT || "cardio-risk-dashboard";
+const projectArg = argv
+  .find((arg) => arg.startsWith("--project="))
+  ?.split("=")[1];
+const CF_PROJECT =
+  projectArg || process.env.CF_PAGES_PROJECT || "cardio-risk-dashboard";
 
 function log(message) {
   console.log(`[build-pages] ${message}`);
@@ -43,11 +46,16 @@ function log(message) {
 // route, so the static snapshot stays in sync with what the live dashboard
 // serves. Used for both /api/results and /api/personas.
 async function snapshotRoute(route) {
-  const resolved = await resolveRequest({ url: route, headers: { host: "localhost" } });
+  const resolved = await resolveRequest({
+    url: route,
+    headers: { host: "localhost" },
+  });
   if (resolved.status !== 200) {
     throw new Error(`${route} returned status ${resolved.status}`);
   }
-  return typeof resolved.body === "string" ? resolved.body : resolved.body.toString("utf8");
+  return typeof resolved.body === "string"
+    ? resolved.body
+    : resolved.body.toString("utf8");
 }
 
 // GitHub Pages hosts the site under /<repo>/, so absolute paths that begin with
@@ -57,6 +65,8 @@ function patchAsset(name, contents) {
   if (name === "index.html") {
     return contents
       .replaceAll('href="/styles.css"', 'href="./styles.css"')
+      .replaceAll('href="/vendor/', 'href="./vendor/')
+      .replaceAll('src="/vendor/', 'src="./vendor/')
       .replaceAll('src="/app.js"', 'src="./app.js"');
   }
   if (name === "app.js") {
@@ -67,18 +77,27 @@ function patchAsset(name, contents) {
   return contents;
 }
 
-function copyPublicAssets() {
-  for (const name of fs.readdirSync(PUBLIC_DIR)) {
-    const source = path.join(PUBLIC_DIR, name);
-    if (fs.statSync(source).isDirectory()) continue;
+// Copy public/ into dist/, recursing so subdirectories (e.g. vendor/ with the
+// Chart.js bundle and Inter fonts) are preserved. Text assets are URL-patched;
+// binaries (fonts, images) are copied byte-for-byte. `patchAsset` keys on the
+// basename, so nested files pass through untouched unless they match a rule.
+function copyPublicAssets(dir = PUBLIC_DIR) {
+  for (const name of fs.readdirSync(dir)) {
+    const source = path.join(dir, name);
+    if (fs.statSync(source).isDirectory()) {
+      copyPublicAssets(source);
+      continue;
+    }
+    const rel = path.relative(PUBLIC_DIR, source);
+    const dest = path.join(DIST_DIR, rel);
+    fs.mkdirSync(path.dirname(dest), { recursive: true });
     const isText = /\.(html|js|css|json|svg)$/.test(name);
     if (isText) {
-      const patched = patchAsset(name, fs.readFileSync(source, "utf8"));
-      fs.writeFileSync(path.join(DIST_DIR, name), patched);
+      fs.writeFileSync(dest, patchAsset(name, fs.readFileSync(source, "utf8")));
     } else {
-      fs.copyFileSync(source, path.join(DIST_DIR, name));
+      fs.copyFileSync(source, dest);
     }
-    log(`copied ${name}`);
+    log(`copied ${rel}`);
   }
 }
 
@@ -98,15 +117,15 @@ function deployToCloudflare() {
         "deploy",
         DIST_DIR,
         `--project-name=${CF_PROJECT}`,
-        "--commit-dirty=true"
+        "--commit-dirty=true",
       ],
-      { stdio: "inherit", cwd: PROJECT_ROOT }
+      { stdio: "inherit", cwd: PROJECT_ROOT },
     );
   } catch (error) {
     throw new Error(
       "wrangler deploy failed. Ensure the Pages project exists (create it once with " +
         `\`npx wrangler pages project create ${CF_PROJECT}\`) and that CLOUDFLARE_API_TOKEN ` +
-        "and CLOUDFLARE_ACCOUNT_ID are set (or run `npx wrangler login`)."
+        "and CLOUDFLARE_ACCOUNT_ID are set (or run `npx wrangler login`).",
     );
   }
   log("deploy complete — Cloudflare printed the live URL above");
@@ -119,11 +138,15 @@ async function main() {
 
   const results = await snapshotRoute("/api/results");
   fs.writeFileSync(RESULTS_FILE, results);
-  log(`wrote ${path.relative(PROJECT_ROOT, RESULTS_FILE)} (${(results.length / 1024).toFixed(1)} KiB)`);
+  log(
+    `wrote ${path.relative(PROJECT_ROOT, RESULTS_FILE)} (${(results.length / 1024).toFixed(1)} KiB)`,
+  );
 
   const personas = await snapshotRoute("/api/personas");
   fs.writeFileSync(PERSONAS_FILE, personas);
-  log(`wrote ${path.relative(PROJECT_ROOT, PERSONAS_FILE)} (${(personas.length / 1024).toFixed(1)} KiB)`);
+  log(
+    `wrote ${path.relative(PROJECT_ROOT, PERSONAS_FILE)} (${(personas.length / 1024).toFixed(1)} KiB)`,
+  );
 
   copyPublicAssets();
   log(`static site ready in ${path.relative(PROJECT_ROOT, DIST_DIR)}/`);
