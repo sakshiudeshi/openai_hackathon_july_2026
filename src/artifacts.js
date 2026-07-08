@@ -40,6 +40,18 @@ export function loadPersonas() {
     .map((file) => JSON.parse(fs.readFileSync(path.join(dir, file), "utf8")));
 }
 
+// Selects personas by the numeric suffix of their source filename
+// (persona_<N>.json), e.g. [3,4,5] -> persona_3.json, persona_4.json,
+// persona_5.json. Used to run the evaluation on a subset of patient profiles.
+export function loadPersonasByFileNumbers(numbers) {
+  const wanted = new Set(numbers.map((n) => `persona_${n}.json`));
+  const dir = path.join(PROJECT_ROOT, "data/personas");
+  return fs.readdirSync(dir)
+    .filter((file) => wanted.has(file))
+    .sort((a, b) => Number(a.match(/\d+/)[0]) - Number(b.match(/\d+/)[0]))
+    .map((file) => JSON.parse(fs.readFileSync(path.join(dir, file), "utf8")));
+}
+
 // The scripted PatientSimulator is the v1/flat path: it discloses a fact's
 // `answer` string on cue. Richer v2 personas instead split each fact into
 // `stated_value`/`true_value` gated by a reveal condition and are meant to be
