@@ -1857,9 +1857,9 @@ function renderPatientDetailPage(key) {
    persona and a model, and "forge" a consultation scored on Coverage /
    Priority / Depth (the same three axes the Coverage Evaluation tab reports).
 
-   NOTE: this is a demo stub. On forge it pulls a real evaluated run from
-   runs/latest-comparison.json (hardcoded below) at random and shows its
-   genuine metrics — no synthetic scoring, no network call.
+   NOTE: this is a demo stub. On forge it pulls a real evaluated run from the
+   live data (runs/latest-comparison.json, via /api/results) for the selected
+   patient and shows its genuine metrics and transcript — no synthetic scoring.
    ===================================================================== */
 const HF_MODELS = [
   { id: "gpt-5.5", label: "gpt-5.5", tag: "flagship" },
@@ -1885,41 +1885,52 @@ function hfCompositeLevel(value) {
   return hfLevel(value / 3);
 }
 
-// The 12 real runs from runs/latest-comparison.json, hardcoded (coverage /
-// priority / depth and the composite bottom-to-roof score). Navix always shows
-// genuine numbers; a forge picks one of these at random.
-const HF_REAL_RUNS = [
-  { run_id: "039uCvC5hiAT", patient: "Liu Jianhua", model: "GPT-5.4 mini · v3", scenario: "Middle-aged man hiding ED — sentinel for undiagnosed diabetes", coverage: 0.731, priority: 0.731, depth: 0.75, composite: 3.212 },
-  { run_id: "3FMeBazzPKdL", patient: "Ma Cheng", model: "GPT-5.4 mini · v3", scenario: "Ideal historian — honest multi-risk-factor control case", coverage: 1, priority: 0.913, depth: 0.87, composite: 3.783 },
-  { run_id: "3YvzuHUibMdb", patient: "Zhao Lei", model: "GPT-5.4 mini · v3", scenario: "Sedentary with high cholesterol", coverage: 1, priority: 0.913, depth: 0.696, composite: 3.609 },
-  { run_id: "3bjDy5Bzk8oV", patient: "Siti Rohana", model: "GPT-5.4 mini · v3", scenario: "Diabetes and family history", coverage: 0.778, priority: 0.759, depth: 0.789, composite: 2.327 },
-  { run_id: "4ORYv9RvKI2Y", patient: "Zhao Lei", model: "GPT-5.4 mini · v0 (simple)", scenario: "Sedentary with high cholesterol", coverage: 0.885, priority: 0.885, depth: 0.65, composite: 3.419 },
-  { run_id: "5PNdTK0gyE9N", patient: "Liu Jianhua", model: "GPT-5.4 mini · v0 (simple)", scenario: "Middle-aged man hiding ED — sentinel for undiagnosed diabetes", coverage: 0.308, priority: 0.163, depth: 0.667, composite: 1.888 },
-  { run_id: "9hS2OxhQQ91I", patient: "Wang Jianguo", model: "GPT-5.4 mini · v3", scenario: "High blood pressure, current smoker", coverage: 0.923, priority: 0.827, depth: 0.7, composite: 3.45 },
-  { run_id: "MB0qpYJ2qowp", patient: "Yang Xiaoyu", model: "GPT-5.4 mini · v3", scenario: "Worried daughter relaying a buried TIA", coverage: 0.207, priority: 0.207, depth: 0.8, composite: 2.214 },
-  { run_id: "WbBr4gH6ymSy", patient: "Wang Jianguo", model: "GPT-5.4 mini · v0 (simple)", scenario: "High blood pressure, current smoker", coverage: 0.654, priority: 0.654, depth: 0.733, composite: 3.041 },
-  { run_id: "afqsIAlMRmx2", patient: "Siti Rohana", model: "GPT-5.4 mini · v0 (simple)", scenario: "Diabetes and family history", coverage: 0.778, priority: 0.778, depth: 0.632, composite: 2.187 },
-  { run_id: "llItiaznu8M7", patient: "Ma Cheng", model: "GPT-5.4 mini · v0 (simple)", scenario: "Ideal historian — honest multi-risk-factor control case", coverage: 0.654, priority: 0.654, depth: 0.867, composite: 3.174 },
-];
+// The demo's runs are derived from the live data on your filesystem
+// (runs/latest-comparison.json, served over /api/results) rather than a
+// hardcoded list — so their run_ids always match the current data and the
+// transcript panel resolves. One run per patient (the best composite) keeps a
+// patient selection deterministic. Navix always shows genuine numbers.
+function hfRealRuns() {
+  const byPatient = new Map();
+  for (const run of allRuns()) {
+    if (!run.events?.length) continue;
+    const persona = personaByScenario(run.scenario);
+    const patient = persona?.persona.name || run.scenario.label;
+    const s = run.score || {};
+    const entry = {
+      run_id: run.run_id,
+      patient,
+      model: run.model_config?.label || "",
+      scenario: run.scenario.label,
+      coverage: Number(s.coverage_score || 0),
+      priority: Number(s.priority_score || 0),
+      depth: Number(s.depth_score || 0),
+      composite: Number(s.bottom_to_roof_score || 0),
+    };
+    const existing = byPatient.get(patient);
+    if (!existing || entry.composite > existing.composite) {
+      byPatient.set(patient, entry);
+    }
+  }
+  return [...byPatient.values()];
+}
 
 // Unique patients that have a run, in first-seen order — drives the dropdown.
-const HF_PATIENTS = HF_REAL_RUNS.reduce((list, run) => {
-  if (!list.includes(run.patient)) list.push(run.patient);
-  return list;
-}, []);
+function hfPatients() {
+  return hfRealRuns().map((run) => run.patient);
+}
 
-// The run to show for a patient: the first hardcoded run for that patient, so a
-// given patient always maps to the same run (and the same transcript).
+// The run to show for a patient: that patient's best run, so a given patient
+// always maps to the same run (and the same transcript).
 function hfRunForPatient(patient) {
-  return (
-    HF_REAL_RUNS.find((run) => run.patient === patient) || HF_REAL_RUNS[0]
-  );
+  const runs = hfRealRuns();
+  return runs.find((run) => run.patient === patient) || runs[0] || null;
 }
 
 function renderHealthForgePage() {
   // Only patients that have a real run, so a selection always resolves to a
   // transcript. Each option carries the patient's short scenario for context.
-  const personaOptions = HF_PATIENTS.map((patient) => {
+  const personaOptions = hfPatients().map((patient) => {
     const run = hfRunForPatient(patient);
     return `<option value="${esc(patient)}">${esc(patient)} — ${esc(run.scenario)}</option>`;
   }).join("");
@@ -1983,7 +1994,7 @@ function hfRun() {
 
   // Drive the result from the selected patient, so the same patient always
   // yields the same run, metrics, and transcript.
-  const patient = $("hfPersona")?.value || HF_PATIENTS[0];
+  const patient = $("hfPersona")?.value || hfPatients()[0];
 
   const btn = $("hfRun");
   if (btn) btn.disabled = true;
