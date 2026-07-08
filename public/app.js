@@ -50,6 +50,10 @@ const ICONS = {
   activity: strokeSvg(`<path d="M3 12h4l3 8 4-16 3 8h4"/>`),
   smoke: strokeSvg(`<path d="M3 8h9a3 3 0 1 0 0-6M3 12h13a3 3 0 1 1 0 6M3 16h6"/>`),
   users: strokeSvg(`<circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="M16 6a3 3 0 0 1 0 6M21 20c0-2.5-1.4-4.6-3.5-5.5"/>`),
+  pill: strokeSvg(`<path d="M10.5 3.5l10 10a5 5 0 0 1-7 7l-10-10a5 5 0 0 1 7-7z"/><path d="M7 7l10 10"/>`),
+  brain: strokeSvg(`<path d="M12 5.5a2.5 2.5 0 0 0-4.5-1.5A2.6 2.6 0 0 0 5 6.5a2.6 2.6 0 0 0-1 4.7A2.7 2.7 0 0 0 7.5 18a2.4 2.4 0 0 0 4.5-.8zM12 5.5a2.5 2.5 0 0 1 4.5-1.5A2.6 2.6 0 0 1 19 6.5a2.6 2.6 0 0 1 1 4.7A2.7 2.7 0 0 1 16.5 18a2.4 2.4 0 0 1-4.5-.8z"/>`),
+  lungs: strokeSvg(`<path d="M12 3v9M9 8.5c0 3-1 4.2-3 6.2C4.6 16 4 17.5 4 19.5h4a1 1 0 0 0 1-1V9.5a2 2 0 0 0-3-1zM15 8.5c0 3 1 4.2 3 6.2 1.4 1.3 2 2.8 2 4.8h-4a1 1 0 0 1-1-1V9.5a2 2 0 0 1 3-1z"/>`),
+  scale: strokeSvg(`<path d="M12 4v16M8 20h8M6 4h12M6 4L3 12a4 4 0 0 0 8 0L8 4M18 4l-3 8a4 4 0 0 0 8 0l-3-8"/>`),
   shield: strokeSvg(`<path d="M12 3l8 3v6c0 5-4 8-8 9-4-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/>`),
   bars: strokeSvg(`<path d="M3 21h18"/><path d="M6 18v-6M12 18V6M18 18v-9"/>`),
   trending: strokeSvg(`<path d="M3 17l6-6 4 4 8-8"/><path d="M17 7h4v4"/>`),
@@ -76,8 +80,10 @@ function statTile(tile) {
     </div>`;
 }
 
-// Guess a fitting condition icon from a patient's label so each profile gets a
-// badge that matches its scenario.
+// The badge icon for a persona is data-driven: it comes from the persona's own
+// `icon` field (data/personas/*.json) so the test set can evolve without code
+// changes. When a persona omits it — or names an icon we don't have — we fall
+// back to a keyword guess from the label, then to a neutral heart.
 function conditionIcon(label) {
   const text = String(label || "").toLowerCase();
   if (/smok|tobacco|cigar/.test(text)) return "smoke";
@@ -89,11 +95,15 @@ function conditionIcon(label) {
   return "heart";
 }
 
+function personaIcon(persona) {
+  return persona.icon && ICONS[persona.icon] ? persona.icon : conditionIcon(persona.label);
+}
+
 // A per-persona portrait avatar. Hue is derived from the profile number so each
 // patient reads as a distinct "specimen", with a condition badge overlaid.
-function personaAvatar(profileNumber, label, size = "") {
+function personaAvatar(profileNumber, persona, size = "") {
   const hue = (Number(profileNumber || 1) * 53 + 168) % 360;
-  const cond = conditionIcon(label);
+  const cond = personaIcon(persona);
   return `
     <span class="personaAvatar ${size}" style="--h:${hue}" aria-hidden="true">
       <svg class="person" viewBox="0 0 24 24" fill="currentColor">
@@ -798,18 +808,20 @@ function renderPersonaCard(entry) {
   if (redFlag) chips.push(`<span class="personaChip flag">${icon("flag")}buried red flag</span>`);
 
   const label = persona.label || persona.id;
+  const name = persona.name || label;
   return `
     <a class="personaCard" href="#/patient/${encodeURIComponent(key)}">
       <div class="personaCardTop">
-        ${personaAvatar(profileNumber, label)}
+        ${personaAvatar(profileNumber, persona)}
         <div class="personaCardMeta">
           <div class="personaCardHead">
             <span class="personaNum">#${profileNumber}</span>
             <span class="personaChips">${chips.join("")}</span>
           </div>
-          <div class="personaLabel">${esc(label)}</div>
+          <div class="personaLabel">${esc(name)}</div>
         </div>
       </div>
+      <div class="personaCondition">${esc(label)}</div>
       ${persona.opening_prompt ? `<div class="personaOpening">&ldquo;${esc(persona.opening_prompt)}&rdquo;</div>` : ""}
     </a>`;
 }
@@ -953,17 +965,19 @@ function renderPatientDetailPage(key) {
   });
 
   const label = persona.label || persona.id;
+  const name = persona.name || label;
   app().innerHTML = `
     <a class="backLink" href="#/patients">&#8592; Back to patient profiles</a>
     <section class="band detailHeader personaHeader">
       <div class="personaHeaderTitle">
-        ${personaAvatar(profileNumber, label, "lg")}
+        ${personaAvatar(profileNumber, persona, "lg")}
         <div class="detailTitle">
           <div class="runModel">
             <span class="personaNum">#${profileNumber}</span>
             <span class="personaChip ${rich ? "rich" : "flat"}">${rich ? `${icon("sparkles")}rich` : "flat"}</span>
           </div>
-          <div class="runScenario">${esc(label)}</div>
+          <div class="personaDetailName">${esc(name)}</div>
+          <div class="personaConditionFull">${esc(label)}</div>
         </div>
       </div>
     </section>

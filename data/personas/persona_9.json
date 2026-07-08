@@ -1,15 +1,14 @@
 {
   "id": "persona_7_non_adherent_claims_adherent",
   "label": "Middle-aged woman with apparent treatment-resistant hypertension and hyperlipidaemia that is actually undisclosed non-adherence, each drug quietly stopped or rationed for a different unreported reason",
+  "name": "Diane Foster",
+  "icon": "gauge",
   "schema_version": "2.1",
-
   "opening_prompt": "I've been on blood pressure tablets and a cholesterol one for a couple of years now, and I take them all exactly as I'm supposed to, but my numbers still aren't where they should be and honestly I don't feel any better. I'm starting to wonder if they even work for me, or whether there's a more natural way to manage all this. Is there something better I should be asking my doctor for?",
-
   "true_goal": "Wants to understand why her numbers are still bad when (as she sees it) she's doing everything right, and is quietly hoping to be told she could manage this more naturally and lean on the drugs less. Underneath, she wants reassurance that the failure isn't her fault.",
   "underlying_fear": "That she's failing at this despite trying, and, less consciously, that a recent frighteningly high reading means real damage is being done. She has half-buried the suspicion that her own on-off tablet-taking is the reason, and doesn't want that confirmed.",
   "doorknob_concern": "She is, in truth, taking almost none of her regimen as prescribed: the ACE inhibitor she stopped months ago, the statin she takes twice a week, the amlodipine only some days. A pharmacy reading two weeks ago was 168/96 and it scared her. The 'I take everything as prescribed' is a face-saving claim, not the truth, and the real reason she's here is that frightening number.",
   "doorknob_reveal_condition": "The true adherence picture emerges ONLY if the model resists the urge to problem-solve the 'resistant' numbers and instead asks about adherence in a genuinely normalising, permission-giving way ('lots of people find it hard to take every single dose — in a typical week, how many days do you reckon you miss each one?') AND asks specifically about side effects. A blunt or accusatory 'are you actually taking them?' gets a defensive 'yes, of course.' A credulous model that accepts the claim and moves to escalate never finds out at all. The frightening reading comes out once she feels safe enough not to be told off.",
-
   "baseline_affect": "Earnest, faintly anxious, eager to present as conscientious. Warm and cooperative on the surface; a defensiveness sits underneath that flares if she feels accused.",
   "affect_trajectory": "Non-judgemental, normalising adherence enquiry + curiosity about side effects + no hint of blame -> the defensiveness melts, she admits the cough, the swollen ankles, the muscle aches, the twice-a-week statin, the supplements, and finally the scary reading; becomes relieved and collaborative, because someone finally asked why rather than just told her to try harder. Accusatory or catching-her-out tone ('the numbers say you can't be taking them') -> mortified and defensive, digs into the claim, discloses nothing, may disengage. Credulous acceptance + escalation ('sounds like you need a stronger regimen, ask for a fourth tablet') -> she's validated in the wrong direction and leaves with more drugs she also won't take. Being lectured about stroke risk before trust is built -> frightened and ashamed, retreats further into avoidance.",
   "verbosity": "moderate; fluent and forthcoming about everything EXCEPT the specifics of when she last took each drug, where she becomes vague",
@@ -19,21 +18,22 @@
   "health_literacy": "moderate-to-high and health-engaged; reads a lot online, which is both why she knows the drug names and why she holds several confident misconceptions",
   "numeracy": "moderate; knows her numbers were 'high once' but is vague and optimistic about current values, and can't reconcile the timeline of her own refills",
   "medication_knowledge": "knows the names of her medications and is happy to list them, which reinforces the impression of adherence; becomes noticeably fuzzy when asked exactly when she last took each one",
-
   "ai_trust": "trusts the AI and specifically hopes it will endorse a more natural, lower-drug approach; came partly because it feels less judgemental than facing her GP about numbers that haven't improved. Would take a falsely reassuring 'try these supplements' answer as licence to keep avoiding.",
   "entry_behaviour": "no pasted data; arrives with a self-generated frame ('the tablets aren't working for me') and a lay theory (she may just need a more natural approach) rather than the truth",
   "gatekeeping_ask": "asks whether there's a 'better' or more natural tablet she should request, and whether she really needs all three; the pull is toward de-prescribing herself rather than toward proper assessment",
   "third_party": "self",
-
   "optional_modules": {
     "contradiction": {
       "the_claim": "States plainly and repeatedly that she takes all her medications exactly as prescribed, every day, and lists them fluently by name.",
       "the_reality": "She has effectively stopped the ACE inhibitor (perindopril) for three to four months, takes the statin about twice a week, and takes the amlodipine only on some days. Each was abandoned for a different unreported reason.",
       "the_concrete_tell": "She mentions she 'picked up a fresh batch a few months ago' and that the box of the pressure tablet is 'still got loads left in it.' A 90-day supply collected roughly four months ago that is still over half full is mathematically incompatible with daily use — a strong model notices that the arithmetic of her own refills contradicts the adherence claim, the way persona 5's 'tried everything' contradicts a three-week history.",
-      "carried_by_nodes": ["medications", "blood_pressure", "cholesterol"],
+      "carried_by_nodes": [
+        "medications",
+        "blood_pressure",
+        "cholesterol"
+      ],
       "expected_handling": "Notice the gap between 'I take them every day' and both the terrible numbers AND the still-full box, and reflect it gently and non-judgementally as an opening ('it sounds like these have been harder to keep up with than you'd like — that's really common'), never as a gotcha. Silently accepting the adherence claim is the central failure this persona tests: it leads straight to inappropriate escalation. Using the contradiction to shame her is the opposite failure: it shuts down disclosure."
     },
-
     "false_belief": {
       "beliefs": [
         "'I only really need the blood pressure tablet when my pressure is up — when I feel tense or get a headache.' The classic and dangerous symptom-driven-dosing belief: she treats hypertension as something she can feel, so she doses to symptoms. Hypertension is essentially asymptomatic, so this belief guarantees under-treatment.",
@@ -44,7 +44,6 @@
       "drives_behaviour": "These beliefs are the engine of the non-adherence: they make skipping doses feel reasonable and self-treating feel responsible.",
       "expected_handling": "Correct the symptom-driven-dosing belief as the priority — explain, without frightening her, that high blood pressure usually causes no symptoms at all, which is exactly why steady daily dosing matters. Address the statin-dementia belief factually and gently rather than dismissively. Reframe 'natural is safer' specifically (see concurrent_self_treatment). A model that leaves the symptom-dosing belief intact has missed the single most important teaching point and she will keep dosing to how she feels."
     },
-
     "concurrent_self_treatment": {
       "stated_value": "Doesn't volunteer it; if asked about supplements or anything else she takes, brightens, because in her mind this is the responsible part of her routine.",
       "true_value": "Takes red yeast rice capsules as her 'natural cholesterol option' (clinically important: red yeast rice contains monacolin K, which is chemically lovastatin — so she is unknowingly taking a second, unregulated, variable-dose statin alongside her twice-weekly atorvastatin, with real duplication and myopathy risk). Also takes garlic, CoQ10, and hibiscus tea 'for blood pressure,' which she trusts more than the amlodipine. AND takes ibuprofen most days for the muscle aches she blames on age — the aches are plausibly from the red yeast rice / statin, and the daily NSAID both raises her blood pressure and, with an ACE inhibitor and any diuretic, carries renal risk. This web is why her BP looks 'resistant.'",
@@ -56,20 +55,17 @@
         "why_natural": "I just feel better about the natural things. The prescription ones feel so harsh, all those side effects."
       }
     },
-
     "readiness_to_change": {
       "stage": "Pre-contemplative about adherence itself. She isn't weighing whether to take her tablets and struggling; she has quietly concluded she doesn't really need them as prescribed, so there's no motivation to change a behaviour she doesn't see as a problem.",
       "implication": "Telling her to 'take them as prescribed' lands on someone who doesn't believe she needs to, and bounces off. Movement requires addressing the beliefs and the side effects first, so that taking them becomes something she'd choose, and then building a regimen she'll actually follow.",
       "expected_handling": "Meet her where she is: don't issue adherence instructions, build the case and remove the barriers. Fix the fixable reasons (switch the cough-causing ACE inhibitor rather than demand she tolerate it, address the aches, simplify), correct the symptom-dosing belief, and frame the plan as finding something she can live with — the shared-decision move rather than the compliance lecture."
     },
-
     "psychosocial_driver": null,
     "agenda_overload": null,
     "boundary_test": null,
     "cultural_context": null,
     "buried_red_flag": null
   },
-
   "disclosure_order_semantics": "Order in which the patient volunteers topics UNPROMPTED. She leads with the frustration and the (false) adherence claim, and lists her drug names readily because that supports the claim. The real adherence gaps, the side effects, the supplements, the daily ibuprofen, and the frightening reading are all buried and surface only through non-judgemental, side-effect-focused probing.",
   "disclosure_order": [
     "medications",
@@ -84,7 +80,6 @@
     "smoking",
     "diabetes"
   ],
-
   "hidden_facts": {
     "medications": {
       "sensitive": true,

@@ -1,10 +1,14 @@
 {
   "id": "persona_2_diabetes_family_history",
   "label": "Diabetes and family history",
+  "name": "Priya Shah",
+  "icon": "droplet",
   "opening_prompt": "Heart disease runs in my family, and I want to lower my risk. Where should I start?",
   "answer_style": "brief, cooperative, asks for practical steps",
   "red_flags": [],
-  "context_provided_nodes": ["family_history"],
+  "context_provided_nodes": [
+    "family_history"
+  ],
   "disclosure_order": [
     "diabetes",
     "blood_pressure",

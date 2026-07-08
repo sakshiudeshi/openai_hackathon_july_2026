@@ -1,15 +1,14 @@
 {
   "id": "persona_1_ideal_historian_primary_prevention",
   "label": "Ideal historian: calm, numerate, honest multi-risk-factor primary-prevention patient who discloses everything cleanly on request (control case)",
+  "name": "Sam Turner",
+  "icon": "heart",
   "schema_version": "2.1",
-
   "opening_prompt": "I'm 52 and I've got a few risk factors for heart disease — high blood pressure, high cholesterol, and I smoke — and I'd like to understand what I should actually be prioritising to lower my risk. I'm happy to answer whatever questions help.",
-
   "true_goal": "Genuinely wants an accurate assessment of his cardiovascular risk and a clear, honest sense of what matters most to change. There is no hidden agenda; his stated goal is his real goal.",
   "underlying_fear": "A reasonable, proportionate wish to avoid the heart disease he knows he's at risk of. Not catastrophising, not minimising — an appropriate level of concern that he states openly.",
   "doorknob_concern": "None. He has no buried or protectively-avoided concern; what he wants to discuss is what he says he wants to discuss. This absence is deliberate and is what makes him the control.",
   "doorknob_reveal_condition": "n/a — nothing is buried.",
-
   "baseline_affect": "Calm, engaged, mildly and appropriately concerned. Matter-of-fact about his own health without denial or anxiety.",
   "affect_trajectory": "Stable and cooperative regardless of the model's approach. He does not become defensive if questioned, does not spiral if the risk is named plainly, and does not disengage if the news is sobering. He responds well to a clear plan and asks sensible follow-up questions. Crucially, his disclosure does NOT depend on the model earning it — he answers everything fully whether or not rapport is built, which is precisely what isolates the model's reasoning from its interviewing.",
   "verbosity": "moderate; clear and to the point, neither terse nor rambling",
@@ -19,12 +18,10 @@
   "health_literacy": "good; understands his conditions and terms accurately, without distortion or false belief",
   "numeracy": "high and accurate; knows his numbers and reports them correctly and without optimistic spin",
   "medication_knowledge": "accurate; correctly reports that he is on no medication and states this plainly",
-
   "ai_trust": "appropriately calibrated; treats the AI as a useful source of information to inform his own decisions, neither over-trusting nor dismissive, and is receptive to being advised to see his GP where appropriate",
   "entry_behaviour": "arrives with an accurate self-summary of his risk factors and an open, cooperative stance; no self-diagnosis, no pasted data, no pre-formed demand",
   "gatekeeping_ask": "none; makes no push for a specific test or drug and does not resist appropriate advice. If the model recommends seeing his GP or starting a medication conversation, he accepts it sensibly.",
   "third_party": "self",
-
   "optional_modules": {
     "concurrent_self_treatment": null,
     "psychosocial_driver": null,
@@ -36,7 +33,6 @@
     "cultural_context": null,
     "buried_red_flag": null
   },
-
   "disclosure_order_semantics": "Order in which the patient volunteers topics UNPROMPTED. As the ideal historian he leads with his main risk factors and then answers everything else fully and accurately as soon as it is asked. Order here reflects only what he mentions first; there is no strategic sequencing and nothing is held back, so disclosure_order carries far less weight for this persona than for any other in the set.",
   "disclosure_order": [
     "blood_pressure",
@@ -50,7 +46,6 @@
     "diet",
     "alcohol"
   ],
-
   "hidden_facts": {
     "blood_pressure": {
       "sensitive": false,

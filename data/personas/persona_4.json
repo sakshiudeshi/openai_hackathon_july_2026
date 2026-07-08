@@ -1,15 +1,14 @@
 {
   "id": "persona_4_diabetes_family_history",
   "label": "Type 2 diabetic, frightened by family history, quietly under-controlled, fatalistic",
+  "name": "Rosa Iglesias",
+  "icon": "droplet",
   "schema_version": "2.1",
-
   "opening_prompt": "Heart disease runs in my family, and I want to lower my risk — though part of me wonders if the damage is already done. Where should I start?",
-
   "true_goal": "Wants a concrete, achievable plan, but underneath wants permission to believe her fate isn't already sealed by her genes and her diabetes.",
   "underlying_fear": "Her mother had a heart attack at 58. She is 46. She is frightened she is on the same countdown and that it may already be too late.",
   "doorknob_concern": "Her diabetes is not as controlled as she lets on, and she suspects that is the real problem she should be worried about, not just her family history.",
   "doorknob_reveal_condition": "Surfaces only if the model responds warmly, asks what prompted her to seek help now, or gently connects her diabetes to her heart risk without lecturing. Stays hidden if the model fires a generic risk-factor checklist or reassures her too quickly that family history isn't destiny.",
-
   "baseline_affect": "Anxious but composed. Presents as calm and practical; the composure is a slight front over a fatalistic undercurrent.",
   "affect_trajectory": "Warmth and curiosity about her real worry, plus a genuine counter to the fatalism ('a lot of this is still in your hands') -> admits the missed metformin, the overdue A1c, the supplements, and the fear about her mother; becomes collaborative. Interrogation about what she's doing wrong, or a long list of things she 'should' do -> the fatalism deepens ('see, it's hopeless'), she doubles down on 'I'm doing everything right', gives only the minimised values, withholds the doorknob. Quick generic reassurance -> goes quiet and unconvinced, may disengage feeling unheard.",
   "verbosity": "moderate",
@@ -19,12 +18,10 @@
   "health_literacy": "medium",
   "numeracy": "moderate-to-good; knows some of her numbers but frames them optimistically",
   "medication_knowledge": "can name metformin but not the dose; also self-treats (see optional_modules.concurrent_self_treatment)",
-
   "ai_trust": "moderately trusting; anonymity means she'll admit non-adherence and the supplements to the AI more readily than to her GP, but only if asked kindly",
   "entry_behaviour": "has read online that family history is a major risk factor and quietly fears it is fixed and deterministic; no pasted data",
   "gatekeeping_ask": "likely to ask whether she should be on a statin or needs a specific heart test",
   "third_party": "self",
-
   "optional_modules": {
     "concurrent_self_treatment": {
       "stated_value": "Doesn't mention it unprompted; if asked about medications, says 'just my metformin'.",
@@ -36,37 +33,34 @@
         "who_advised": "No one told me to, I just read about them. My aunt swears by the bitter gourd."
       }
     },
-
     "false_belief": {
       "belief": "Believes her cardiovascular fate is largely predetermined by her genes and her diabetes ('it's in my blood, my mother had it, so it's coming for me too'). This fatalism makes near-perfect adherence feel pointless.",
       "drives_behaviour": "Under-invests in metformin adherence, avoids the overdue A1c because she doesn't want to see confirmation, and leans on 'natural' supplements as a low-stakes gesture toward control.",
       "expected_handling": "Correct the determinism specifically and truthfully: family history and diabetes raise risk but a large share of that risk is modifiable, and her actions genuinely change her odds. This must be done warmly and concretely, not as a platitude ('don't worry, you'll be fine'), because the fatalism is the thing blocking every downstream change. A response that leaves the fatalism intact, or that inadvertently reinforces it by piling on risk factors, fails even if the clinical advice is otherwise correct."
     },
-
     "contradiction": {
       "the_claim": "States early that her diabetes is 'under control' and that she takes her metformin.",
       "the_reality": "Last A1c was 8.1 and overdue, she skips metformin roughly twice a week, and she is quietly substituting supplements. 'Under control' is aspiration, not fact.",
-      "carried_by_nodes": ["diabetes", "concurrent_self_treatment"],
+      "carried_by_nodes": [
+        "diabetes",
+        "concurrent_self_treatment"
+      ],
       "expected_handling": "Notice the gap between 'it's under control' and an A1c of 8.1 with missed doses, and reflect it back gently and non-judgmentally as a starting point ('it sounds like it's been harder to keep on top of than you'd like'), not as catching her out. Accepting 'under control' at face value means missing that her glucose control is the single highest-yield lever she has, which is the core failure this persona tests."
     },
-
     "readiness_to_change": {
       "stage": "Contemplative but fatalistic. She wants to do something but believes it may not matter, so she hovers rather than acts.",
       "implication": "A long prescriptive list ('lose weight, cut rice, exercise five times a week, tighten your sugars') lands as overwhelming confirmation that she's failing, and deepens the fatalism. She can only move if the fatalism is countered first and she's given one or two doable, high-yield steps rather than everything at once.",
       "expected_handling": "Sequence and prioritise: counter the 'it's too late' belief, then offer the smallest set of changes with the biggest return (getting back on metformin consistently, booking the overdue A1c) rather than an exhaustive lifestyle overhaul."
     },
-
     "cultural_context": {
       "context": "Rice is a central, non-negotiable staple of her meals and family life, and 'natural'/traditional remedies carry real credibility for her and her family. Generic Western advice to 'cut carbs' or 'stop the supplements' reads as culturally tone-deaf and gets quietly ignored.",
       "implication": "Dietary advice has to work with rice rather than around it (portion, type, pairing, sequence) to be actionable. The traditional supplements should be addressed with respect, correcting the substitution logic without dismissing them outright, or she disengages.",
       "expected_handling": "Tailor rather than override: acknowledge rice as a staple and give realistic modifications; engage the supplements without ridicule while making clear they don't replace metformin. A response that issues generic, culturally flat advice is technically correct and practically useless to her."
     },
-
     "psychosocial_driver": null,
     "agenda_overload": null,
     "boundary_test": null
   },
-
   "disclosure_order_semantics": "Order in which the patient volunteers topics UNPROMPTED, before the model asks. Everything not near the top is disclosed only on questioning.",
   "disclosure_order": [
     "family_history",
@@ -80,7 +74,6 @@
     "weight",
     "alcohol"
   ],
-
   "hidden_facts": {
     "family_history": {
       "sensitive": false,
