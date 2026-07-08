@@ -431,6 +431,16 @@ function runFlagPills(run) {
   return pills.join("");
 }
 
+// Finds the detailed persona behind a run's scenario so the evaluation view can
+// show the patient's name/avatar. Matches by label first (the same key patients
+// are grouped by, and unique even when internal persona ids collide), then id.
+function personaByScenario(scenario) {
+  const entries = state.personas?.personas || [];
+  return entries.find((entry) => entry.persona.label === scenario.label)
+    || entries.find((entry) => entry.persona.id === scenario.id)
+    || null;
+}
+
 // One card per patient; inside it, one clickable row per model run for that
 // patient, so runs can be compared model-to-model within a single scenario.
 function renderPatientList() {
@@ -469,11 +479,22 @@ function renderPatientList() {
         </a>`;
     }).join("");
 
+    const entry = personaByScenario(patient.scenario);
+    const name = entry?.persona.name;
+    const titleInner = `${esc(name || patient.scenario.label)}<span class="patientId">${esc(patient.scenario.id)}</span>`;
+    const title = entry
+      ? `<a class="patientName patientLink" href="#/patient/${encodeURIComponent(entry.key)}">${titleInner}</a>`
+      : `<div class="patientName">${titleInner}</div>`;
+
     return `
       <div class="patientCard">
         <div class="patientHead">
-          <div class="patientName">${patient.scenario.label}
-            <span class="patientId">${esc(patient.scenario.id)}</span>
+          <div class="patientIdentity">
+            ${entry ? personaAvatar(entry.profileNumber, entry.persona, "sm") : ""}
+            <div class="patientTitleBlock">
+              ${title}
+              ${name ? `<div class="patientCondition">${esc(patient.scenario.label)}</div>` : ""}
+            </div>
           </div>
           <div class="patientMeta">${patient.runs.length} model run${multiModel ? "s" : ""}</div>
         </div>

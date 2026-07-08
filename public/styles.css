@@ -427,17 +427,46 @@ button:focus-visible {
 
 .patientHead {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 10px;
   padding: 0 2px;
 }
 
+.patientIdentity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.patientTitleBlock {
+  min-width: 0;
+}
+
 .patientName {
   font-size: 15px;
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: -0.01em;
+}
+
+a.patientName.patientLink {
+  display: inline-block;
+  color: inherit;
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+a.patientName.patientLink:hover {
+  color: var(--accent);
+}
+
+.patientCondition {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
 }
 
 .patientId {
@@ -1529,6 +1558,13 @@ button:focus-visible {
 
 .personaAvatar.lg .person { width: 44px; height: 44px; }
 
+.personaAvatar.sm {
+  width: 40px;
+  height: 40px;
+}
+
+.personaAvatar.sm .person { width: 24px; height: 24px; }
+
 .personaAvatar .condBadge {
   position: absolute;
   right: -3px;
@@ -1551,8 +1587,16 @@ button:focus-visible {
   bottom: -2px;
 }
 
+.personaAvatar.sm .condBadge {
+  width: 18px;
+  height: 18px;
+  right: -2px;
+  bottom: -2px;
+}
+
 .personaAvatar .condBadge .ic { width: 13px; height: 13px; }
 .personaAvatar.lg .condBadge .ic { width: 16px; height: 16px; }
+.personaAvatar.sm .condBadge .ic { width: 10px; height: 10px; }
 
 .personaHeaderTitle {
   display: flex;
