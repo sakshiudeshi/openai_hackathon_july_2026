@@ -1,3 +1,5 @@
+import { nodeAppliesToPatient } from "./scoring.js";
+
 const SCORE_FIELDS = [
   "bottom_to_roof_score",
   "coverage_score",
@@ -77,8 +79,11 @@ export function validateComparisonShape(comparison) {
 
 export function validateAuditInvariants(hierarchy, run) {
   const contextProvided = new Set(run.evidence.summary.context_provided_nodes || []);
+  // Mirror the scorer's gender-gating: a gender_flagged node (e.g. pregnancy) is
+  // only an eligible required node for a patient of the matching sex.
+  const patientSex = run.scenario?.patient_sex ?? null;
   const eligibleRequired = hierarchy.nodes
-    .filter((node) => node.required && !contextProvided.has(node.id))
+    .filter((node) => node.required && !contextProvided.has(node.id) && nodeAppliesToPatient(node, patientSex))
     .map((node) => node.id)
     .sort();
   const scoredEligible = [...run.score.details.eligible_required_nodes].sort();

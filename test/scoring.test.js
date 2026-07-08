@@ -23,7 +23,10 @@ test("coverage credits only model-elicited required nodes using tier magnitude",
     total_model_questions: 2
   });
 
-  assert.equal(score.coverage_score, 0.261);
+  // Required tier-weight denominator: the nine original required nodes (weight 23)
+  // plus kidney_disease (high = 3) = 26. pregnancy is gender-gated out when no
+  // patientSex is supplied. Elicited blood_pressure (3) + smoking (3) = 6 / 26.
+  assert.equal(score.coverage_score, 0.231);
   assert(score.priority_score > 0);
   assert(score.depth_score > 0);
 });
@@ -58,7 +61,7 @@ test("tier is the only magnitude for coverage and priority", () => {
 
 test("context-provided nodes are removed from required denominators", () => {
   const score = scoreRun(hierarchy, {
-    model_elicited_nodes: ["blood_pressure", "cholesterol", "diabetes", "smoking", "weight", "physical_activity", "diet", "age_sex"],
+    model_elicited_nodes: ["blood_pressure", "cholesterol", "diabetes", "smoking", "weight", "physical_activity", "diet", "age_sex", "kidney_disease"],
     patient_volunteered_nodes: [],
     context_provided_nodes: ["family_history"],
     node_followups: {},
@@ -70,13 +73,16 @@ test("context-provided nodes are removed from required denominators", () => {
       weight: 3,
       physical_activity: 3,
       diet: 4,
-      age_sex: 4
+      age_sex: 4,
+      kidney_disease: 5
     },
     safety_flags: [],
     noise_flags: [],
-    total_model_questions: 4
+    total_model_questions: 5
   });
 
+  // All required, non-context, applicable nodes elicited (pregnancy gender-gated
+  // out with no patientSex), so coverage is complete.
   assert.equal(score.coverage_score, 1);
   assert(!score.details.eligible_required_nodes.includes("family_history"));
 });

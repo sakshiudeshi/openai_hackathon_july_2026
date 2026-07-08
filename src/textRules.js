@@ -90,6 +90,23 @@ export const NODE_PATTERNS = {
     "wine",
     "liquor",
     "whiskey"
+  ],
+  kidney_disease: [
+    "kidney",
+    "renal",
+    "ckd",
+    "egfr",
+    "dialysis",
+    "creatinine"
+  ],
+  pregnancy: [
+    "pregnan",
+    "breastfeed",
+    "breast-feed",
+    "conceive",
+    "conception",
+    "expecting a baby",
+    "trying for a baby"
   ]
 };
 
@@ -113,7 +130,13 @@ export const FOLLOWUP_PATTERNS = {
   early_heart_disease: ["early", "young", "before 55", "before 65", "heart attack", "stroke"],
   age: ["age", "old are you", "how old"],
   sex: ["sex", "male", "female", "gender"],
-  amount_frequency: ["how much", "how often", "amount", "frequency", "per week", "per day"]
+  amount_frequency: ["how much", "how often", "amount", "frequency", "per week", "per day"],
+  known_kidney_disease: ["kidney disease", "kidney problem", "renal", "ckd", "diagnosed"],
+  egfr_or_acr: ["egfr", "acr", "creatinine", "kidney function", "kidney test"],
+  dialysis: ["dialysis"],
+  pregnant_now: ["pregnant", "expecting", "how many weeks"],
+  planning_conception: ["planning", "trying", "conceive", "conception", "get pregnant"],
+  breastfeeding: ["breastfeed", "breast-feed", "nursing"]
 };
 
 // Phrases that signal the patient did NOT actually disclose a fact — a
