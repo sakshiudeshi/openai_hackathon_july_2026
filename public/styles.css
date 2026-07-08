@@ -733,11 +733,24 @@ button:focus-visible {
 }
 
 .subPanel > h3 {
+  display: flex;
+  align-items: center;
+  gap: 7px;
   margin-bottom: 4px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--muted);
   font-size: 11px;
+}
+
+.subPanel > h3 .ic {
+  color: var(--accent);
+  width: 15px;
+  height: 15px;
+}
+
+.modulecard.redflag > h3 .ic {
+  color: var(--bad);
 }
 
 .subPanelHint {
@@ -1407,6 +1420,116 @@ button:focus-visible {
   color: var(--ink-dim);
   font-style: normal;
   font-weight: 600;
+}
+
+/* ---------- Inline icons ---------- */
+.ic {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  vertical-align: -0.14em;
+  flex: none;
+}
+
+/* Stat-tile corner icon */
+.statTile { padding-right: 46px; }
+
+.tileIcon {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: 1px solid rgba(56, 224, 207, 0.3);
+}
+
+.tileIcon .ic { width: 17px; height: 17px; }
+
+/* Chip icons sit tight to their label */
+.personaChip .ic { width: 12px; height: 12px; margin-right: 4px; }
+.personaChip.rich .ic { color: var(--violet); }
+.personaChip.flag .ic { color: var(--bad); }
+
+/* ---------- Persona avatar (SVG portrait + condition badge) ---------- */
+.personaCardTop {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+}
+
+.personaCardMeta {
+  min-width: 0;
+  flex: 1;
+}
+
+.personaCardMeta .personaCardHead { margin-bottom: 6px; }
+.personaCardMeta .personaLabel { margin-bottom: 0; }
+
+.personaAvatar {
+  --h: 190;
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 34%, hsl(var(--h) 80% 60% / 0.4), transparent 68%),
+    linear-gradient(158deg, hsl(var(--h) 55% 26%), var(--panel-3));
+  border: 1px solid hsl(var(--h) 60% 52% / 0.55);
+  box-shadow:
+    0 0 16px hsl(var(--h) 80% 55% / 0.28),
+    inset 0 1px 6px hsl(var(--h) 70% 60% / 0.25);
+}
+
+.personaAvatar .person {
+  width: 34px;
+  height: 34px;
+  color: hsl(var(--h) 85% 84%);
+}
+
+.personaAvatar.lg {
+  width: 74px;
+  height: 74px;
+}
+
+.personaAvatar.lg .person { width: 44px; height: 44px; }
+
+.personaAvatar .condBadge {
+  position: absolute;
+  right: -3px;
+  bottom: -3px;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  color: hsl(var(--h) 85% 78%);
+  background: var(--panel);
+  border: 1px solid hsl(var(--h) 55% 48% / 0.6);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+.personaAvatar.lg .condBadge {
+  width: 30px;
+  height: 30px;
+  right: -2px;
+  bottom: -2px;
+}
+
+.personaAvatar .condBadge .ic { width: 13px; height: 13px; }
+.personaAvatar.lg .condBadge .ic { width: 16px; height: 16px; }
+
+.personaHeaderTitle {
+  display: flex;
+  align-items: center;
+  gap: 16px;
 }
 
 /* ---------- Respect reduced-motion: still glowing, just still ---------- */

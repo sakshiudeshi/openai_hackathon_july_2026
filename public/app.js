@@ -26,6 +26,84 @@ function score(value) {
   return Number(value || 0).toFixed(3);
 }
 
+/* ---------- Inline SVG icons ----------
+   Small, themeable line/solid icons drawn in code (no external assets, so the
+   dashboard stays self-contained). They inherit `currentColor` and are sized
+   with the `.ic` class in CSS. */
+const strokeSvg = (inner) =>
+  `<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${inner}</svg>`;
+const fillSvg = (inner) =>
+  `<svg class="ic" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true">${inner}</svg>`;
+
+const ICONS = {
+  message: strokeSvg(`<path d="M4 5h16v11H9l-4 3v-3H4z"/>`),
+  clipboard: strokeSvg(`<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4h6M7.5 12h2l1-2 2 4 1-2h2.5"/>`),
+  sliders: strokeSvg(`<path d="M4 8h8M18 8h2M4 16h2M12 16h8"/><circle cx="15" cy="8" r="2.2"/><circle cx="9" cy="16" r="2.2"/>`),
+  lock: strokeSvg(`<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>`),
+  ordered: strokeSvg(`<circle cx="5" cy="7" r="1.4"/><circle cx="5" cy="12" r="1.4"/><circle cx="5" cy="17" r="1.4"/><path d="M9 7h11M9 12h11M9 17h11"/>`),
+  flag: strokeSvg(`<path d="M5 21V4M5 4h11l-2 4 2 4H5"/>`),
+  sparkles: fillSvg(`<path d="M12 3l1.4 4.2L18 9l-4.6 1.8L12 15l-1.4-4.2L6 9l4.6-1.8z"/><path d="M18.5 14l.7 2.1 2.1.7-2.1.7-.7 2.1-.7-2.1-2.1-.7 2.1-.7z"/>`),
+  layers: strokeSvg(`<path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/>`),
+  heart: fillSvg(`<path d="M12 20.5C6.5 17 3 13.4 3 9.6 3 7 5 5.2 7.4 5.2c1.7 0 3.2 1 3.9 2.4h1.4c.7-1.4 2.2-2.4 3.9-2.4C20.9 5.2 23 7 23 9.6c0 .1 0 .1 0 .2 0-.1-.4 0-9 .2z"/><path d="M12 20.5C6.5 17 3 13.4 3 9.6 3 7 5 5.2 7.4 5.2c1.7 0 3.2 1 3.9 2.4h1.4c.7-1.4 2.2-2.4 3.9-2.4C19 5.2 21 7 21 9.6c0 3.8-3.5 7.4-9 10.9z"/>`),
+  droplet: fillSvg(`<path d="M12 3s6 6.4 6 10.4A6 6 0 0 1 6 13.4C6 9.4 12 3 12 3z"/>`),
+  gauge: strokeSvg(`<path d="M4 15a8 8 0 0 1 16 0"/><path d="M13.5 12.5L16 10.5"/><circle cx="12" cy="15" r="1.1" fill="currentColor" stroke="none"/>`),
+  activity: strokeSvg(`<path d="M3 12h4l3 8 4-16 3 8h4"/>`),
+  smoke: strokeSvg(`<path d="M3 8h9a3 3 0 1 0 0-6M3 12h13a3 3 0 1 1 0 6M3 16h6"/>`),
+  users: strokeSvg(`<circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="M16 6a3 3 0 0 1 0 6M21 20c0-2.5-1.4-4.6-3.5-5.5"/>`),
+  shield: strokeSvg(`<path d="M12 3l8 3v6c0 5-4 8-8 9-4-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/>`),
+  bars: strokeSvg(`<path d="M3 21h18"/><path d="M6 18v-6M12 18V6M18 18v-9"/>`),
+  trending: strokeSvg(`<path d="M3 17l6-6 4 4 8-8"/><path d="M17 7h4v4"/>`),
+  sitemap: strokeSvg(`<rect x="9" y="3" width="6" height="4" rx="1"/><rect x="3" y="17" width="6" height="4" rx="1"/><rect x="15" y="17" width="6" height="4" rx="1"/><path d="M12 7v4M6 17v-2h12v2"/>`),
+  alert: strokeSvg(`<path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17.5v.5"/>`),
+  info: strokeSvg(`<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.4"/>`),
+  award: strokeSvg(`<circle cx="12" cy="9" r="5"/><path d="M9 13.4l-1.2 6.6L12 18l4.2 2-1.2-6.6"/>`),
+  target: strokeSvg(`<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="0.6" fill="currentColor" stroke="none"/>`),
+  grid: strokeSvg(`<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>`)
+};
+
+function icon(name) {
+  return ICONS[name] || "";
+}
+
+// Renders one overview stat tile, with an optional corner icon.
+function statTile(tile) {
+  return `
+    <div class="statTile">
+      ${tile.icon ? `<span class="tileIcon">${icon(tile.icon)}</span>` : ""}
+      <div class="statLabel">${tile.label}</div>
+      <div class="statValue">${tile.value}</div>
+      <div class="statSub">${tile.sub}</div>
+    </div>`;
+}
+
+// Guess a fitting condition icon from a patient's label so each profile gets a
+// badge that matches its scenario.
+function conditionIcon(label) {
+  const text = String(label || "").toLowerCase();
+  if (/smok|tobacco|cigar/.test(text)) return "smoke";
+  if (/cholesterol|lipid|ldl|hdl/.test(text)) return "droplet";
+  if (/diabet|glucose|sugar|a1c|prediab/.test(text)) return "droplet";
+  if (/blood pressure|hypertens|\bbp\b/.test(text)) return "gauge";
+  if (/sedentary|inactiv|exercise|activity/.test(text)) return "activity";
+  if (/family|history|hereditary|genetic/.test(text)) return "users";
+  return "heart";
+}
+
+// A per-persona portrait avatar. Hue is derived from the profile number so each
+// patient reads as a distinct "specimen", with a condition badge overlaid.
+function personaAvatar(profileNumber, label, size = "") {
+  const hue = (Number(profileNumber || 1) * 53 + 168) % 360;
+  const cond = conditionIcon(label);
+  return `
+    <span class="personaAvatar ${size}" style="--h:${hue}" aria-hidden="true">
+      <svg class="person" viewBox="0 0 24 24" fill="currentColor">
+        <circle cx="12" cy="8.5" r="3.9"/>
+        <path d="M4.5 21c0-4.3 3.4-7.3 7.5-7.3s7.5 3 7.5 7.3z"/>
+      </svg>
+      <span class="condBadge">${icon(cond)}</span>
+    </span>`;
+}
+
 /* ---------- Metric knowledge base ---------- */
 // dir "up" => higher is better; dir "down" => lower is better (a penalty).
 const METRIC_INFO = {
@@ -198,24 +276,20 @@ function renderListPage() {
   const totalSafety = runs.reduce((sum, run) => sum + (run.score.details.safety_flags || []).length, 0);
 
   const tiles = [
-    { label: "Runs", value: runs.length, sub: `${models.length} models &times; ${scenarios.length} scenarios` },
+    { icon: "grid", label: "Runs", value: runs.length, sub: `${models.length} models &times; ${scenarios.length} scenarios` },
     {
+      icon: "award",
       label: "Top model",
       value: best ? best.model_config.label : "—",
       sub: best ? `Avg score ${score(best.score.bottom_to_roof_score)}` : ""
     },
-    { label: "Mean run score", value: score(avg), sub: "Bottom-to-roof composite" },
-    { label: "Safety flags", value: totalSafety, sub: `${totalMissed} required nodes missed` }
+    { icon: "target", label: "Mean run score", value: score(avg), sub: "Bottom-to-roof composite" },
+    { icon: "shield", label: "Safety flags", value: totalSafety, sub: `${totalMissed} required nodes missed` }
   ];
 
   app().innerHTML = `
     <section class="overview">
-      ${tiles.map((tile) => `
-        <div class="statTile">
-          <div class="statLabel">${tile.label}</div>
-          <div class="statValue">${tile.value}</div>
-          <div class="statSub">${tile.sub}</div>
-        </div>`).join("")}
+      ${tiles.map(statTile).join("")}
     </section>
 
     <section class="band">
@@ -469,34 +543,34 @@ function renderRunBody(run) {
     <div class="runBody detailBody">
       <div class="detailGrid">
         <div class="subPanel">
-          <h3>Score breakdown</h3>
+          <h3>${icon("bars")}Score breakdown</h3>
           <div class="subPanelHint">How the composite score is built, and what each metric means for this run.</div>
           ${renderScoreBreakdown(run)}
         </div>
         <div class="subPanel">
-          <h3>Score progression</h3>
+          <h3>${icon("trending")}Score progression</h3>
           <div class="subPanelHint">Running composite score after each turn.</div>
           ${renderProgression(run)}
-          <h3 style="margin-top:16px">Missed high-priority nodes</h3>
+          <h3 style="margin-top:16px">${icon("alert")}Missed high-priority nodes</h3>
           ${renderMissed(run)}
         </div>
       </div>
       <div class="detailGrid">
         <div class="subPanel">
-          <h3>Hierarchy audit</h3>
+          <h3>${icon("sitemap")}Hierarchy audit</h3>
           <div class="subPanelHint">Every hierarchy node and how it was (or was not) surfaced.</div>
           ${renderHierarchy(run)}
         </div>
         <div class="subPanel">
-          <h3>Safety &amp; noise flags</h3>
+          <h3>${icon("shield")}Safety &amp; noise flags</h3>
           <div class="subPanelHint">Evaluator-detected issues that moved the score.</div>
           ${renderFlags(run)}
-          <h3 style="margin-top:16px">Run metadata</h3>
+          <h3 style="margin-top:16px">${icon("info")}Run metadata</h3>
           ${renderMetadata(run)}
         </div>
       </div>
       <div class="subPanel">
-        <h3>Transcript evidence</h3>
+        <h3>${icon("message")}Transcript evidence</h3>
         <div class="subPanelHint">Conversation with per-turn evaluator labels.</div>
         ${renderTranscript(run)}
       </div>
@@ -686,21 +760,16 @@ function renderPatientsPage() {
   const rich = entries.filter((entry) => isRichPersona(entry.persona)).length;
   const withRedFlag = entries.filter((entry) => buriedRedFlag(entry.persona)).length;
   const tiles = [
-    { label: "Patient profiles", value: entries.length, sub: "Personas in the test set" },
-    { label: "Rich personas", value: rich, sub: `${entries.length - rich} flat scripted` },
-    { label: "Buried red flags", value: withRedFlag, sub: "Sentinel symptoms to surface" }
+    { icon: "users", label: "Patient profiles", value: entries.length, sub: "Personas in the test set" },
+    { icon: "sparkles", label: "Rich personas", value: rich, sub: `${entries.length - rich} flat scripted` },
+    { icon: "flag", label: "Buried red flags", value: withRedFlag, sub: "Sentinel symptoms to surface" }
   ];
 
   const cards = entries.map((entry) => renderPersonaCard(entry)).join("");
 
   app().innerHTML = `
     <section class="overview">
-      ${tiles.map((tile) => `
-        <div class="statTile">
-          <div class="statLabel">${tile.label}</div>
-          <div class="statValue">${tile.value}</div>
-          <div class="statSub">${tile.sub}</div>
-        </div>`).join("")}
+      ${tiles.map(statTile).join("")}
     </section>
 
     <section class="band">
@@ -721,22 +790,27 @@ function renderPersonaCard(entry) {
   const rich = isRichPersona(persona);
   const redFlag = buriedRedFlag(persona);
   const chips = [
-    `<span class="personaChip">${hiddenFactCount(persona)} hidden facts</span>`,
+    `<span class="personaChip">${icon("lock")}${hiddenFactCount(persona)} hidden facts</span>`,
     rich
-      ? `<span class="personaChip rich">rich</span>`
+      ? `<span class="personaChip rich">${icon("sparkles")}rich</span>`
       : `<span class="personaChip flat">flat</span>`
   ];
-  if (redFlag) chips.push(`<span class="personaChip flag">buried red flag</span>`);
+  if (redFlag) chips.push(`<span class="personaChip flag">${icon("flag")}buried red flag</span>`);
 
+  const label = persona.label || persona.id;
   return `
     <a class="personaCard" href="#/patient/${encodeURIComponent(key)}">
-      <div class="personaCardHead">
-        <span class="personaNum">#${profileNumber}</span>
-        <span class="personaChips">${chips.join("")}</span>
+      <div class="personaCardTop">
+        ${personaAvatar(profileNumber, label)}
+        <div class="personaCardMeta">
+          <div class="personaCardHead">
+            <span class="personaNum">#${profileNumber}</span>
+            <span class="personaChips">${chips.join("")}</span>
+          </div>
+          <div class="personaLabel">${esc(label)}</div>
+        </div>
       </div>
-      <div class="personaLabel">${esc(persona.label || persona.id)}</div>
       ${persona.opening_prompt ? `<div class="personaOpening">&ldquo;${esc(persona.opening_prompt)}&rdquo;</div>` : ""}
-      <span class="rowGo" aria-hidden="true">&#9656;</span>
     </a>`;
 }
 
@@ -781,7 +855,7 @@ function renderDisclosureOrder(persona) {
     `<span class="orderChip"><span class="orderNum">${index + 1}</span>${esc(labelForNode(nodeId))}</span>`).join("");
   return `
     <div class="subPanel">
-      <h3>Disclosure order</h3>
+      <h3>${icon("ordered")}Disclosure order</h3>
       <div class="subPanelHint">Order in which the patient volunteers topics unprompted.</div>
       <div class="orderChips">${chips}</div>
     </div>`;
@@ -821,7 +895,7 @@ function renderOptionalModules(persona) {
   if (!modules.length) return "";
   return modules.map(([name, mod]) => `
     <div class="subPanel modulecard ${name === "buried_red_flag" ? "redflag" : ""}">
-      <h3>${titleize(name)}</h3>
+      <h3>${icon(name === "buried_red_flag" ? "flag" : "layers")}${titleize(name)}</h3>
       ${renderKeyVals(mod)}
     </div>`).join("");
 }
@@ -854,7 +928,7 @@ function renderBehaviourProfile(persona) {
   if (!Object.keys(present).length) return "";
   return `
     <div class="subPanel">
-      <h3>Behavioural profile</h3>
+      <h3>${icon("sliders")}Behavioural profile</h3>
       <div class="subPanelHint">How this patient talks, trusts, and decides — the levers the model must read.</div>
       ${renderKeyVals(present)}
     </div>`;
@@ -878,27 +952,31 @@ function renderPatientDetailPage(key) {
     doorknob_reveal_condition: persona.doorknob_reveal_condition
   });
 
+  const label = persona.label || persona.id;
   app().innerHTML = `
     <a class="backLink" href="#/patients">&#8592; Back to patient profiles</a>
     <section class="band detailHeader personaHeader">
-      <div class="detailTitle">
-        <div class="runModel">
-          <span class="personaNum">#${profileNumber}</span>
-          <span class="personaChip ${rich ? "rich" : "flat"}">${rich ? "rich" : "flat"}</span>
+      <div class="personaHeaderTitle">
+        ${personaAvatar(profileNumber, label, "lg")}
+        <div class="detailTitle">
+          <div class="runModel">
+            <span class="personaNum">#${profileNumber}</span>
+            <span class="personaChip ${rich ? "rich" : "flat"}">${rich ? `${icon("sparkles")}rich` : "flat"}</span>
+          </div>
+          <div class="runScenario">${esc(label)}</div>
         </div>
-        <div class="runScenario">${esc(persona.label || persona.id)}</div>
       </div>
     </section>
 
     <div class="runBody detailBody">
       <div class="subPanel">
-        <h3>Opening line</h3>
+        <h3>${icon("message")}Opening line</h3>
         <div class="personaOpeningFull">&ldquo;${esc(persona.opening_prompt || "—")}&rdquo;</div>
       </div>
 
       ${brief ? `
       <div class="subPanel">
-        <h3>Clinical brief</h3>
+        <h3>${icon("clipboard")}Clinical brief</h3>
         <div class="subPanelHint">What the patient really wants, fears, and is holding back.</div>
         ${brief}
       </div>` : ""}
@@ -908,7 +986,7 @@ function renderPatientDetailPage(key) {
       ${renderDisclosureOrder(persona)}
 
       <div class="subPanel">
-        <h3>Hidden facts</h3>
+        <h3>${icon("lock")}Hidden facts</h3>
         <div class="subPanelHint">Per risk factor: what the patient says at first versus what is actually true, and what makes it surface.</div>
         ${renderHiddenFacts(persona)}
       </div>
