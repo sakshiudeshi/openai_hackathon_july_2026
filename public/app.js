@@ -768,6 +768,7 @@ function renderModelSummary() {
         </td>
         <td class="msRuns">${runCount}</td>
         <td class="msCoverage">${score(model.score.coverage_score)}</td>
+        <td class="msEfficiency">${score(model.score.coverage_efficiency_score)}</td>
         <td class="msScore"><span class="headlineValue ${level}">${score(composite)}</span></td>
       </tr>`;
     })
@@ -779,6 +780,7 @@ function renderModelSummary() {
           <th>Model</th>
           <th>Runs</th>
           <th>Avg coverage</th>
+          <th>Avg efficiency</th>
           <th>Avg score</th>
         </tr>
       </thead>

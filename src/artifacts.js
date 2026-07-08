@@ -18,7 +18,7 @@ export function loadHierarchy() {
   return parseHierarchyYaml(readText("data/hierarchy/cardiovascular_risk_v0.yaml"));
 }
 
-export const DEFAULT_SYSTEM_PROMPT_PATH = "data/prompts/tested_model_system_prompt_v0.txt";
+export const DEFAULT_SYSTEM_PROMPT_PATH = "data/prompts/tested_model_system_prompt_simple.txt";
 
 export function loadSystemPromptFrom(relativePath) {
   return readText(relativePath).trim();

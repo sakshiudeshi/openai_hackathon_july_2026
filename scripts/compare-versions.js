@@ -1,9 +1,9 @@
 // Runs one or more personas through two model-config versions and prints the
 // scores side by side. Handy for eyeballing the effect of a prompt-version bump
-// (e.g. prompt v0 vs prompt coach) on the same base model.
+// (e.g. prompt simple vs prompt coach) on the same base model.
 //
 //   node scripts/compare-versions.js --personas 4
-//   node scripts/compare-versions.js --personas 4,5,6 --configs gpt_5_5_prompt_v0,gpt_5_5_prompt_coach
+//   node scripts/compare-versions.js --personas 4,5,6 --configs gpt_5_5_prompt_simple,gpt_5_5_prompt_coach
 //   node scripts/compare-versions.js --personas 4,5,6 --concurrency 6
 //   node scripts/compare-versions.js --personas 4 --engine scripted
 //
@@ -72,7 +72,7 @@ if (personas.length === 0) {
 }
 
 // The two versions to compare. Defaults to the two prompt versions of GPT-5.5.
-const configIds = argValue("--configs", "gpt_5_5_prompt_v0,gpt_5_5_prompt_coach")
+const configIds = argValue("--configs", "gpt_5_5_prompt_simple,gpt_5_5_prompt_coach")
   .split(",")
   .map((id) => id.trim());
 const allConfigs = loadModelConfigs(configPath);

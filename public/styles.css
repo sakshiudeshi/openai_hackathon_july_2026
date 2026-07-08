@@ -486,10 +486,11 @@ button:focus-visible {
   border-bottom: none;
 }
 
-.modelSummary .msRuns,
-.modelSummary .msCoverage,
-.modelSummary .msScore {
-  text-align: right;
+/* Numeric columns (everything after the model name) are centered, headers
+   included, so the values line up under their labels. */
+.modelSummary th:not(:first-child),
+.modelSummary td:not(:first-child) {
+  text-align: center;
   white-space: nowrap;
 }
 

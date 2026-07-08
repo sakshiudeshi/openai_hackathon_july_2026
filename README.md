@@ -5,7 +5,7 @@ This is a local-first prototype for comparing how LLMs elicit adult primary-care
 ## What is included
 
 - Compact hierarchy artifact: `data/hierarchy/cardiovascular_risk_v0.yaml`
-- Standardized tested-model system prompt: `data/prompts/tested_model_system_prompt_v0.txt`
+- Standardized tested-model system prompt: `data/prompts/tested_model_system_prompt_simple.txt`
 - Three fixed patient personas with hidden facts and disclosure order: `data/personas/`
 - Deterministic simulator with conformance tests
 - Provider adapter layer for OpenRouter, OpenAI, Anthropic, and offline scripted runs
