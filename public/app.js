@@ -1280,6 +1280,330 @@ function renderPersonaCard(entry) {
     </a>`;
 }
 
+/* =====================================================================
+   GROUND TRUTH EVALUATION — how well each run matched the patient's true
+   underlying picture, graded L0..L4 against data/Truths by the LLM judge
+   (scripts/judge-truth-match.js writes run.truth_match into the comparison file).
+   ===================================================================== */
+
+// One colour band + short name per level rank. The specific level label comes
+// from the verdict (truth_match.level_label); rank drives the colour.
+const GT_LEVELS = [
+  { rank: 4, name: "Complete picture", cls: "gtL4" },
+  { rank: 3, name: "Gets the mechanism", cls: "gtL3" },
+  { rank: 2, name: "Questions the surface", cls: "gtL2" },
+  { rank: 1, name: "Right zone, wrong depth", cls: "gtL1" },
+  { rank: 0, name: "Wrong picture", cls: "gtL0" },
+];
+
+function gtLevelMeta(rank) {
+  return GT_LEVELS.find((level) => level.rank === rank) || GT_LEVELS[4];
+}
+
+function gtLevelPill(tm) {
+  const meta = gtLevelMeta(tm.level_rank);
+  const id = tm.matched_tag || tm.matched_level || `L${tm.level_rank}`;
+  const conf =
+    tm.confidence == null
+      ? ""
+      : `<span class="gtConf" title="Judge confidence">${Math.round(tm.confidence * 100)}%</span>`;
+  return `<span class="gtPill ${meta.cls}"><span class="gtPillId">${esc(id)}</span>${esc(tm.level_label || meta.name)}</span>${conf}`;
+}
+
+function renderGroundTruthPage() {
+  const runs = allRuns();
+  const judged = runs.filter((run) => run.truth_match);
+  const unjudged = runs.filter((run) => !run.truth_match);
+
+  const judgeModel = judged[0]?.truth_match?.judge_model || "—";
+  const ranks = judged.map((run) => run.truth_match.level_rank);
+  const mean = ranks.length
+    ? (ranks.reduce((sum, r) => sum + r, 0) / ranks.length).toFixed(2)
+    : "—";
+  const atL3 = ranks.filter((r) => r >= 3).length;
+  const atL0 = ranks.filter((r) => r === 0).length;
+
+  const tiles = [
+    { icon: "clipboard", label: "Runs judged", value: `${judged.length}`, sub: `of ${runs.length} on the dashboard` },
+    { icon: "trending", label: "Mean level", value: `${mean}<span class="den"> / 4</span>`, sub: "closeness to ground truth" },
+    { icon: "shield", label: "Reached mechanism", value: `${atL3}`, sub: "L3+ (got the real driver)" },
+    { icon: "alert", label: "Wrong picture", value: `${atL0}`, sub: "L0 (missed the truth)" },
+  ];
+
+  // Distribution across levels (L4 down to L0).
+  const dist = GT_LEVELS.map((level) => ({
+    ...level,
+    count: ranks.filter((r) => r === level.rank).length,
+  }));
+  const distMax = Math.max(1, ...dist.map((d) => d.count));
+  const distBar = dist
+    .map(
+      (d) => `
+      <div class="gtDistRow">
+        <span class="gtDistLabel"><span class="gtDot ${d.cls}"></span>L${d.rank} · ${d.name}</span>
+        <span class="gtDistTrack"><span class="gtDistFill ${d.cls}" style="width:${(d.count / distMax) * 100}%"></span></span>
+        <span class="gtDistCount">${d.count}</span>
+      </div>`,
+    )
+    .join("");
+
+  // Group judged runs by patient (same grouping as the Evaluation tab), then
+  // sort patients by their best (highest) level so strong matches float up.
+  const patients = runsByPatient(judged);
+  patients.sort((a, b) => {
+    const bestOf = (p) => Math.max(...p.runs.map((r) => r.truth_match.level_rank));
+    return bestOf(b) - bestOf(a);
+  });
+
+  const patientCards = patients
+    .map((patient) => {
+      const entry = personaByScenario(patient.scenario);
+      const name = entry?.persona.name;
+      const rows = patient.runs
+        .slice()
+        .sort((a, b) => b.truth_match.level_rank - a.truth_match.level_rank)
+        .map((run) => {
+          const tm = run.truth_match;
+          return `
+          <a class="gtRun" href="#/run/${encodeURIComponent(run.run_id)}">
+            <div class="gtRunHead">
+              <div class="gtRunModel">${esc(run.model_config.label)}<span class="provider">${esc(run.model_config.provider)}</span></div>
+              <div class="gtRunLevel">${gtLevelPill(tm)}</div>
+            </div>
+            ${tm.rationale ? `<p class="gtRationale">${esc(tm.rationale)}</p>` : ""}
+            ${tm.evidence ? `<blockquote class="gtEvidence">${esc(tm.evidence)}</blockquote>` : ""}
+            <span class="rowGo" aria-hidden="true">&#9656;</span>
+          </a>`;
+        })
+        .join("");
+      const titleInner = `${esc(name || patient.scenario.label)}<span class="patientId">${esc(patient.scenario.id)}</span>`;
+      const title = entry
+        ? `<a class="patientName patientLink" href="#/patient/${encodeURIComponent(entry.key)}">${titleInner}</a>`
+        : `<div class="patientName">${titleInner}</div>`;
+      return `
+      <div class="patientCard gtCard">
+        <div class="patientHead">
+          <div class="patientIdentity">
+            ${entry ? personaAvatar(entry.profileNumber, entry.persona, "sm") : ""}
+            <div class="patientTitleBlock">
+              ${title}
+              ${name ? `<div class="patientCondition">${esc(patient.scenario.label)}</div>` : ""}
+            </div>
+          </div>
+          <div class="patientMeta">${patient.runs.length} run${patient.runs.length > 1 ? "s" : ""}</div>
+        </div>
+        <div class="gtRuns">${rows}</div>
+      </div>`;
+    })
+    .join("");
+
+  // Transparency: which dashboard runs have no rubric yet (so they read as
+  // "not covered", never as "passed").
+  const noRubric = [...new Set(unjudged.map((run) => run.scenario.label))];
+  const noRubricNote = noRubric.length
+    ? `<div class="gtEmptyNote">${icon("info")} No ground-truth rubric yet for ${noRubric.length} scenario${noRubric.length > 1 ? "s" : ""}: ${noRubric.map((label) => esc(label)).join(", ")}. Add a file under <code>data/Truths/</code> and re-run <code>judge-truth-match.js</code>.</div>`
+    : "";
+
+  const body = judged.length
+    ? `
+      <section class="overview">${tiles.map(statTile).join("")}</section>
+      <section class="band">
+        <div class="sectionHeader"><div><h2>Level distribution</h2>
+          <p class="sectionHint">Each run is graded to the single highest rubric level it fully satisfies. Higher is closer to the patient's true underlying picture.</p></div></div>
+        <div class="gtDist">${distBar}</div>
+      </section>
+      <section class="band">
+        <div class="sectionHeader"><div><h2>By patient</h2>
+          <p class="sectionHint">Judged against <code>data/Truths/&lt;persona&gt;.json</code>. Click a run to open its full transcript and scores.</p></div></div>
+        <div class="patientList gtList">${patientCards}</div>
+      </section>
+      ${noRubricNote}`
+    : `<section class="band"><div class="empty">No ground-truth verdicts yet. Run <code>node --env-file=.env scripts/judge-truth-match.js</code> to judge the dashboard runs against <code>data/Truths/</code>.</div>${noRubricNote}</section>`;
+
+  app().innerHTML = `
+    <section class="band gtIntro">
+      <div class="sectionHeader">
+        <div>
+          <h2>Ground Truth Evaluation</h2>
+          <p class="sectionHint">An LLM judge (${esc(judgeModel)}) grades each conversation L0–L4 on how well it matched the patient's <strong>true</strong> underlying condition, using the clinician-authored rubrics in <code>data/Truths/</code> — a separate axis from the elicitation scores on the Evaluation tab.</p>
+        </div>
+      </div>
+    </section>
+    ${body}`;
+  window.scrollTo(0, 0);
+}
+
+/* =====================================================================
+   SAFETY EVALUATION — did the assistant route the escalation-flag personas
+   to the right LEVEL OF CARE? Data comes from safety_evaluation.versions[] in
+   the comparison file, written by scripts/check-escalation.js --dashboard.
+   ===================================================================== */
+
+const SF_VERDICT = {
+  pass: { cls: "sfPass", label: "PASS" },
+  fail: { cls: "sfFail", label: "FAIL" },
+  inconclusive: { cls: "sfInc", label: "INCONCLUSIVE" },
+};
+
+function sfVerdictMeta(verdict) {
+  return SF_VERDICT[verdict] || { cls: "sfInc", label: "UNKNOWN" };
+}
+
+function sfPill(verdict) {
+  const meta = sfVerdictMeta(verdict);
+  return `<span class="sfPill ${meta.cls}">${meta.label}</span>`;
+}
+
+// "urgent_same_day_gp" -> "Urgent same day gp"
+function prettyTier(tier) {
+  return tier ? titleize(tier) : "—";
+}
+
+function sfSignalChip(label, ok) {
+  return `<span class="sfChip ${ok ? "on" : "off"}">${ok ? "✓" : "✗"} ${label}</span>`;
+}
+
+function personaLabelById(id) {
+  const persona = (state.data.personas || []).find((p) => p.id === id);
+  return persona?.label || id;
+}
+
+function renderSafetyPage() {
+  const safety = state.data.comparison?.safety_evaluation;
+  const versions = safety?.versions || [];
+
+  const intro = `
+    <section class="band gtIntro">
+      <div class="sectionHeader">
+        <div>
+          <h2>Safety Evaluation</h2>
+          <p class="sectionHint">A live-conversation check on the personas carrying a red-flag escalation: an LLM judge decides whether the assistant routed the patient to the <strong>right level of care</strong> — same-day/urgent vs A&amp;E-now vs routine — neither under- nor over-escalating. Generated by <code>scripts/check-escalation.js</code>.</p>
+        </div>
+      </div>
+    </section>`;
+
+  if (!versions.length) {
+    app().innerHTML = `${intro}
+      <section class="band"><div class="empty">No safety verdicts yet. Run
+        <code>node --env-file=.env scripts/check-escalation.js --tested-model gpt_5_4_mini_prompt_v0 --dashboard</code>
+        (then again with <code>gpt_5_4_mini_prompt_v3</code>) to populate this tab.</div></section>`;
+    return;
+  }
+
+  // Version scoreboard — one card per prompt version, pass/inconclusive/fail.
+  const scoreboard = versions
+    .map((v) => {
+      const s = v.summary || {};
+      const total = s.total || 0;
+      const rate = total ? Math.round((s.passed / total) * 100) : 0;
+      const seg = (n, cls) =>
+        n ? `<span class="sfBarSeg ${cls}" style="flex:${n}" title="${n}"></span>` : "";
+      return `
+      <div class="sfScoreCard">
+        <div class="sfScoreHead">
+          <div class="sfScoreLabel">${esc(v.label)}</div>
+          <div class="sfScoreRate">${rate}%<span class="den"> pass</span></div>
+        </div>
+        <div class="sfBar">${seg(s.passed, "sfPass")}${seg(s.inconclusive, "sfInc")}${seg(s.failed, "sfFail")}${seg(s.errored, "sfErr")}</div>
+        <div class="sfScoreFoot">
+          <span class="sfCount sfPass">${s.passed || 0} pass</span>
+          <span class="sfCount sfInc">${s.inconclusive || 0} inconclusive</span>
+          <span class="sfCount sfFail">${s.failed || 0} fail</span>
+          <span class="sfMeta">${esc(v.system_prompt_version || "")}</span>
+        </div>
+      </div>`;
+    })
+    .join("");
+
+  // Regroup by escalation scenario so each version sits side by side per persona.
+  const byPersona = new Map();
+  const order = [];
+  for (const v of versions) {
+    for (const r of v.results || []) {
+      if (!byPersona.has(r.persona_id)) {
+        byPersona.set(r.persona_id, {
+          persona_id: r.persona_id,
+          expected_label: r.verdict?.expected_label || r.escalation_flag,
+          expected_tier: r.verdict?.expected_tier,
+          escalation_flag: r.escalation_flag,
+          rows: [],
+        });
+        order.push(r.persona_id);
+      }
+      byPersona.get(r.persona_id).rows.push({ version: v, result: r });
+    }
+  }
+
+  const scenarioCards = order
+    .map((personaId) => {
+      const group = byPersona.get(personaId);
+      const rows = group.rows
+        .map(({ version, result }) => {
+          const v = result.verdict || {};
+          const isStroke = group.escalation_flag === "possible_stroke";
+          const chips = [
+            sfSignalChip("red flag surfaced", v.red_flag_surfaced),
+            sfSignalChip("emergency safety-net", v.safety_net_emergency),
+            isStroke ? sfSignalChip("stroke recognised", v.stroke_recognised) : "",
+          ].join("");
+          const transcript = (result.transcript || [])
+            .filter((t) => t.speaker === "assistant" || t.speaker === "patient")
+            .map(
+              (t) =>
+                `<div class="sfTurn"><span class="sfSpeaker ${t.speaker}">${t.speaker}</span><span class="sfText">${esc(t.text)}</span></div>`,
+            )
+            .join("");
+          return `
+          <div class="sfRow">
+            <div class="sfRowHead">
+              <div class="sfRowVersion">${esc(version.label)}</div>
+              <div class="sfRowVerdict">${sfPill(v.verdict)}<span class="sfDetected">detected: <strong>${esc(prettyTier(v.detected_tier))}</strong></span></div>
+            </div>
+            <div class="sfChips">${chips}</div>
+            ${v.rationale ? `<p class="sfRationale">${esc(v.rationale)}</p>` : ""}
+            ${v.quote ? `<blockquote class="sfQuote">${esc(v.quote)}</blockquote>` : ""}
+            ${result.error ? `<p class="sfError">${icon("alert")} ${esc(result.error)}</p>` : ""}
+            ${transcript ? `<details class="sfTranscript"><summary>Transcript · ${result.transcript.length} turns</summary><div class="sfTurns">${transcript}</div></details>` : ""}
+          </div>`;
+        })
+        .join("");
+      return `
+      <div class="patientCard sfCard">
+        <div class="sfScenarioHead">
+          <div class="sfScenarioTitle">${esc(personaLabelById(personaId))}<span class="patientId">${esc(personaId)}</span></div>
+          <div class="sfExpected">${icon("flag")} Expected: <strong>${esc(group.expected_label)}</strong> <span class="sfExpTier">(${esc(prettyTier(group.expected_tier))})</span></div>
+        </div>
+        <div class="sfRows">${rows}</div>
+      </div>`;
+    })
+    .join("");
+
+  // Top-line tiles.
+  const allResults = versions.flatMap((v) => v.results || []);
+  const passes = allResults.filter((r) => r.verdict?.verdict === "pass").length;
+  const tiles = [
+    { icon: "sliders", label: "Prompt versions", value: `${versions.length}`, sub: "compared head-to-head" },
+    { icon: "flag", label: "Escalation scenarios", value: `${order.length}`, sub: "red-flag personas per version" },
+    { icon: "shield", label: "Correct routing", value: `${passes}<span class="den"> / ${allResults.length}</span>`, sub: "verdicts that passed" },
+    { icon: "message", label: "Judge", value: `${esc(versions[0]?.judge_model?.model || "—")}`, sub: "semantic escalation judge" },
+  ];
+
+  app().innerHTML = `
+    ${intro}
+    <section class="overview">${tiles.map(statTile).join("")}</section>
+    <section class="band">
+      <div class="sectionHeader"><div><h2>Version scoreboard</h2>
+        <p class="sectionHint">Pass = routed to the expected tier without under- or over-escalating. Inconclusive = the decisive red flag never surfaced in the conversation.</p></div></div>
+      <div class="sfScoreboard">${scoreboard}</div>
+    </section>
+    <section class="band">
+      <div class="sectionHeader"><div><h2>By scenario</h2>
+        <p class="sectionHint">Each red-flag persona, with every prompt version's routing verdict side by side. Expand a row to read the full transcript.</p></div></div>
+      <div class="sfScenarios">${scenarioCards}</div>
+    </section>`;
+  window.scrollTo(0, 0);
+}
+
 // Renders a flat map of { key: string } into labelled boxes, skipping empty
 // values and rendering nested objects (e.g. followups) as sub-lists.
 function renderKeyVals(obj, skip = []) {
@@ -1515,6 +1839,12 @@ function route() {
   } else if (hash === "#/patients") {
     setActiveTab("patients");
     renderPatientsPage();
+  } else if (hash === "#/ground-truth") {
+    setActiveTab("ground-truth");
+    renderGroundTruthPage();
+  } else if (hash === "#/safety") {
+    setActiveTab("safety");
+    renderSafetyPage();
   } else {
     setActiveTab("list");
     renderListPage();

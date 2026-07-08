@@ -7,11 +7,19 @@
 // worsens" needs to read the sentence. We skip the elicitation judge here and
 // only pay for the patient harness, the tested model, and the escalation judge.
 //
+// With --dashboard, it also merges its verdicts into LATEST_COMPARISON_FILE under
+// `safety_evaluation.versions[]` (keyed by tested-model id, accumulating across
+// versions) so the dashboard's "Safety Evaluation" tab renders straight from it.
+//
 // Usage:
 //   node --env-file=.env scripts/check-escalation.js
-//   node --env-file=.env scripts/check-escalation.js --tested-model gpt_5_4_mini_prompt_coach --turn-limit 12
+//   node --env-file=.env scripts/check-escalation.js --tested-model gpt_5_4_mini_prompt_v0 --dashboard
+//   node --env-file=.env scripts/check-escalation.js --tested-model gpt_5_4_mini_prompt_coach --dashboard
 //   node --env-file=.env scripts/check-escalation.js --tested-provider anthropic --tested-model-name claude-haiku-4-5-20251001
 
+import fs from "node:fs";
+import path from "node:path";
+import { PROJECT_ROOT } from "../src/artifacts.js";
 import {
   loadHierarchy,
   loadModelConfigs,
@@ -30,6 +38,10 @@ function argValue(name, fallback = null) {
   const index = process.argv.indexOf(name);
   if (index < 0) return fallback;
   return process.argv[index + 1] || fallback;
+}
+
+function hasFlag(name) {
+  return process.argv.includes(name);
 }
 
 const appConfig = loadAppConfig();
@@ -169,9 +181,10 @@ const errored = results.filter((entry) => entry.error).length;
 console.log(`Summary: ${passed} passed, ${failed} failed, ${inconclusive} inconclusive, ${errored} errored (of ${results.length}).`);
 
 const store = new LocalRunStore(appConfig.storage.outputDir);
+const generatedAt = new Date().toISOString();
 const report = {
-  generated_at: new Date().toISOString(),
-  tested_model: { id: testedModelConfig.id, provider: testedModelConfig.provider, model: testedModelConfig.model },
+  generated_at: generatedAt,
+  tested_model: { id: testedModelConfig.id, provider: testedModelConfig.provider, model: testedModelConfig.model, label: testedModelConfig.label },
   patient_model: { provider: patientConfig.provider, model: patientConfig.model },
   judge_model: { provider: judgeConfig.provider, model: judgeConfig.model },
   system_prompt_version: resolved.systemPromptVersion,
@@ -179,5 +192,43 @@ const report = {
   summary: { passed, failed, inconclusive, errored, total: results.length },
   results
 };
-const outputPath = store.writeComparison("escalation-check.json", report);
+const outputPath = store.writeComparison(argValue("--out", "escalation-check.json"), report);
 console.log(`Wrote report to ${outputPath}`);
+
+// With --dashboard, merge this version's verdicts into the comparison file the
+// dashboard renders, under safety_evaluation.versions[]. Keyed by tested-model
+// id so running v0 then v3 accumulates both instead of overwriting.
+if (hasFlag("--dashboard")) {
+  const comparisonPath = path.join(
+    PROJECT_ROOT,
+    appConfig.storage.outputDir,
+    appConfig.storage.latestComparisonFile
+  );
+  if (!fs.existsSync(comparisonPath)) {
+    console.warn(`--dashboard: no comparison file at ${comparisonPath}; skipped.`);
+  } else {
+    const comparison = JSON.parse(fs.readFileSync(comparisonPath, "utf8"));
+    const safety = comparison.safety_evaluation || { versions: [] };
+    safety.generated_at = generatedAt;
+    const versionEntry = {
+      key: testedModelConfig.id,
+      label: testedModelConfig.label || testedModelConfig.id,
+      tested_model: report.tested_model,
+      judge_model: report.judge_model,
+      system_prompt_version: resolved.systemPromptVersion,
+      turn_limit: turnLimit,
+      generated_at: generatedAt,
+      summary: report.summary,
+      results
+    };
+    safety.versions = [
+      ...safety.versions.filter((version) => version.key !== versionEntry.key),
+      versionEntry
+    ].sort((a, b) => a.key.localeCompare(b.key));
+    comparison.safety_evaluation = safety;
+    fs.writeFileSync(comparisonPath, `${JSON.stringify(comparison, null, 2)}\n`);
+    console.log(
+      `Merged "${versionEntry.label}" into ${path.relative(PROJECT_ROOT, comparisonPath)} (dashboard · ${safety.versions.length} version(s))`
+    );
+  }
+}

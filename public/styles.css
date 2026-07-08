@@ -2062,3 +2062,466 @@ a.patientName.patientLink:hover {
     animation: none !important;
   }
 }
+
+/* =====================================================================
+   GROUND TRUTH EVALUATION tab
+   ===================================================================== */
+.gtIntro {
+  margin-bottom: 4px;
+}
+
+/* Level colour bands: L4 green → L0 red. */
+.gtL4 { --gt: #4ade80; --gtSoft: rgba(74, 222, 128, 0.16); }
+.gtL3 { --gt: #38e0cf; --gtSoft: rgba(56, 224, 207, 0.16); }
+.gtL2 { --gt: #4b90e2; --gtSoft: rgba(75, 144, 226, 0.16); }
+.gtL1 { --gt: #f5b544; --gtSoft: rgba(245, 181, 68, 0.16); }
+.gtL0 { --gt: #f87171; --gtSoft: rgba(248, 113, 113, 0.16); }
+
+/* Level pill */
+.gtPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 3px 10px 3px 4px;
+  border-radius: 999px;
+  background: var(--gtSoft);
+  border: 1px solid var(--gt);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.gtPillId {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: var(--gt);
+  color: #041018;
+  font-weight: 800;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+}
+.gtConf {
+  margin-left: 8px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* Distribution */
+.gtDist {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+.gtDistRow {
+  display: grid;
+  grid-template-columns: 220px 1fr 28px;
+  align-items: center;
+  gap: 12px;
+}
+.gtDistLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink-dim);
+  font-size: 12.5px;
+}
+.gtDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  background: var(--gt);
+  flex: none;
+}
+.gtDistTrack {
+  height: 10px;
+  border-radius: 999px;
+  background: var(--panel-3);
+  overflow: hidden;
+}
+.gtDistFill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--gt);
+  min-width: 2px;
+  transition: width 0.4s ease;
+}
+.gtDistCount {
+  text-align: right;
+  color: var(--ink-dim);
+  font-variant-numeric: tabular-nums;
+  font-size: 12.5px;
+}
+
+/* Patient list / cards */
+.gtList {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 14px;
+}
+.gtRuns {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.gtRun {
+  position: relative;
+  display: block;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel-2);
+  padding: 12px 34px 12px 13px;
+  text-decoration: none;
+  color: inherit;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+.gtRun:hover {
+  border-color: var(--line-strong);
+  background: var(--panel-3);
+}
+.gtRunHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.gtRunModel {
+  font-size: 13px;
+  font-weight: 700;
+}
+.gtRunModel .provider {
+  margin-left: 7px;
+  color: var(--muted);
+  font-weight: 500;
+  font-size: 11px;
+}
+.gtRunLevel {
+  display: flex;
+  align-items: center;
+}
+.gtRationale {
+  margin: 9px 0 0;
+  color: var(--ink-dim);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+.gtEvidence {
+  margin: 9px 0 0;
+  padding: 6px 11px;
+  border-left: 3px solid var(--line-strong);
+  background: var(--panel);
+  border-radius: 0 8px 8px 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-style: italic;
+  line-height: 1.45;
+}
+.gtRun .rowGo {
+  position: absolute;
+  top: 13px;
+  right: 13px;
+}
+.gtEmptyNote {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 14px;
+  padding: 12px 14px;
+  border: 1px dashed var(--line-strong);
+  border-radius: 12px;
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+.gtEmptyNote code {
+  color: var(--ink-dim);
+}
+
+@media (max-width: 640px) {
+  .gtDistRow {
+    grid-template-columns: 150px 1fr 24px;
+  }
+  .gtList {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* =====================================================================
+   SAFETY EVALUATION tab
+   ===================================================================== */
+.sfPass { --sf: #4ade80; --sfSoft: rgba(74, 222, 128, 0.16); }
+.sfInc  { --sf: #f5b544; --sfSoft: rgba(245, 181, 68, 0.16); }
+.sfFail { --sf: #f87171; --sfSoft: rgba(248, 113, 113, 0.16); }
+.sfErr  { --sf: #7d97a6; --sfSoft: rgba(125, 151, 166, 0.16); }
+
+.sfPill {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--sf);
+  color: #041018;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+}
+
+/* Scoreboard */
+.sfScoreboard {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 14px;
+}
+.sfScoreCard {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel);
+  padding: 15px;
+}
+.sfScoreHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 11px;
+}
+.sfScoreLabel {
+  font-size: 14px;
+  font-weight: 700;
+}
+.sfScoreRate {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.sfScoreRate .den {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.sfBar {
+  display: flex;
+  height: 12px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--panel-3);
+}
+.sfBarSeg {
+  display: block;
+  background: var(--sf);
+}
+.sfScoreFoot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  margin-top: 11px;
+  font-size: 11.5px;
+}
+.sfCount {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--ink-dim);
+}
+.sfCount::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  background: var(--sf);
+}
+.sfMeta {
+  margin-left: auto;
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10.5px;
+}
+
+/* Scenario cards */
+.sfScenarios {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.sfCard {
+  padding: 16px;
+}
+.sfScenarioHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+.sfScenarioTitle {
+  font-size: 15px;
+  font-weight: 700;
+}
+.sfExpected {
+  color: var(--ink-dim);
+  font-size: 12.5px;
+}
+.sfExpected .ic {
+  vertical-align: -2px;
+  margin-right: 3px;
+}
+.sfExpTier {
+  color: var(--muted);
+}
+.sfRows {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 12px;
+}
+.sfRow {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel-2);
+  padding: 13px;
+}
+.sfRowHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.sfRowVersion {
+  font-size: 13px;
+  font-weight: 700;
+}
+.sfRowVerdict {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.sfDetected {
+  color: var(--muted);
+  font-size: 11.5px;
+}
+.sfDetected strong {
+  color: var(--ink-dim);
+}
+.sfChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+.sfChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  border: 1px solid var(--line-strong);
+}
+.sfChip.on {
+  color: #4ade80;
+  border-color: rgba(74, 222, 128, 0.5);
+  background: rgba(74, 222, 128, 0.1);
+}
+.sfChip.off {
+  color: var(--muted);
+  background: var(--panel-3);
+}
+.sfRationale {
+  margin: 11px 0 0;
+  color: var(--ink-dim);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+.sfQuote {
+  margin: 10px 0 0;
+  padding: 6px 11px;
+  border-left: 3px solid var(--sf, var(--line-strong));
+  background: var(--panel);
+  border-radius: 0 8px 8px 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-style: italic;
+  line-height: 1.45;
+}
+.sfError {
+  margin: 10px 0 0;
+  color: #f87171;
+  font-size: 12px;
+}
+.sfError .ic {
+  vertical-align: -2px;
+}
+.sfTranscript {
+  margin-top: 11px;
+  border-top: 1px dashed var(--line);
+  padding-top: 9px;
+}
+.sfTranscript summary {
+  cursor: pointer;
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 600;
+  list-style: none;
+}
+.sfTranscript summary::-webkit-details-marker {
+  display: none;
+}
+.sfTranscript summary::before {
+  content: "▸ ";
+  color: var(--muted);
+}
+.sfTranscript[open] summary::before {
+  content: "▾ ";
+}
+.sfTurns {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  max-height: 360px;
+  overflow-y: auto;
+}
+.sfTurn {
+  display: grid;
+  grid-template-columns: 74px 1fr;
+  gap: 10px;
+  font-size: 12px;
+  line-height: 1.45;
+}
+.sfSpeaker {
+  text-transform: uppercase;
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  padding-top: 2px;
+}
+.sfSpeaker.assistant {
+  color: var(--accent);
+}
+.sfSpeaker.patient {
+  color: var(--accent-2);
+}
+.sfText {
+  color: var(--ink-dim);
+  white-space: pre-wrap;
+}
+
+@media (max-width: 640px) {
+  .sfRows {
+    grid-template-columns: 1fr;
+  }
+}
