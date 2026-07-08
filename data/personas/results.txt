@@ -1,0 +1,68 @@
+
+Per-persona scores:
+┌─────────┬─────────────────────────────────────────┬───────────────────────┬────────────────┬───────┬──────────┬──────────┬───────┬────────┬───────┐
+│ (index) │ persona                                 │ version               │ run_id         │ score │ coverage │ priority │ depth │ safety │ noise │
+├─────────┼─────────────────────────────────────────┼───────────────────────┼────────────────┼───────┼──────────┼──────────┼───────┼────────┼───────┤
+│ 0       │ 'persona_2_diabetes_family_history'     │ 'GPT-5.5 · prompt v0' │ 'pBlVHivDLwk2' │ 1.82  │ 0.63     │ 0.324    │ 0.867 │ 0      │ 0     │
+│ 1       │ 'persona_2_diabetes_family_history'     │ 'GPT-5.5 · prompt v1' │ '5duoxf0Tc8yN' │ 1.967 │ 0.815    │ 0.676    │ 0.476 │ 0      │ 0     │
+│ 2       │ 'persona_3_health_anxious_palpitations' │ 'GPT-5.5 · prompt v0' │ 'v5dbiclNeGkg' │ 2.44  │ 0.241    │ 0.198    │ 1     │ 1      │ 0     │
+│ 3       │ 'persona_3_health_anxious_palpitations' │ 'GPT-5.5 · prompt v1' │ 'JNgq4FYjFTdD' │ 2.619 │ 0.69     │ 0.517    │ 0.412 │ 1      │ 0     │
+│ 4       │ 'persona_3_sedentary_high_cholesterol'  │ 'GPT-5.5 · prompt v0' │ 'djP7UOZpDJ6p' │ 3.165 │ 0.769    │ 0.673    │ 0.722 │ 1      │ 0     │
+│ 5       │ 'persona_3_sedentary_high_cholesterol'  │ 'GPT-5.5 · prompt v1' │ 'gKTH8I56b73C' │ 3.041 │ 0.654    │ 0.654    │ 0.733 │ 1      │ 0     │
+│ 6       │ 'persona_4_low_literacy_unknown_meds'   │ 'GPT-5.5 · prompt v0' │ 'S8yJAzCbcUux' │ 2.551 │ 0.5      │ 0.385    │ 0.667 │ 1      │ 0     │
+│ 7       │ 'persona_4_low_literacy_unknown_meds'   │ 'GPT-5.5 · prompt v1' │ '0KUY8RvVKKif' │ 2.538 │ 0.538    │ 0.5      │ 0.5   │ 1      │ 0     │
+└─────────┴─────────────────────────────────────────┴───────────────────────┴────────────────┴───────┴──────────┴──────────┴───────┴────────┴───────┘
+
+Per-persona scores:
+┌─────────┬────────────────────────────────────────────────┬───────────────────────┬────────────────┬───────┬──────────┬──────────┬───────┬────────┬───────┐
+│ (index) │ persona                                        │ version               │ run_id         │ score │ coverage │ priority │ depth │ safety │ noise │
+├─────────┼────────────────────────────────────────────────┼───────────────────────┼────────────────┼───────┼──────────┼──────────┼───────┼────────┼───────┤
+│ 0       │ 'persona_1_ideal_historian_primary_prevention' │ 'GPT-5.5 · prompt v0' │ 'kCz2C7Pite0s' │ 2.853 │ 0.577    │ 0.49     │ 0.786 │ 1      │ 0     │
+│ 1       │ 'persona_1_ideal_historian_primary_prevention' │ 'GPT-5.5 · prompt v1' │ 'd8fXXJ5uscNu' │ 3.596 │ 0.923    │ 0.923    │ 0.75  │ 1      │ 0     │
+│ 2       │ 'persona_9_third_party_asker_parent_tia'       │ 'GPT-5.5 · prompt v0' │ 'qLUztN6cIFUe' │ 0.927 │ 0.276    │ 0.276    │ 0.375 │ 0      │ 0     │
+│ 3       │ 'persona_9_third_party_asker_parent_tia'       │ 'GPT-5.5 · prompt v1' │ 'XCSqsL4JEDTs' │ 2.052 │ 0.276    │ 0.276    │ 0.5   │ 1      │ 0     │
+└─────────┴────────────────────────────────────────────────┴───────────────────────┴────────────────┴───────┴──────────┴──────────┴───────┴────────┴───────┘
+
+node --env-file=.env scripts/judge-agreement.js --limit 15 --no-baseline
+Reference judge : openai/gpt-5.5  (temp 1)
+Candidate judge : openai/gpt-5.4-mini  (temp 1)
+Transcripts     : 15   (no self-agreement baseline)
+Judge calls     : 30   concurrency 4
+
+  judged 30/30
+
+AGREEMENT — reference (gpt-5.5) vs candidate (gpt-5.4-mini)
+            higher = the small judge behaves like the big one.
+
+metric                         candidate
+------------------------------------------
+attribution agreement           0.917
+attribution kappa               0.864
+coverage agreement              0.972
+coverage kappa                  0.944
+followup depth (jaccard)        0.929
+score corr (bottom_to_roof)     0.988
+score mean|Δ| (bottom_to_roof)    0.054
+score bias (cand - ref)         0.027
+
+Attribution confusion (reference row → candidate column), off-diagonal = disagreement:
+ref \ cand           model_elicit patient_volu context_prov       missed
+model_elicited                 60            8            0            0
+patient_volunteered             1           20            0            0
+context_provided                0            1            1            0
+missed                          4            1            0           84
+
+Ranking of tested configs (the decision the eval drives):
+┌─────────┬────────────────────────────┬───┬───────────┬─────────────────┐
+│ (index) │ config                     │ n │ ref (5.5) │ cand (5.4-mini) │
+├─────────┼────────────────────────────┼───┼───────────┼─────────────────┤
+│ 0       │ 'GPT-5.4 mini · prompt v0' │ 2 │ 1.853     │ 1.853           │
+│ 1       │ 'GPT-5.5 · prompt v1'      │ 2 │ 2.314     │ 2.395           │
+│ 2       │ 'OpenAI GPT-5.4 mini'      │ 2 │ 3.15      │ 3.075           │
+│ 3       │ 'Lifestyle first'          │ 4 │ 2.337     │ 2.415           │
+│ 4       │ 'Generic advice'           │ 1 │ 2.39      │ 2.39            │
+│ 5       │ 'Thorough ordered'         │ 2 │ 2.758     │ 2.821           │
+│ 6       │ 'Labs first'               │ 1 │ 2.758     │ 2.705           │
+│ 7       │ 'GPT-5.4 mini · prompt v1' │ 1 │ 1.564     │ 1.564           │
+└─────────┴────────────────────────────┴───┴───────────┴─────────────────┘
+  Spearman (config order): 0.922   inversions: 2
