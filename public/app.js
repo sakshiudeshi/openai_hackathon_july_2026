@@ -1851,35 +1851,40 @@ function hfCompositeLevel(value) {
 // priority / depth and the composite bottom-to-roof score). Navix always shows
 // genuine numbers; a forge picks one of these at random.
 const HF_REAL_RUNS = [
-  { run_id: "039uCvC5hiAT", model: "GPT-5.4 mini · v3", scenario: "Middle-aged man hiding ED — sentinel for undiagnosed diabetes", coverage: 0.731, priority: 0.731, depth: 0.75, composite: 3.212 },
-  { run_id: "3FMeBazzPKdL", model: "GPT-5.4 mini · v3", scenario: "Ideal historian — honest multi-risk-factor control case", coverage: 1, priority: 0.913, depth: 0.87, composite: 3.783 },
-  { run_id: "3YvzuHUibMdb", model: "GPT-5.4 mini · v3", scenario: "Sedentary with high cholesterol", coverage: 1, priority: 0.913, depth: 0.696, composite: 3.609 },
-  { run_id: "3bjDy5Bzk8oV", model: "GPT-5.4 mini · v3", scenario: "Diabetes and family history", coverage: 0.778, priority: 0.759, depth: 0.789, composite: 2.327 },
-  { run_id: "4ORYv9RvKI2Y", model: "GPT-5.4 mini · v0 (simple)", scenario: "Sedentary with high cholesterol", coverage: 0.885, priority: 0.885, depth: 0.65, composite: 3.419 },
-  { run_id: "5PNdTK0gyE9N", model: "GPT-5.4 mini · v0 (simple)", scenario: "Middle-aged man hiding ED — sentinel for undiagnosed diabetes", coverage: 0.308, priority: 0.163, depth: 0.667, composite: 1.888 },
-  { run_id: "9hS2OxhQQ91I", model: "GPT-5.4 mini · v3", scenario: "High blood pressure, current smoker", coverage: 0.923, priority: 0.827, depth: 0.7, composite: 3.45 },
-  { run_id: "MB0qpYJ2qowp", model: "GPT-5.4 mini · v3", scenario: "Worried daughter relaying a buried TIA", coverage: 0.207, priority: 0.207, depth: 0.8, composite: 2.214 },
-  { run_id: "WbBr4gH6ymSy", model: "GPT-5.4 mini · v0 (simple)", scenario: "High blood pressure, current smoker", coverage: 0.654, priority: 0.654, depth: 0.733, composite: 3.041 },
-  { run_id: "afqsIAlMRmx2", model: "GPT-5.4 mini · v0 (simple)", scenario: "Diabetes and family history", coverage: 0.778, priority: 0.778, depth: 0.632, composite: 2.187 },
-  { run_id: "llItiaznu8M7", model: "GPT-5.4 mini · v0 (simple)", scenario: "Ideal historian — honest multi-risk-factor control case", coverage: 0.654, priority: 0.654, depth: 0.867, composite: 3.174 },
+  { run_id: "039uCvC5hiAT", patient: "Liu Jianhua", model: "GPT-5.4 mini · v3", scenario: "Middle-aged man hiding ED — sentinel for undiagnosed diabetes", coverage: 0.731, priority: 0.731, depth: 0.75, composite: 3.212 },
+  { run_id: "3FMeBazzPKdL", patient: "Ma Cheng", model: "GPT-5.4 mini · v3", scenario: "Ideal historian — honest multi-risk-factor control case", coverage: 1, priority: 0.913, depth: 0.87, composite: 3.783 },
+  { run_id: "3YvzuHUibMdb", patient: "Zhao Lei", model: "GPT-5.4 mini · v3", scenario: "Sedentary with high cholesterol", coverage: 1, priority: 0.913, depth: 0.696, composite: 3.609 },
+  { run_id: "3bjDy5Bzk8oV", patient: "Siti Rohana", model: "GPT-5.4 mini · v3", scenario: "Diabetes and family history", coverage: 0.778, priority: 0.759, depth: 0.789, composite: 2.327 },
+  { run_id: "4ORYv9RvKI2Y", patient: "Zhao Lei", model: "GPT-5.4 mini · v0 (simple)", scenario: "Sedentary with high cholesterol", coverage: 0.885, priority: 0.885, depth: 0.65, composite: 3.419 },
+  { run_id: "5PNdTK0gyE9N", patient: "Liu Jianhua", model: "GPT-5.4 mini · v0 (simple)", scenario: "Middle-aged man hiding ED — sentinel for undiagnosed diabetes", coverage: 0.308, priority: 0.163, depth: 0.667, composite: 1.888 },
+  { run_id: "9hS2OxhQQ91I", patient: "Wang Jianguo", model: "GPT-5.4 mini · v3", scenario: "High blood pressure, current smoker", coverage: 0.923, priority: 0.827, depth: 0.7, composite: 3.45 },
+  { run_id: "MB0qpYJ2qowp", patient: "Yang Xiaoyu", model: "GPT-5.4 mini · v3", scenario: "Worried daughter relaying a buried TIA", coverage: 0.207, priority: 0.207, depth: 0.8, composite: 2.214 },
+  { run_id: "WbBr4gH6ymSy", patient: "Wang Jianguo", model: "GPT-5.4 mini · v0 (simple)", scenario: "High blood pressure, current smoker", coverage: 0.654, priority: 0.654, depth: 0.733, composite: 3.041 },
+  { run_id: "afqsIAlMRmx2", patient: "Siti Rohana", model: "GPT-5.4 mini · v0 (simple)", scenario: "Diabetes and family history", coverage: 0.778, priority: 0.778, depth: 0.632, composite: 2.187 },
+  { run_id: "llItiaznu8M7", patient: "Ma Cheng", model: "GPT-5.4 mini · v0 (simple)", scenario: "Ideal historian — honest multi-risk-factor control case", coverage: 0.654, priority: 0.654, depth: 0.867, composite: 3.174 },
 ];
 
-// Randomly pick one of the hardcoded real runs.
-function hfPickRun() {
-  return HF_REAL_RUNS[Math.floor(Math.random() * HF_REAL_RUNS.length)];
+// Unique patients that have a run, in first-seen order — drives the dropdown.
+const HF_PATIENTS = HF_REAL_RUNS.reduce((list, run) => {
+  if (!list.includes(run.patient)) list.push(run.patient);
+  return list;
+}, []);
+
+// The run to show for a patient: the first hardcoded run for that patient, so a
+// given patient always maps to the same run (and the same transcript).
+function hfRunForPatient(patient) {
+  return (
+    HF_REAL_RUNS.find((run) => run.patient === patient) || HF_REAL_RUNS[0]
+  );
 }
 
 function renderHealthForgePage() {
-  const entries = personaEntries();
-  const personaOptions = entries.length
-    ? entries
-        .map((entry) => {
-          const p = entry.persona;
-          const name = p.name || p.label || p.id;
-          return `<option value="${esc(entry.key)}">#${entry.profileNumber} · ${esc(name)}${p.label ? ` — ${esc(p.label)}` : ""}</option>`;
-        })
-        .join("")
-    : `<option value="">No personas loaded</option>`;
+  // Only patients that have a real run, so a selection always resolves to a
+  // transcript. Each option carries the patient's short scenario for context.
+  const personaOptions = HF_PATIENTS.map((patient) => {
+    const run = hfRunForPatient(patient);
+    return `<option value="${esc(patient)}">${esc(patient)} — ${esc(run.scenario)}</option>`;
+  }).join("");
 
   const modelOptions = HF_MODELS.map(
     (m) => `<option value="${m.id}">${esc(m.label)} · ${esc(m.tag)}</option>`,
@@ -1936,6 +1941,10 @@ function hfRun() {
   const result = $("hfResult");
   if (!result) return;
 
+  // Drive the result from the selected patient, so the same patient always
+  // yields the same run, metrics, and transcript.
+  const patient = $("hfPersona")?.value || HF_PATIENTS[0];
+
   const btn = $("hfRun");
   if (btn) btn.disabled = true;
 
@@ -1955,7 +1964,7 @@ function hfRun() {
   setTimeout(() => {
     clearInterval(timer);
     if (btn) btn.disabled = false;
-    const run = hfPickRun();
+    const run = hfRunForPatient(patient);
     result.innerHTML = renderHealthForgeResult(run);
     result.scrollIntoView({ behavior: "smooth", block: "start" });
   }, 1500);
@@ -1983,8 +1992,7 @@ function renderHealthForgeResult(run) {
   // we can show its real transcript — for this run's exact persona — alongside
   // the hardcoded metrics.
   const liveRun = findRun(run.run_id);
-  const persona = liveRun ? personaByScenario(liveRun.scenario) : null;
-  const title = persona?.persona?.name || run.scenario;
+  const title = run.patient || run.scenario;
   const transcriptPanel =
     liveRun && liveRun.events?.length
       ? `
