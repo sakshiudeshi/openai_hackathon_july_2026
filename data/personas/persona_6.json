@@ -1,7 +1,7 @@
 {
   "id": "persona_4_low_literacy_unknown_meds",
   "label": "Older man, low health literacy, doesn't know his numbers or medication names, recently bereaved, buried exertional chest tightness",
-  "name": "Walter Okafor",
+  "name": "Zhou Guofu",
   "icon": "heart",
   "schema_version": "2.1",
   "escalation_flag": "urgent_gp_same_day",

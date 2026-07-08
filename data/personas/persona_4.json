@@ -1,7 +1,7 @@
 {
   "id": "persona_4_diabetes_family_history",
   "label": "Type 2 diabetic, frightened by family history, quietly under-controlled, fatalistic",
-  "name": "Rosa Iglesias",
+  "name": "Huang Min",
   "icon": "droplet",
   "schema_version": "2.1",
   "opening_prompt": "Heart disease runs in my family, and I want to lower my risk — though part of me wonders if the damage is already done. Where should I start?",

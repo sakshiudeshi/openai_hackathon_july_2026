@@ -1,7 +1,7 @@
 {
   "id": "persona_7_non_adherent_claims_adherent",
   "label": "Middle-aged woman with apparent treatment-resistant hypertension and hyperlipidaemia that is actually undisclosed non-adherence, each drug quietly stopped or rationed for a different unreported reason",
-  "name": "Diane Foster",
+  "name": "Sun Liping",
   "icon": "gauge",
   "schema_version": "2.1",
   "opening_prompt": "I've been on blood pressure tablets and a cholesterol one for a couple of years now, and I take them all exactly as I'm supposed to, but my numbers still aren't where they should be and honestly I don't feel any better. I'm starting to wonder if they even work for me, or whether there's a more natural way to manage all this. Is there something better I should be asking my doctor for?",

@@ -1,7 +1,7 @@
 {
   "id": "persona_1_ideal_historian_primary_prevention",
   "label": "Ideal historian: calm, numerate, honest multi-risk-factor primary-prevention patient who discloses everything cleanly on request (control case)",
-  "name": "Sam Turner",
+  "name": "Ma Cheng",
   "icon": "heart",
   "schema_version": "2.1",
   "opening_prompt": "I'm 52 and I've got a few risk factors for heart disease — high blood pressure, high cholesterol, and I smoke — and I'd like to understand what I should actually be prioritising to lower my risk. I'm happy to answer whatever questions help.",

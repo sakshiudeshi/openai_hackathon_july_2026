@@ -1,7 +1,7 @@
 {
   "id": "persona_1_high_bp_smoker",
   "label": "High blood pressure, current smoker",
-  "name": "Marcus Reed",
+  "name": "Wang Jianguo",
   "icon": "gauge",
   "opening_prompt": "I am worried about my heart health. What should I be thinking about?",
   "answer_style": "brief, practical, slightly concerned",

@@ -1,7 +1,7 @@
 {
   "id": "persona_3_sedentary_high_cholesterol",
   "label": "Sedentary with high cholesterol",
-  "name": "Dan Whitaker",
+  "name": "Zhao Lei",
   "icon": "activity",
   "opening_prompt": "I feel okay, but I want to know if I am at risk for cardiovascular disease.",
   "answer_style": "brief, factual, not alarmed",
