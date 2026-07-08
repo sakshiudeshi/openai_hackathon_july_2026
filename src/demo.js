@@ -1,4 +1,4 @@
-import { loadGoldTranscripts, loadHierarchy, loadPersonas, loadSystemPrompt } from "./artifacts.js";
+import { loadGoldTranscripts, loadHierarchy, loadScriptedPersonas, loadSystemPrompt } from "./artifacts.js";
 import { loadAppConfig } from "./config.js";
 import { demoModelConfigs } from "./scriptedModels.js";
 import { runComparison } from "./runner.js";
@@ -10,7 +10,7 @@ export async function generateDemoComparison({ force = false, config = loadAppCo
   if (cachedDemo && !force) return cachedDemo;
 
   const hierarchy = loadHierarchy();
-  const personas = loadPersonas();
+  const personas = loadScriptedPersonas();
   const systemPrompt = loadSystemPrompt();
   const validation = validateEvaluator(loadGoldTranscripts(), hierarchy);
   const comparison = await runComparison({

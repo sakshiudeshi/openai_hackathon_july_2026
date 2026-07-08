@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
-import { loadHierarchy, loadPersonas, loadSystemPrompt } from "../../src/artifacts.js";
+import { loadHierarchy, loadScriptedPersonas, loadSystemPrompt } from "../../src/artifacts.js";
 import { PROJECT_ROOT } from "../../src/artifacts.js";
 import { runComparison, runScenario } from "../../src/runner.js";
 import { demoModelConfigs } from "../../src/scriptedModels.js";
@@ -10,7 +10,7 @@ import { LocalRunStore } from "../../src/storage/localRunStore.js";
 import { validateAuditInvariants, validateComparisonShape, validateRunResultShape } from "../../src/resultValidation.js";
 
 const hierarchy = loadHierarchy();
-const personas = loadPersonas();
+const personas = loadScriptedPersonas();
 const systemPrompt = loadSystemPrompt();
 
 test("runScenario produces complete auditable result for one persona and scripted model", async () => {
