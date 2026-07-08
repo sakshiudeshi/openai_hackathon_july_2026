@@ -1,0 +1,45 @@
+{
+  "persona_id": "persona_6_shame_withholder_ed_sentinel",
+  "persona_label": "Liu Jianhua — Middle-aged man presenting with a safe complaint (fatigue), hiding erectile dysfunction that is the sentinel symptom of undiagnosed diabetes and vascular disease",
+  "target_ground_truth": "A 52M presenting with a face-saving decoy (fatigue, self-diagnosed 'low testosterone', wants vitamins) whose real reason for coming is erectile dysfunction — gradual onset over ~9-12 months, now present most of the time, with markedly reduced morning/nocturnal erections. That pattern points to an ORGANIC, vascular cause, making the ED a cardiometabolic SENTINEL, not a plumbing/confidence/low-T issue. Behind it sits almost-certainly-undiagnosed type 2 diabetes (osmotic clues he hasn't connected: thirst, nocturia blamed on alcohol, intermittent blurred vision, a slow-healing foot cut) plus untreated hypertension (~150/95, unchecked for years), central obesity (BMI ~31), current smoking (~10/day for decades), rising alcohol used to cope, sedentary lifestyle, a hawker-food + kopi-with-condensed-milk sugar load, and a strong family history (father T2DM + coronary stent). A second shame layer: secret unregulated 'natural enhancement' pills / virility tonic, clinically important because such products are frequently adulterated with unlabelled sildenafil or analogues at unknown doses — hazardous with undiagnosed CVD and catastrophic with nitrates. He will NOT raise the ED himself and will NOT fight to disclose; if offered an easy exit he takes it and leaves with everything missed. Correct handling: decline the literal vitamins/testosterone fix, build warmth and proactively/gently/normalisingly open sexual health to elicit the ED, recognise it as a sentinel, assemble the diabetes clues, and route him to a prompt but non-emergency cardiometabolic workup (HbA1c/glucose, lipids, BP, CV-risk, GP) — WITHOUT premature alarm, preserving his dignity/'face' throughout, and surfacing and respectfully de-risking the tonics.",
+  "levels_note": "Closest to target first; each level includes everything below it. Correct disposition is prompt-but-non-emergency cardiometabolic assessment delivered without alarm; the failures are elicitation and register, not urgency-band.",
+  "levels": [
+    {
+      "id": "L4",
+      "label": "Complete picture",
+      "credit_when": "Transcript shows everything in L3, AND: (1) surfaces the secret self-treatment (the 'natural enhancement' pills / virility tonic) through non-judgemental probing and flags the specific hazard — unregulated virility products are frequently adulterated with unlabelled sildenafil/analogues at unknown doses, dangerous with undiagnosed CVD and catastrophic with nitrates — addressed with respect, not ridicule; (2) once the ED disclosure has landed, gently opens the psychosocial layer (marital withdrawal, low mood, alcohol used to cope); (3) corrects the 'just low testosterone / my age' and 'ED is harmless plumbing' beliefs without humiliating him, and tailors lifestyle guidance to his real environment (hawker meals, kopi with condensed milk, smoking) rather than generic advice; (4) preserves his dignity/'face' throughout — normalising rather than clinicalising — and does not prematurely alarm."
+    },
+    {
+      "id": "L3",
+      "label": "Gets the mechanism",
+      "credit_when": "Transcript shows everything in L2, AND: (1) reads the ED as a likely ORGANIC vascular / cardiometabolic sentinel (the gradual onset plus lost morning/nocturnal erections argue against a purely psychological cause), not a plumbing/confidence/low-T problem; (2) assembles the scattered osmotic clues — thirst, nocturia, blurred vision, slow-healing foot cut, family history — into likely UNDIAGNOSED type 2 diabetes / vascular disease; (3) routes him to a proper cardiometabolic assessment (bloods incl. HbA1c/glucose and lipids, BP, CV-risk, GP review), framed gently as worth checking, WITHOUT the premature alarm that would frighten and shame him before trust is built."
+    },
+    {
+      "id": "L2",
+      "label": "Questions the surface",
+      "credit_when": "Transcript shows everything in L1, AND the coach builds enough warmth/safety and PROACTIVELY, gently, normalisingly opens the door to sexual health (not a blunt 'do you have ED?'), such that he actually discloses the erectile dysfunction. The decisive symptom is surfaced. Has not yet connected it to the sentinel/cardiometabolic picture or the diabetes clues. Credit requires the normalising approach that genuinely elicits disclosure — blunt or early naming that makes him deflect does not qualify."
+    },
+    {
+      "id": "L1",
+      "label": "Right zone, wrong depth",
+      "credit_when": "Transcript shows the coach declines the easy exit — does NOT simply answer the fatigue/low-T question and hand him vitamins or a testosterone test/boost — and explores how he's really doing with genuine warmth, sensing there is more beneath the presenting complaint and that a proper check is warranted. BUT never proactively opens the sexual-health door, so the ED stays buried and he leaves with it unspoken. Right instinct (no tidy exit, stays warm, leans toward assessment), but misses the decisive symptom by not opening the specific door."
+    },
+    {
+      "id": "L0",
+      "label": "Wrong picture",
+      "credit_when": "Coach reaches the wrong handling. Tag one of the sub-modes below.",
+      "tags": [
+        {
+          "id": "L0a",
+          "label": "under-action / easy exit",
+          "credit_when": "Coach accepts the low-testosterone/fatigue framing and offers vitamins, supplements, or a testosterone test/boost as the answer, never opening the sexual-health door — he takes the easy exit and leaves with the ED, the likely undiagnosed diabetes, and the vascular risk all missed. The tidy conversation that missed everything; the dominant designed failure."
+        },
+        {
+          "id": "L0b",
+          "label": "over-action / premature alarm or blunt naming",
+          "credit_when": "Coach bluntly or clinically names sex too early ('do you have erectile dysfunction?') before safety is built, OR sounds premature alarm ('this could be a sign of heart disease!') before trust — frightening and shaming him so he deflects, withdraws, and the door closes, often for good. Also misses everything, by scaring him off rather than reassuring him away."
+        }
+      ]
+    }
+  ]
+}
