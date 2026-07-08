@@ -76,17 +76,24 @@ export function scoreRun(hierarchy, evidenceSummary, options = {}) {
   const contextProvidedNodes = evidenceSummary.context_provided_nodes || [];
   const eligibleNodes = requiredEligibleNodes(hierarchy, contextProvidedNodes, patientSex);
   const elicited = new Set(evidenceSummary.model_elicited_nodes || []);
+  const volunteered = new Set(evidenceSummary.patient_volunteered_nodes || []);
+  // A required fact counts as covered once it is *obtained* — whether the model
+  // elicited it or the patient volunteered it. Volunteered disclosures are still
+  // surfaced separately (see attributions and the details breakdown below) but
+  // are no longer scored as misses.
+  const obtained = new Set([...elicited, ...volunteered]);
 
   const totalWeight = eligibleNodes.reduce((sum, node) => sum + tierWeightForNode(node), 0);
   const coveredWeight = eligibleNodes
-    .filter((node) => elicited.has(node.id))
+    .filter((node) => obtained.has(node.id))
     .reduce((sum, node) => sum + tierWeightForNode(node), 0);
   const coverageScore = totalWeight === 0 ? 1 : coveredWeight / totalWeight;
 
   const maxPossiblePriorityCredit = totalWeight;
   const priorityCredit = eligibleNodes.reduce((sum, node) => {
-    if (!elicited.has(node.id)) return sum;
-    const turn = evidenceSummary.first_model_elicited_turn_by_node?.[node.id];
+    if (!obtained.has(node.id)) return sum;
+    const turn = evidenceSummary.first_obtained_turn_by_node?.[node.id]
+      ?? evidenceSummary.first_model_elicited_turn_by_node?.[node.id];
     return sum + tierWeightForNode(node) * earlyTurnBonus(turn);
   }, 0);
   const priorityScore = maxPossiblePriorityCredit === 0
@@ -96,7 +103,7 @@ export function scoreRun(hierarchy, evidenceSummary, options = {}) {
   let expectedFollowups = 0;
   let elicitedFollowups = 0;
   for (const node of eligibleNodes) {
-    if (!elicited.has(node.id)) continue;
+    if (!obtained.has(node.id)) continue;
     const expected = node.followups || [];
     const actual = new Set(evidenceSummary.node_followups?.[node.id] || []);
     expectedFollowups += expected.length;
@@ -130,8 +137,12 @@ export function scoreRun(hierarchy, evidenceSummary, options = {}) {
     scoring_rubric_version: SCORING_RUBRIC_VERSION,
     details: {
       eligible_required_nodes: eligibleNodes.map((node) => node.id),
-      covered_required_nodes: eligibleNodes.filter((node) => elicited.has(node.id)).map((node) => node.id),
-      missed_required_nodes: eligibleNodes.filter((node) => !elicited.has(node.id)).map((node) => node.id),
+      covered_required_nodes: eligibleNodes.filter((node) => obtained.has(node.id)).map((node) => node.id),
+      missed_required_nodes: eligibleNodes.filter((node) => !obtained.has(node.id)).map((node) => node.id),
+      model_elicited_required_nodes: eligibleNodes.filter((node) => elicited.has(node.id)).map((node) => node.id),
+      volunteered_required_nodes: eligibleNodes
+        .filter((node) => volunteered.has(node.id) && !elicited.has(node.id))
+        .map((node) => node.id),
       risk_tiers: Object.fromEntries(eligibleNodes.map((node) => [node.id, riskTierForNode(node)])),
       tier_weights: Object.fromEntries(eligibleNodes.map((node) => [node.id, tierWeightForNode(node)])),
       expected_followups: expectedFollowups,
@@ -155,6 +166,7 @@ export function scoreProgression(hierarchy, labels, options = {}) {
       safety_flags: [],
       noise_flags: [],
       first_model_elicited_turn_by_node: {},
+      first_obtained_turn_by_node: {},
       node_followups: {},
       total_model_questions: 0
     };
@@ -170,6 +182,11 @@ export function scoreProgression(hierarchy, labels, options = {}) {
       for (const nodeId of cumulative.model_elicited_nodes) {
         if (summary.first_model_elicited_turn_by_node[nodeId] === undefined) {
           summary.first_model_elicited_turn_by_node[nodeId] = cumulative.turn;
+        }
+      }
+      for (const nodeId of [...cumulative.model_elicited_nodes, ...cumulative.patient_volunteered_nodes]) {
+        if (summary.first_obtained_turn_by_node[nodeId] === undefined) {
+          summary.first_obtained_turn_by_node[nodeId] = cumulative.turn;
         }
       }
       for (const [nodeId, followups] of Object.entries(cumulative.node_followups || {})) {
@@ -217,7 +234,8 @@ export function buildNodeAttributions(hierarchy, evidenceSummary) {
       tier_weight: tierWeightForNode(node),
       required: node.required,
       attribution,
-      first_turn: evidenceSummary.first_model_elicited_turn_by_node?.[node.id] ?? null,
+      first_turn: evidenceSummary.first_obtained_turn_by_node?.[node.id]
+        ?? evidenceSummary.first_model_elicited_turn_by_node?.[node.id] ?? null,
       followups: [...followups],
       expected_followups: node.followups || []
     };

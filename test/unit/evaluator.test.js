@@ -17,7 +17,7 @@ test("evaluator credits assistant elicitation and not the responding patient men
   assert.deepEqual(result.summary.node_followups.blood_pressure, ["recent_reading"]);
 });
 
-test("evaluator records patient-volunteered adjacent nodes without scoring credit", () => {
+test("evaluator records patient-volunteered adjacent nodes distinctly from elicited", () => {
   const result = extractEvidence([
     { turn: 0, speaker: "patient", text: "I am worried about my heart health." },
     { turn: 1, speaker: "assistant", text: "Do you know your blood pressure?" },

@@ -97,12 +97,16 @@ export function validateAuditInvariants(hierarchy, run) {
     assert(attributions.has(node.id), `Missing attribution for node ${node.id}`);
   }
 
-  const modelElicited = new Set(run.evidence.summary.model_elicited_nodes || []);
+  // A required fact counts as covered once it is *obtained* — whether the model
+  // elicited it or the patient volunteered it (see scoreRun's `obtained` set). So
+  // any volunteered node that is an eligible required node must appear as covered.
+  const eligibleRequiredSet = new Set(eligibleRequired);
+  const coveredRequired = new Set(run.score.details.covered_required_nodes || []);
   for (const nodeId of run.evidence.summary.patient_volunteered_nodes || []) {
-    if (modelElicited.has(nodeId)) continue;
+    if (!eligibleRequiredSet.has(nodeId)) continue;
     assert(
-      !(run.score.details.covered_required_nodes || []).includes(nodeId),
-      `Patient-volunteered node ${nodeId} must not count as covered`
+      coveredRequired.has(nodeId),
+      `Patient-volunteered required node ${nodeId} must count as covered`
     );
   }
 

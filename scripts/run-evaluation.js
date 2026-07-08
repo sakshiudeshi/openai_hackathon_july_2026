@@ -1,4 +1,4 @@
-import { loadHierarchy, loadModelConfigs, loadPersonas, loadSystemPrompt } from "../src/artifacts.js";
+import { loadHierarchy, loadModelConfigs, loadPersonas, loadPersonasByFileNumbers, loadSystemPrompt } from "../src/artifacts.js";
 import { loadAppConfig } from "../src/config.js";
 import { buildEngine } from "../src/engine.js";
 import { runComparison } from "../src/runner.js";
@@ -35,7 +35,16 @@ const storage = {
   }
 };
 
-const personas = loadPersonas();
+// --personas 3,4,5 restricts the run to those patient-profile files
+// (persona_<N>.json); omit to run every persona.
+const personaArg = argValue("--personas");
+const personaNumbers = personaArg
+  ? personaArg.split(",").map((token) => Number(token.trim())).filter((n) => Number.isFinite(n))
+  : null;
+const personas = personaNumbers ? loadPersonasByFileNumbers(personaNumbers) : loadPersonas();
+if (personaNumbers) {
+  console.log(`Personas: ${personas.map((p) => p.id).join(", ")}`);
+}
 const modelConfigs = loadModelConfigs(configPath);
 const progress = createProgressBar({ total: modelConfigs.length * personas.length });
 

@@ -1,11 +1,26 @@
 const state = {
   data: null,
+  personas: null,
   filterModel: "all",
   filterScenario: "all"
 };
 
 const $ = (id) => document.getElementById(id);
 const app = () => $("app");
+
+/* ---------- Small text helpers ---------- */
+function esc(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;");
+}
+
+// "buried_red_flag" -> "Buried red flag"
+function titleize(key) {
+  const spaced = String(key).replaceAll("_", " ").trim();
+  return spaced.charAt(0).toUpperCase() + spaced.slice(1);
+}
 
 function score(value) {
   return Number(value || 0).toFixed(3);
@@ -95,7 +110,8 @@ function pct(value) {
 }
 
 function labelForNode(nodeId) {
-  const node = state.data.hierarchy.nodes.find((candidate) => candidate.id === nodeId);
+  const hierarchy = state.data?.hierarchy || state.personas?.hierarchy;
+  const node = hierarchy?.nodes.find((candidate) => candidate.id === nodeId);
   return node?.label || nodeId;
 }
 
@@ -107,9 +123,33 @@ function allRuns() {
 function visibleRuns() {
   return allRuns().filter((run) => {
     if (state.filterModel !== "all" && run.model_config.id !== state.filterModel) return false;
-    if (state.filterScenario !== "all" && run.scenario.id !== state.filterScenario) return false;
+    // Group/filter patients by label, not id: the results file can carry a
+    // duplicate scenario id (a persona-data bug), but labels stay distinct.
+    if (state.filterScenario !== "all" && run.scenario.label !== state.filterScenario) return false;
     return true;
   });
+}
+
+// Group runs by patient (scenario label). Each patient holds every model's run
+// for that scenario, ordered to match the comparison's model order (v0, v1, …).
+function runsByPatient(runs) {
+  const modelOrder = new Map(
+    (state.data.comparison.models || []).map((model, index) => [model.model_config.id, index])
+  );
+  const patients = new Map();
+  for (const run of runs) {
+    const key = run.scenario.label;
+    if (!patients.has(key)) {
+      patients.set(key, { label: key, scenario: run.scenario, runs: [] });
+    }
+    patients.get(key).runs.push(run);
+  }
+  const rank = (run) => modelOrder.get(run.model_config.id) ?? Number.MAX_SAFE_INTEGER;
+  const groups = [...patients.values()];
+  for (const group of groups) {
+    group.runs.sort((a, b) => rank(a) - rank(b));
+  }
+  return groups.sort((a, b) => a.label.localeCompare(b.label));
 }
 
 function findRun(runId) {
@@ -181,14 +221,15 @@ function renderListPage() {
     <section class="band">
       <div class="sectionHeader">
         <div>
-          <h2>Runs</h2>
-          <p class="sectionHint">One row per model &times; scenario. Click a run to open the full breakdown.</p>
+          <h2>Patients</h2>
+          <p class="sectionHint">One card per patient, showing how each model run performed. Click a model to open its full breakdown.</p>
         </div>
         <div class="filters">
           <label>Model <select id="filterModel"></select></label>
-          <label>Scenario <select id="filterScenario"></select></label>
+          <label>Patient <select id="filterScenario"></select></label>
         </div>
       </div>
+      ${renderModelSummary()}
       <div id="runList" class="runList"></div>
     </section>
 
@@ -203,25 +244,63 @@ function renderListPage() {
   `;
 
   renderFilters();
-  renderRunList();
+  renderPatientList();
   renderValidation();
   wireValidationToggle();
+}
+
+// Compact per-model averages, shown above the run list. Each model entry in
+// the comparison already carries an aggregated `score`, so this is just a
+// small readout of the composite (and its coverage component) per model.
+function renderModelSummary() {
+  const models = state.data.comparison.models || [];
+  if (!models.length) return "";
+  const rows = models.map((model) => {
+    const composite = model.score.bottom_to_roof_score;
+    const level = compositeLevel(composite);
+    const runCount = (model.runs || []).length;
+    return `
+      <tr>
+        <td class="msModel">${model.model_config.label}
+          <span class="provider">${model.model_config.provider}</span>
+        </td>
+        <td class="msRuns">${runCount}</td>
+        <td class="msCoverage">${score(model.score.coverage_score)}</td>
+        <td class="msScore"><span class="headlineValue ${level}">${score(composite)}</span></td>
+      </tr>`;
+  }).join("");
+  return `
+    <table class="modelSummary">
+      <thead>
+        <tr>
+          <th>Model</th>
+          <th>Runs</th>
+          <th>Avg coverage</th>
+          <th>Avg score</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>`;
 }
 
 function renderFilters() {
   const modelOptions = ['<option value="all">All models</option>']
     .concat(state.data.comparison.models.map((model) =>
       `<option value="${model.model_config.id}">${model.model_config.label}</option>`));
-  const scenarioOptions = ['<option value="all">All scenarios</option>']
-    .concat(state.data.personas.map((persona) =>
-      `<option value="${persona.id}">${persona.label}</option>`));
+  // Patient options come from the runs' distinct scenario labels (keyed by
+  // label, matching how patients are grouped) so the filter stays consistent
+  // even when the results file has a duplicate scenario id.
+  const patientLabels = [...new Set(allRuns().map((run) => run.scenario.label))]
+    .sort((a, b) => a.localeCompare(b));
+  const scenarioOptions = ['<option value="all">All patients</option>']
+    .concat(patientLabels.map((label) => `<option value="${label}">${label}</option>`));
 
   const modelSelect = $("filterModel");
   modelSelect.innerHTML = modelOptions.join("");
   modelSelect.value = state.filterModel;
   modelSelect.onchange = (event) => {
     state.filterModel = event.target.value;
-    renderRunList();
+    renderPatientList();
   };
 
   const scenarioSelect = $("filterScenario");
@@ -229,7 +308,7 @@ function renderFilters() {
   scenarioSelect.value = state.filterScenario;
   scenarioSelect.onchange = (event) => {
     state.filterScenario = event.target.value;
-    renderRunList();
+    renderPatientList();
   };
 }
 
@@ -268,7 +347,9 @@ function runFlagPills(run) {
   return pills.join("");
 }
 
-function renderRunList() {
+// One card per patient; inside it, one clickable row per model run for that
+// patient, so runs can be compared model-to-model within a single scenario.
+function renderPatientList() {
   const runs = visibleRuns();
   const list = $("runList");
   if (!runs.length) {
@@ -276,29 +357,44 @@ function renderRunList() {
     return;
   }
 
-  list.innerHTML = runs.map((run) => {
-    const headLevel = compositeLevel(run.score.bottom_to_roof_score);
-    return `
-      <a class="runRow" href="#/run/${encodeURIComponent(run.run_id)}">
-        <div class="runIdent">
-          <div>
+  const patients = runsByPatient(runs);
+  list.innerHTML = patients.map((patient) => {
+    const best = Math.max(...patient.runs.map((run) => run.score.bottom_to_roof_score));
+    const multiModel = patient.runs.length > 1;
+    const rows = patient.runs.map((run) => {
+      const headLevel = compositeLevel(run.score.bottom_to_roof_score);
+      const isBest = multiModel && run.score.bottom_to_roof_score === best;
+      return `
+        <a class="runRow patientRun" href="#/run/${encodeURIComponent(run.run_id)}">
+          <div class="runIdent">
             <div class="runModel">
               ${run.model_config.label}
               <span class="provider">${run.model_config.provider}</span>
+              ${isBest ? `<span class="bestTag">best</span>` : ""}
             </div>
-            <div class="runScenario">${run.scenario.label}</div>
           </div>
+          <div class="headline">
+            <span class="headlineValue ${headLevel}">${score(run.score.bottom_to_roof_score)}</span>
+            <span class="headlineMeta">Bottom&#8209;to&#8209;roof</span>
+          </div>
+          <div class="miniMetrics">
+            ${METRIC_ORDER.map((key) => miniChip(key, run.score[key], run)).join("")}
+          </div>
+          <div class="runFlags">${runFlagPills(run)}</div>
+          <span class="rowGo" aria-hidden="true">&#9656;</span>
+        </a>`;
+    }).join("");
+
+    return `
+      <div class="patientCard">
+        <div class="patientHead">
+          <div class="patientName">${patient.scenario.label}
+            <span class="patientId">${esc(patient.scenario.id)}</span>
+          </div>
+          <div class="patientMeta">${patient.runs.length} model run${multiModel ? "s" : ""}</div>
         </div>
-        <div class="headline">
-          <span class="headlineValue ${headLevel}">${score(run.score.bottom_to_roof_score)}</span>
-          <span class="headlineMeta">Bottom&#8209;to&#8209;roof</span>
-        </div>
-        <div class="miniMetrics">
-          ${METRIC_ORDER.map((key) => miniChip(key, run.score[key], run)).join("")}
-        </div>
-        <div class="runFlags">${runFlagPills(run)}</div>
-        <span class="rowGo" aria-hidden="true">&#9656;</span>
-      </a>`;
+        <div class="patientRuns">${rows}</div>
+      </div>`;
   }).join("");
 }
 
@@ -353,7 +449,9 @@ function renderDetailPage(runId) {
           ${run.model_config.label}
           <span class="provider">${run.model_config.provider}</span>
         </div>
-        <div class="runScenario">${run.scenario.label}</div>
+        <div class="runScenario">${run.scenario.label}
+          <span class="patientId">${esc(run.scenario.id)}</span>
+        </div>
       </div>
       <div class="detailScore">
         <span class="headlineValue ${headLevel}">${score(run.score.bottom_to_roof_score)}</span>
@@ -554,22 +652,307 @@ function renderTranscript(run) {
 }
 
 /* =====================================================================
+   PATIENT PROFILES — showcase of the persona test set
+   ===================================================================== */
+function personaEntries() {
+  return state.personas?.personas || [];
+}
+
+function findPersona(key) {
+  return personaEntries().find((entry) => entry.key === key) || null;
+}
+
+// A persona is "rich" (schema v2) when it carries the harness-driven fields
+// (goals, affect, stated/true splits); otherwise it is a flat scripted persona.
+function isRichPersona(persona) {
+  return Boolean(persona.true_goal || persona.optional_modules || persona.schema_version);
+}
+
+function hiddenFactCount(persona) {
+  return Object.keys(persona.hidden_facts || {}).length;
+}
+
+function buriedRedFlag(persona) {
+  return persona.optional_modules?.buried_red_flag || null;
+}
+
+function renderPatientsPage() {
+  const entries = personaEntries();
+  if (!entries.length) {
+    app().innerHTML = `<section class="band"><div class="empty">No personas found.</div></section>`;
+    return;
+  }
+
+  const rich = entries.filter((entry) => isRichPersona(entry.persona)).length;
+  const withRedFlag = entries.filter((entry) => buriedRedFlag(entry.persona)).length;
+  const tiles = [
+    { label: "Patient profiles", value: entries.length, sub: "Personas in the test set" },
+    { label: "Rich personas", value: rich, sub: `${entries.length - rich} flat scripted` },
+    { label: "Buried red flags", value: withRedFlag, sub: "Sentinel symptoms to surface" }
+  ];
+
+  const cards = entries.map((entry) => renderPersonaCard(entry)).join("");
+
+  app().innerHTML = `
+    <section class="overview">
+      ${tiles.map((tile) => `
+        <div class="statTile">
+          <div class="statLabel">${tile.label}</div>
+          <div class="statValue">${tile.value}</div>
+          <div class="statSub">${tile.sub}</div>
+        </div>`).join("")}
+    </section>
+
+    <section class="band">
+      <div class="sectionHeader">
+        <div>
+          <h2>Patient Profiles</h2>
+          <p class="sectionHint">The simulated patients the models are tested against. Click a profile to see its goals, behaviour, hidden facts, and any buried red flag.</p>
+        </div>
+      </div>
+      <div class="personaGrid">${cards}</div>
+    </section>
+  `;
+  window.scrollTo(0, 0);
+}
+
+function renderPersonaCard(entry) {
+  const { key, profileNumber, persona } = entry;
+  const rich = isRichPersona(persona);
+  const redFlag = buriedRedFlag(persona);
+  const chips = [
+    `<span class="personaChip">${hiddenFactCount(persona)} hidden facts</span>`,
+    rich
+      ? `<span class="personaChip rich">rich</span>`
+      : `<span class="personaChip flat">flat</span>`
+  ];
+  if (redFlag) chips.push(`<span class="personaChip flag">buried red flag</span>`);
+
+  return `
+    <a class="personaCard" href="#/patient/${encodeURIComponent(key)}">
+      <div class="personaCardHead">
+        <span class="personaNum">#${profileNumber}</span>
+        <span class="personaChips">${chips.join("")}</span>
+      </div>
+      <div class="personaLabel">${esc(persona.label || persona.id)}</div>
+      ${persona.opening_prompt ? `<div class="personaOpening">&ldquo;${esc(persona.opening_prompt)}&rdquo;</div>` : ""}
+      <span class="rowGo" aria-hidden="true">&#9656;</span>
+    </a>`;
+}
+
+// Renders a flat map of { key: string } into labelled boxes, skipping empty
+// values and rendering nested objects (e.g. followups) as sub-lists.
+function renderKeyVals(obj, skip = []) {
+  const rows = Object.entries(obj || {})
+    .filter(([key, value]) => !skip.includes(key) && value != null && value !== "")
+    .map(([key, value]) => {
+      if (typeof value === "object") {
+        return `
+          <div class="metricBox">
+            <strong>${titleize(key)}</strong>
+            <span></span>
+            <p>${renderNestedList(value)}</p>
+          </div>`;
+      }
+      return `
+        <div class="metricBox">
+          <strong>${titleize(key)}</strong>
+          <span></span>
+          <p>${esc(value)}</p>
+        </div>`;
+    });
+  return rows.length ? `<div class="stackGrid">${rows.join("")}</div>` : "";
+}
+
+function renderNestedList(obj) {
+  if (Array.isArray(obj)) {
+    return obj.map((item) => esc(typeof item === "object" ? JSON.stringify(item) : item)).join("<br>");
+  }
+  return Object.entries(obj)
+    .filter(([, value]) => value != null && value !== "")
+    .map(([key, value]) => `<em>${titleize(key)}:</em> ${esc(value)}`)
+    .join("<br>");
+}
+
+function renderDisclosureOrder(persona) {
+  const order = persona.disclosure_order || [];
+  if (!order.length) return "";
+  const chips = order.map((nodeId, index) =>
+    `<span class="orderChip"><span class="orderNum">${index + 1}</span>${esc(labelForNode(nodeId))}</span>`).join("");
+  return `
+    <div class="subPanel">
+      <h3>Disclosure order</h3>
+      <div class="subPanelHint">Order in which the patient volunteers topics unprompted.</div>
+      <div class="orderChips">${chips}</div>
+    </div>`;
+}
+
+function renderHiddenFacts(persona) {
+  const facts = Object.entries(persona.hidden_facts || {});
+  if (!facts.length) return `<div class="empty">No hidden facts defined.</div>`;
+  return `<div class="factList">${facts.map(([nodeId, fact]) => {
+    const reveal = fact.reveal_condition
+      ? `<span class="factReveal">${esc(fact.reveal_condition)}</span>` : "";
+    const values = fact.stated_value != null || fact.true_value != null
+      ? `
+        <div class="factValue"><span class="factTag stated">stated</span><span>${esc(fact.stated_value ?? "—")}</span></div>
+        <div class="factValue"><span class="factTag true">true</span><span>${esc(fact.true_value ?? "—")}</span></div>`
+      : `<div class="factValue"><span class="factTag answer">answer</span><span>${esc(fact.answer ?? "—")}</span></div>`;
+    const withhold = fact.withhold_reason
+      ? `<div class="factMeta"><em>Withheld:</em> ${esc(fact.withhold_reason)}</div>` : "";
+    const followups = fact.followups && Object.keys(fact.followups).length
+      ? `<div class="factMeta"><em>Follow-ups:</em><br>${renderNestedList(fact.followups)}</div>` : "";
+    return `
+      <div class="factCard">
+        <div class="factHead">
+          <div class="factName">${esc(labelForNode(nodeId))}</div>
+          ${reveal}
+        </div>
+        ${values}
+        ${withhold}
+        ${followups}
+      </div>`;
+  }).join("")}</div>`;
+}
+
+function renderOptionalModules(persona) {
+  const modules = Object.entries(persona.optional_modules || {})
+    .filter(([, value]) => value && typeof value === "object");
+  if (!modules.length) return "";
+  return modules.map(([name, mod]) => `
+    <div class="subPanel modulecard ${name === "buried_red_flag" ? "redflag" : ""}">
+      <h3>${titleize(name)}</h3>
+      ${renderKeyVals(mod)}
+    </div>`).join("");
+}
+
+const BEHAVIOUR_FIELDS = [
+  "baseline_affect",
+  "affect_trajectory",
+  "verbosity",
+  "focus",
+  "interaction_stance",
+  "decision_preference",
+  "health_literacy",
+  "numeracy",
+  "medication_knowledge",
+  "ai_trust",
+  "entry_behaviour",
+  "gatekeeping_ask",
+  "third_party",
+  "answer_style"
+];
+
+function renderBehaviourProfile(persona) {
+  const present = {};
+  for (const field of BEHAVIOUR_FIELDS) {
+    if (persona[field] != null && persona[field] !== "") present[field] = persona[field];
+  }
+  if (persona.red_flags && persona.red_flags.length) {
+    present.red_flags = persona.red_flags.join("; ");
+  }
+  if (!Object.keys(present).length) return "";
+  return `
+    <div class="subPanel">
+      <h3>Behavioural profile</h3>
+      <div class="subPanelHint">How this patient talks, trusts, and decides — the levers the model must read.</div>
+      ${renderKeyVals(present)}
+    </div>`;
+}
+
+function renderPatientDetailPage(key) {
+  const entry = findPersona(key);
+  if (!entry) {
+    app().innerHTML = `
+      <a class="backLink" href="#/patients">&#8592; Back to patient profiles</a>
+      <div class="band"><div class="empty">Persona “${esc(key)}” was not found.</div></div>`;
+    return;
+  }
+  const { profileNumber, persona } = entry;
+  const rich = isRichPersona(persona);
+
+  const brief = renderKeyVals({
+    true_goal: persona.true_goal,
+    underlying_fear: persona.underlying_fear,
+    doorknob_concern: persona.doorknob_concern,
+    doorknob_reveal_condition: persona.doorknob_reveal_condition
+  });
+
+  app().innerHTML = `
+    <a class="backLink" href="#/patients">&#8592; Back to patient profiles</a>
+    <section class="band detailHeader personaHeader">
+      <div class="detailTitle">
+        <div class="runModel">
+          <span class="personaNum">#${profileNumber}</span>
+          <span class="personaChip ${rich ? "rich" : "flat"}">${rich ? "rich" : "flat"}</span>
+        </div>
+        <div class="runScenario">${esc(persona.label || persona.id)}</div>
+      </div>
+    </section>
+
+    <div class="runBody detailBody">
+      <div class="subPanel">
+        <h3>Opening line</h3>
+        <div class="personaOpeningFull">&ldquo;${esc(persona.opening_prompt || "—")}&rdquo;</div>
+      </div>
+
+      ${brief ? `
+      <div class="subPanel">
+        <h3>Clinical brief</h3>
+        <div class="subPanelHint">What the patient really wants, fears, and is holding back.</div>
+        ${brief}
+      </div>` : ""}
+
+      ${renderBehaviourProfile(persona)}
+      ${renderOptionalModules(persona)}
+      ${renderDisclosureOrder(persona)}
+
+      <div class="subPanel">
+        <h3>Hidden facts</h3>
+        <div class="subPanelHint">Per risk factor: what the patient says at first versus what is actually true, and what makes it surface.</div>
+        ${renderHiddenFacts(persona)}
+      </div>
+    </div>
+  `;
+  window.scrollTo(0, 0);
+}
+
+/* =====================================================================
    Router
    ===================================================================== */
+function setActiveTab(routeName) {
+  for (const tab of document.querySelectorAll("#tabs .tab")) {
+    tab.classList.toggle("active", tab.dataset.route === routeName);
+  }
+}
+
 function route() {
   const hash = window.location.hash || "#/";
   const runMatch = hash.match(/^#\/run\/(.+)$/);
+  const patientMatch = hash.match(/^#\/patient\/(.+)$/);
   if (runMatch) {
+    setActiveTab("list");
     renderDetailPage(decodeURIComponent(runMatch[1]));
+  } else if (patientMatch) {
+    setActiveTab("patients");
+    renderPatientDetailPage(decodeURIComponent(patientMatch[1]));
+  } else if (hash === "#/patients") {
+    setActiveTab("patients");
+    renderPatientsPage();
   } else {
+    setActiveTab("list");
     renderListPage();
   }
 }
 
 /* ---------- Init ---------- */
 async function init() {
-  const response = await fetch("/api/results");
-  state.data = await response.json();
+  const [results, personas] = await Promise.all([
+    fetch("/api/results").then((response) => response.json()),
+    fetch("/api/personas").then((response) => response.json())
+  ]);
+  state.data = results;
+  state.personas = personas;
   renderStatus();
   window.addEventListener("hashchange", route);
   route();

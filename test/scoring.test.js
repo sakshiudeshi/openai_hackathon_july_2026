@@ -5,7 +5,7 @@ import { scoreRun } from "../src/scoring.js";
 
 const hierarchy = loadHierarchy();
 
-test("coverage credits only model-elicited required nodes using tier magnitude", () => {
+test("coverage credits obtained required nodes (elicited or volunteered) using tier magnitude", () => {
   const score = scoreRun(hierarchy, {
     model_elicited_nodes: ["blood_pressure", "smoking"],
     patient_volunteered_nodes: ["cholesterol"],
@@ -18,17 +18,26 @@ test("coverage credits only model-elicited required nodes using tier magnitude",
       blood_pressure: 1,
       smoking: 2
     },
+    first_obtained_turn_by_node: {
+      blood_pressure: 1,
+      smoking: 2,
+      cholesterol: 1
+    },
     safety_flags: [],
     noise_flags: [],
     total_model_questions: 2
   });
 
-  // Required tier-weight denominator: the nine original required nodes (weight 23)
-  // plus kidney_disease (high = 3) = 26. pregnancy is gender-gated out when no
-  // patientSex is supplied. Elicited blood_pressure (3) + smoking (3) = 6 / 26.
-  assert.equal(score.coverage_score, 0.231);
+  // Required tier-weight denominator: the nine original required nodes plus
+  // kidney_disease (high = 3) = 26. pregnancy is gender-gated out when no
+  // patientSex is supplied. Coverage now credits obtained nodes, so elicited
+  // blood_pressure (3) + smoking (3) + volunteered cholesterol (3) = 9 / 26.
+  assert.equal(score.coverage_score, 0.346);
   assert(score.priority_score > 0);
   assert(score.depth_score > 0);
+  // The elicited/volunteered split is still tracked for reporting.
+  assert.deepEqual(score.details.volunteered_required_nodes, ["cholesterol"]);
+  assert.deepEqual(score.details.model_elicited_required_nodes, ["blood_pressure", "smoking"]);
 });
 
 test("tier is the only magnitude for coverage and priority", () => {

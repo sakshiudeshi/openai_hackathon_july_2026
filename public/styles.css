@@ -231,10 +231,120 @@ button:focus-visible {
   font-size: 12px;
 }
 
+/* ---------- Model summary table (above run list) ---------- */
+.modelSummary {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 16px;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+  font-size: 14px;
+}
+
+.modelSummary th,
+.modelSummary td {
+  text-align: left;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.modelSummary thead th {
+  color: var(--muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+}
+
+.modelSummary tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.modelSummary .msRuns,
+.modelSummary .msCoverage,
+.modelSummary .msScore {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.modelSummary .msModel {
+  font-weight: 600;
+}
+
+.modelSummary .headlineValue {
+  font-size: 16px;
+}
+
 /* ---------- Run list (clickable rows) ---------- */
 .runList {
   display: grid;
   gap: 10px;
+}
+
+/* ---------- Patient cards (each patient, every model run) ---------- */
+.patientCard {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel);
+  padding: 14px;
+}
+
+.patientHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+  padding: 0 2px;
+}
+
+.patientName {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.patientId {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 7px;
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--muted);
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.patientMeta {
+  color: var(--muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.patientRuns {
+  display: grid;
+  gap: 8px;
+}
+
+.bestTag {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--good, #34d399);
+  background: color-mix(in srgb, var(--good, #34d399) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--good, #34d399) 40%, transparent);
 }
 
 .runRow {
@@ -320,6 +430,11 @@ button:focus-visible {
 
 .detailTitle .runModel {
   font-size: 18px;
+}
+
+.detailHeader .runScenario {
+  white-space: normal;
+  overflow: visible;
 }
 
 .detailTitle .runScenario {
@@ -865,4 +980,285 @@ button:focus-visible {
   .statusCluster {
     justify-content: flex-start;
   }
+}
+
+/* ---------- Tab navigation ---------- */
+.tabs {
+  display: flex;
+  gap: 6px;
+  padding: 12px 28px 0;
+  max-width: 1320px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.tab {
+  padding: 9px 16px;
+  border: 1px solid var(--line);
+  border-bottom: none;
+  border-radius: 10px 10px 0 0;
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 600;
+  background: var(--panel-2);
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.tab:hover {
+  color: var(--ink);
+}
+
+.tab.active {
+  color: var(--ink);
+  background: var(--panel);
+  border-color: var(--line-strong);
+}
+
+/* ---------- Patient profiles: grid + cards ---------- */
+.personaGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 12px;
+}
+
+.personaCard {
+  position: relative;
+  display: block;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel-2);
+  padding: 14px 16px;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.personaCard:hover {
+  border-color: var(--line-strong);
+  transform: translateY(-2px);
+}
+
+.personaCardHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.personaNum {
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.personaChips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.personaChip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  border: 1px solid var(--line-strong);
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.personaChip.rich {
+  color: var(--violet);
+  border-color: rgba(179, 148, 240, 0.4);
+  background: var(--violet-soft);
+}
+
+.personaChip.flat {
+  color: var(--accent);
+  border-color: rgba(90, 169, 230, 0.4);
+  background: var(--accent-soft);
+}
+
+.personaChip.flag {
+  color: var(--bad);
+  border-color: rgba(248, 113, 113, 0.4);
+  background: var(--bad-soft);
+}
+
+.personaLabel {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+  margin-bottom: 8px;
+}
+
+.personaOpening {
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.45;
+  font-style: italic;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.personaCard .rowGo {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: none;
+}
+
+/* ---------- Patient detail ---------- */
+.personaHeader .runScenario {
+  white-space: normal;
+  overflow: visible;
+  font-size: 15px;
+  color: var(--ink-dim);
+  line-height: 1.4;
+}
+
+.personaOpeningFull {
+  color: var(--ink-dim);
+  font-size: 15px;
+  line-height: 1.55;
+  font-style: italic;
+  padding: 4px 0;
+}
+
+.modulecard.redflag {
+  border-color: rgba(248, 113, 113, 0.4);
+}
+
+.modulecard.redflag > h3 {
+  color: var(--bad);
+}
+
+/* Disclosure order chips */
+.orderChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.orderChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px 4px 4px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 12px;
+  color: var(--ink-dim);
+  background: var(--panel);
+}
+
+.orderChip .orderNum {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+/* Hidden facts */
+.factList {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.factCard {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+  padding: 12px;
+  display: grid;
+  gap: 8px;
+}
+
+.factHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.factName {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.factReveal {
+  font-size: 10.5px;
+  color: var(--muted);
+  text-align: right;
+  max-width: 55%;
+}
+
+.factValue {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--ink-dim);
+}
+
+.factTag {
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 6px;
+  border-radius: 6px;
+  white-space: nowrap;
+  align-self: start;
+  margin-top: 1px;
+}
+
+.factTag.stated {
+  color: var(--muted);
+  background: var(--panel-3);
+}
+
+.factTag.true {
+  color: var(--good);
+  background: var(--good-soft);
+}
+
+.factTag.answer {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.factMeta {
+  font-size: 11.5px;
+  color: var(--muted);
+  line-height: 1.5;
+  border-top: 1px solid var(--line);
+  padding-top: 8px;
+}
+
+.factMeta em {
+  color: var(--ink-dim);
+  font-style: normal;
+  font-weight: 600;
 }
