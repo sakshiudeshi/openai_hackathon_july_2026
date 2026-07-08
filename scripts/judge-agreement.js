@@ -205,7 +205,13 @@ for (const outcome of outcomes) {
 // ---- metric computation -------------------------------------------------
 
 const COVERAGE_CATEGORIES = ["covered", "missed"];
-const SCORE_KEYS = ["bottom_to_roof_score", "coverage_score", "priority_score", "depth_score"];
+const SCORE_KEYS = [
+  "bottom_to_roof_score",
+  "coverage_score",
+  "priority_score",
+  "depth_score",
+  "coverage_efficiency_score"
+];
 
 // Compares two judge passes (X = reference, Y = other) across every transcript
 // where both passes succeeded. Returns null if fewer than one transcript aligns.

@@ -14,7 +14,7 @@
 // Usage:
 //   node --env-file=.env scripts/check-escalation.js
 //   node --env-file=.env scripts/check-escalation.js --tested-model gpt_5_4_mini_prompt_v0 --dashboard
-//   node --env-file=.env scripts/check-escalation.js --tested-model gpt_5_4_mini_prompt_v3 --dashboard
+//   node --env-file=.env scripts/check-escalation.js --tested-model gpt_5_4_mini_prompt_coach --dashboard
 //   node --env-file=.env scripts/check-escalation.js --tested-provider anthropic --tested-model-name claude-haiku-4-5-20251001
 
 import fs from "node:fs";

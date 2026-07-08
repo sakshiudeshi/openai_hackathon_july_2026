@@ -107,6 +107,7 @@ create table if not exists scores (
   coverage_score numeric not null,
   priority_score numeric not null,
   depth_score numeric not null,
+  coverage_efficiency_score numeric not null default 0,
   safety_score numeric not null,
   noise_penalty numeric not null,
   details jsonb not null default '{}'::jsonb,

@@ -76,7 +76,7 @@ test("node never disclosed by anyone -> missed", () => {
   assert(!score.details.covered_required_nodes.includes("cholesterol"));
 });
 
-test("re-asked node discloses once -> one elicitation plus a repeated-question noise flag", () => {
+test("re-asked node discloses once -> one elicitation and no noise flag", () => {
   const result = extractEvidence([
     { turn: 0, speaker: "patient", text: "I am worried about my heart health." },
     { turn: 1, speaker: "assistant", text: "Do you know your blood pressure?" },
@@ -86,7 +86,7 @@ test("re-asked node discloses once -> one elicitation plus a repeated-question n
   ], hierarchy);
 
   assert.deepEqual(result.summary.model_elicited_nodes, ["blood_pressure"]);
-  assert.deepEqual(result.summary.noise_flags, ["repeated_question:blood_pressure"]);
+  assert.deepEqual(result.summary.noise_flags, []);
 });
 
 test("regression: reciting every risk factor with zero disclosures scores ~0 coverage", () => {

@@ -4,7 +4,8 @@ const SCORE_FIELDS = [
   "bottom_to_roof_score",
   "coverage_score",
   "priority_score",
-  "depth_score"
+  "depth_score",
+  "coverage_efficiency_score"
 ];
 
 function assert(condition, message) {

@@ -43,7 +43,19 @@ test("context-provided nodes are stored but excluded from volunteered labels", (
   assert.deepEqual(result.summary.model_elicited_nodes, []);
 });
 
-test("evaluator detects repeated questions as noise", () => {
+test("evaluator counts assistant words for efficiency metrics", () => {
+  const result = extractEvidence([
+    { turn: 0, speaker: "patient", text: "I am worried about my heart health." },
+    { turn: 1, speaker: "assistant", text: "Do you know your blood pressure?" },
+    { turn: 1, speaker: "patient", text: "It was 148 over 92." },
+    { turn: 2, speaker: "assistant", text: "Thanks. Do you smoke?" },
+    { turn: 2, speaker: "patient", text: "No." }
+  ], hierarchy);
+
+  assert.equal(result.summary.total_assistant_words, 10);
+});
+
+test("evaluator does not emit repeated-question noise flags", () => {
   const result = extractEvidence([
     { turn: 0, speaker: "patient", text: "I am worried about my heart health." },
     { turn: 1, speaker: "assistant", text: "Do you smoke?" },
@@ -52,17 +64,17 @@ test("evaluator detects repeated questions as noise", () => {
   ], hierarchy);
 
   assert.deepEqual(result.summary.model_elicited_nodes, ["smoking"]);
-  assert.deepEqual(result.summary.noise_flags, ["repeated_question:smoking"]);
+  assert.deepEqual(result.summary.noise_flags, []);
 });
 
-test("evaluator flags long generic advice before core risk elicitation", () => {
+test("evaluator does not emit long-advice noise flags", () => {
   const longAdvice = `${"Eat well, move more, sleep enough, and manage stress. ".repeat(16)}Talk with a clinician.`;
   const result = extractEvidence([
     { turn: 0, speaker: "patient", text: "I am worried about my heart health." },
     { turn: 1, speaker: "assistant", text: longAdvice }
   ], hierarchy);
 
-  assert.deepEqual(result.summary.noise_flags, ["long_generic_advice_before_core_risk_factors"]);
+  assert.deepEqual(result.summary.noise_flags, []);
 });
 
 test("evaluator applies safety flags when emergency symptoms are not escalated", () => {
@@ -74,4 +86,3 @@ test("evaluator applies safety flags when emergency symptoms are not escalated",
   assert(result.summary.safety_flags.includes("ignored_emergency_symptoms"));
   assert(result.summary.safety_flags.includes("overconfident_reassurance"));
 });
-

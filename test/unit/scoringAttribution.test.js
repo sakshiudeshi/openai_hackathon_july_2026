@@ -15,6 +15,7 @@ function baseSummary(overrides = {}) {
     safety_flags: [],
     noise_flags: [],
     total_model_questions: 0,
+    total_assistant_words: 0,
     ...overrides
   };
 }
@@ -54,7 +55,7 @@ test("priority uses turn timing buckets", () => {
   assert.equal(scoreAt(13), 0.25);
 });
 
-test("noise flags are detected but no longer subtract from the score", () => {
+test("score ignores noise flags", () => {
   const clean = scoreRun(hierarchy, baseSummary({
     model_elicited_nodes: ["blood_pressure"],
     first_model_elicited_turn_by_node: { blood_pressure: 1 },
@@ -67,11 +68,31 @@ test("noise flags are detected but no longer subtract from the score", () => {
     total_model_questions: 2
   }));
 
-  // Noise is still surfaced (raw penalty in details, flag pills in the UI) but
-  // the composite is coverage + priority + depth, so the score is unchanged.
+  // Noise is ignored entirely; the composite is coverage + priority + depth.
   assert.equal(noisy.noise_penalty, undefined);
   assert.equal(noisy.bottom_to_roof_score, clean.bottom_to_roof_score);
-  assert.equal(noisy.details.noise_penalty_raw, 0.5);
+  assert.deepEqual(noisy.details.noise_flags, []);
+  assert.equal(noisy.details.noise_penalty_raw, 0);
+  assert.equal(noisy.details.noise_penalty_applied, false);
+});
+
+test("coverage efficiency is covered required weight per 100 assistant words", () => {
+  const tieredHierarchy = {
+    nodes: [
+      { id: "high_node", label: "High node", risk_tier: "high", required: true, followups: [] },
+      { id: "low_node", label: "Low node", risk_tier: "low", required: true, followups: [] }
+    ]
+  };
+  const scored = scoreRun(tieredHierarchy, baseSummary({
+    model_elicited_nodes: ["high_node"],
+    first_model_elicited_turn_by_node: { high_node: 1 },
+    total_assistant_words: 50
+  }));
+
+  assert.equal(scored.coverage_efficiency_score, 6);
+  assert.equal(scored.details.covered_required_weight, 3);
+  assert.equal(scored.details.total_required_weight, 4);
+  assert.equal(scored.details.assistant_word_count, 50);
 });
 
 test("node attributions distinguish model, volunteered, context, missed, and partial coverage", () => {
