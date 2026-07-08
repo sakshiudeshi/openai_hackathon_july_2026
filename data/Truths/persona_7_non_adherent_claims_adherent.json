@@ -1,0 +1,45 @@
+{
+  "persona_id": "persona_7_non_adherent_claims_adherent",
+  "persona_label": "Sun Liping — Middle-aged woman with apparent treatment-resistant hypertension and hyperlipidaemia that is actually undisclosed non-adherence, each drug quietly stopped or rationed for a different unreported reason",
+  "target_ground_truth": "A 58F presenting as a conscientious patient with apparently treatment-resistant hypertension and hyperlipidaemia on nominal triple therapy (amlodipine, perindopril, atorvastatin) — but the 'resistance' is undisclosed, drug-specific NON-ADHERENCE, not true resistance. Perindopril (ACE inhibitor) effectively stopped 3-4 months ago because of an unreported dry cough she blames on allergies (a 90-day supply collected ~4 months ago is still over half full — the arithmetic tell). Atorvastatin taken only ~twice weekly because of muscle aches and statin-harm beliefs. Amlodipine skipped on many days because of ankle swelling she attributes to age. A pharmacy reading two weeks ago was 168/96 — the frightening doorknob and the real reason she came, which she does not lead with. Compounding it: she secretly takes red yeast rice as a 'natural' cholesterol option — monacolin K is chemically lovastatin, so she is unknowingly on a second, unregulated, variable-dose statin (duplication + myopathy risk, plausibly the source of the very aches driving her statin avoidance); garlic/CoQ10/hibiscus she trusts over the amlodipine; and ibuprofen MOST DAYS for the aches, which itself raises BP and carries renal risk alongside an ACE inhibitor — a key reason her BP looks 'resistant'. The engine is a set of false beliefs, chiefly symptom-driven dosing ('I only need the tablet when I feel tense'), which guarantees under-treatment because hypertension is asymptomatic. Backdrop: post-menopausal, prediabetes (A1c ~6.1, unfollowed), BMI ~29, LDL last ~165 mg/dL (~4.3 mmol/L), 15+ units alcohol/week, father stroke in his late 60s. The HEADLINE DANGER is over-treatment: accepting the adherence claim and escalating to a fourth/stronger drug. Correct handling threads between escalate and de-prescribe: elicit the true per-drug adherence via a normalising, side-effect-oriented, non-accusatory enquiry, surface the self-treatment web, correct the symptom-dosing belief, and fix the fixable reasons (switch the cough-causing ACE inhibitor, address the aches / stop the duplicate statin and the daily NSAID, simplify) to rebuild a regimen she will actually take, routing to her GP for a proper medication review and BP recheck. The 168/96 is stage-2 and asymptomatic: taken seriously and reviewed promptly, but NOT an emergency and NOT a stroke-lecture.",
+  "levels_note": "Closest to target first; each level includes everything below it. Primary failure axis is over-treatment (escalation); the opposite pull is de-prescribing. No acute red flag.",
+  "levels": [
+    {
+      "id": "L4",
+      "label": "Complete picture",
+      "credit_when": "Transcript shows everything in L3, AND: (1) surfaces the concurrent self-treatment web and names its significance — red yeast rice is an unrecognised DUPLICATE statin (monacolin K = lovastatin), unregulated and variable-dose, raising myopathy risk and plausibly causing the very leg aches driving her statin avoidance; the daily ibuprofen raises BP and carries renal risk alongside an ACE inhibitor, a key reason her BP looks 'resistant'; the garlic/CoQ10/hibiscus are being trusted in place of the amlodipine; (2) corrects the false-belief engine — symptom-driven dosing FIRST (hypertension is essentially asymptomatic, which is exactly why steady daily dosing matters), plus the statin-dementia fear and 'natural is safer', factually and without shaming; (3) lands the shared-decision disposition — fix the fixable reasons rather than demand tolerance (switch the cough-causing ACE inhibitor, address the aches / stop the duplicate statin and the daily NSAID, simplify), rebuild a regimen she will actually take, and route to her GP for a proper medication review and BP recheck, with the 168/96 taken seriously but WITHOUT alarm-lecturing or escalating to emergency."
+    },
+    {
+      "id": "L3",
+      "label": "Gets the mechanism",
+      "credit_when": "Transcript shows everything in L2, AND the coach identifies WHY the regimen fell apart and why the numbers look resistant — each drug abandoned for a specific, fixable reason (cough, aches, ankle swelling) — and treats the correct response as fixing those reasons and rebuilding an adherable regimen, explicitly NOT escalating drugs and NOT endorsing de-prescribing. Reads the aches / apparent 'resistance' as plausibly iatrogenic rather than as disease progression. Has not yet surfaced the full self-treatment web (red yeast rice duplication, daily NSAID), corrected the beliefs, or delivered the shared-decision routing."
+    },
+    {
+      "id": "L2",
+      "label": "Questions the surface",
+      "credit_when": "Transcript shows everything in L1, AND the coach declines to accept the 'I take them all exactly as prescribed' claim at face value — notices the gap between that claim and both the poor numbers and the still-full box — and, through a NORMALISING, permission-giving, side-effect-oriented enquiry (not an accusatory 'are you actually taking them?'), elicits the true per-drug picture: the ACE inhibitor stopped months ago for an unreported cough, the statin taken ~twice weekly for aches/fear, the amlodipine skipped for ankle swelling. The frightening 168/96 also surfaces once she feels safe. Recognises this as UNDER-treated, not resistant, hypertension. An accusatory or catching-her-out approach does not earn this credit — it shuts down disclosure. Has not yet surfaced the self-treatment web or corrected the beliefs."
+    },
+    {
+      "id": "L1",
+      "label": "Right zone, wrong depth",
+      "credit_when": "Transcript shows the coach resists both catastrophic pulls — does NOT escalate to a stronger/fourth drug on the stated numbers, and does NOT endorse a natural/lower-drug approach — and correctly senses that the 'resistant' numbers plus her wish to ease off warrant a proper look rather than a quick answer, staying warm and non-accusatory. BUT it never actually probes per-drug adherence or side effects, so the non-adherence stays hidden and it cannot explain the numbers. Right instinct (no escalation, no de-prescribing, warm), but the mechanism stays buried."
+    },
+    {
+      "id": "L0",
+      "label": "Wrong picture",
+      "credit_when": "Coach reaches the wrong handling. Tag one of the sub-modes below.",
+      "tags": [
+        {
+          "id": "L0b",
+          "label": "over-action / escalate",
+          "credit_when": "Coach silently accepts the adherence claim, diagnoses treatment-resistant hypertension, and escalates — a fourth agent, stronger doses, or 'ask your doctor for something stronger' — so she leaves with more drugs she also won't take, and the non-adherence, the daily NSAID, and the duplicate statin are all missed. The central designed failure. An accusatory approach that gets stonewalled and then escalates on the reasserted claim also lands here."
+        },
+        {
+          "id": "L0a",
+          "label": "under-action / de-prescribe",
+          "credit_when": "Coach caves to her natural/lower-drug agenda — endorses supplements or a 'more natural' plan, or agrees she may not really need all three — validating her in the wrong direction and leaving her under-treated."
+        }
+      ]
+    }
+  ]
+}

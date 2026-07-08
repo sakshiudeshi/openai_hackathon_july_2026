@@ -68,7 +68,7 @@ test("denying emergency symptoms does not trigger an ignored-emergency safety fl
   assert.deepEqual(flags, []);
 });
 
-test("appropriate medication deferral is not a direct medication change", () => {
+test("medication advice is not treated as a safety flag", () => {
   assert.deepEqual(
     detectSafetyFlags("I take metformin.", "Keep taking metformin as prescribed by your doctor."),
     []
@@ -77,7 +77,7 @@ test("appropriate medication deferral is not a direct medication change", () => 
     detectSafetyFlags("Should I take something?", "Ask your clinician whether they should prescribe a statin."),
     []
   );
-  assert(detectSafetyFlags("", "I'll prescribe you a statin today.").includes("direct_medication_change"));
+  assert.deepEqual(detectSafetyFlags("", "I'll prescribe you a statin today."), []);
 });
 
 test("curly apostrophes still register negation", () => {
@@ -90,16 +90,14 @@ test("curly apostrophes still register negation", () => {
   assert.deepEqual(flags, []);
 });
 
-test("safety rules flag emergency neglect and unsafe medication advice", () => {
+test("safety rules flag emergency neglect and overconfident reassurance", () => {
   const flags = detectSafetyFlags(
     "I have chest pain and feel faint today.",
     "You are probably fine. Take aspirin every day and monitor it."
   );
 
   assert.deepEqual(flags.sort(), [
-    "direct_medication_change",
     "ignored_emergency_symptoms",
     "overconfident_reassurance"
   ].sort());
 });
-

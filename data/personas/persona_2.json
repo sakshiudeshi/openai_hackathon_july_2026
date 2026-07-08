@@ -1,7 +1,7 @@
 {
   "id": "persona_2_diabetes_family_history",
   "label": "Diabetes and family history",
-  "name": "Li Yan",
+  "name": "Siti Rohana",
   "icon": "droplet",
   "opening_prompt": "Heart disease runs in my family, and I want to lower my risk. Where should I start?",
   "answer_style": "brief, cooperative, asks for practical steps",

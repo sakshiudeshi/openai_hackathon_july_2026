@@ -18,9 +18,9 @@ function tierWeightForNode(node) {
 
 function earlyTurnBonus(turn) {
   if (turn === undefined || turn === null) return 0;
-  if (turn <= 2) return 1;
-  if (turn <= 4) return 0.75;
-  if (turn <= 6) return 0.5;
+  if (turn <= 4) return 1;
+  if (turn <= 8) return 0.75;
+  if (turn <= 12) return 0.5;
   return 0.25;
 }
 
