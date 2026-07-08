@@ -17,6 +17,8 @@ It evaluates health AI conversations against simulated cardiovascular patient pe
 ## Demo
 
 To try a demo of how it works, run the app (as outlined in setup), click **Navix Demo** and watch a simulated cardiovascular-risk conversation and evaluation flow.
+You can find details of existing runs of various models and how they perform against our patients in the Coverage, Ground Truth and Safety Evaluation Tabs, along with details transcripts.
+The Patient Profiles Tab will show the list of personas and how they respond to the AI
 
 ## Setup
 

@@ -487,13 +487,51 @@ function renderModelLeaderboardChart() {
     borderWidth: 2,
     borderSkipped: false,
   }));
+  // Draw each segment's value inside its bar (and the composite total just past
+  // the bar end) so the breakdown reads without hovering. Segments too narrow
+  // to fit their label are skipped to avoid overlap.
+  const segmentLabels = {
+    id: "leaderboardSegmentLabels",
+    afterDatasetsDraw(chart) {
+      const { ctx } = chart;
+      ctx.save();
+      ctx.font = "600 11px " + window.Chart.defaults.font.family;
+      ctx.textBaseline = "middle";
+      const totals = models.map(() => 0);
+      chart.data.datasets.forEach((dataset, di) => {
+        const meta = chart.getDatasetMeta(di);
+        if (meta.hidden) return;
+        meta.data.forEach((bar, i) => {
+          const value = Number(dataset.data[i] || 0);
+          totals[i] += value;
+          if (value <= 0) return;
+          const width = Math.abs(bar.x - bar.base);
+          if (width < 22) return; // too narrow for a legible label
+          ctx.fillStyle = t.surface;
+          ctx.textAlign = "center";
+          ctx.fillText(score(value), (bar.x + bar.base) / 2, bar.y);
+        });
+      });
+      // Composite total, drawn just past the end of each stacked bar.
+      const lastMeta = chart.getDatasetMeta(chart.data.datasets.length - 1);
+      ctx.fillStyle = t.ink;
+      ctx.textAlign = "left";
+      ctx.font = "700 11px " + window.Chart.defaults.font.family;
+      lastMeta.data.forEach((bar, i) => {
+        ctx.fillText(score(totals[i]), bar.x + 6, bar.y);
+      });
+      ctx.restore();
+    },
+  };
   makeChart("leaderboardChart", {
     type: "bar",
+    plugins: [segmentLabels],
     data: { labels: models.map((model) => model.model_config.label), datasets },
     options: {
       indexAxis: "y",
       responsive: true,
       maintainAspectRatio: false,
+      layout: { padding: { right: 34 } },
       interaction: { mode: "nearest", intersect: true },
       scales: {
         x: {
