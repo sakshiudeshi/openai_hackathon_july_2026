@@ -2,7 +2,13 @@ import fs from "node:fs";
 import http from "node:http";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { loadGoldTranscripts, loadHierarchy, loadPersonas, loadPersonasDetailed, PROJECT_ROOT } from "./artifacts.js";
+import {
+  loadGoldTranscripts,
+  loadHierarchy,
+  loadPersonas,
+  loadPersonasDetailed,
+  PROJECT_ROOT,
+} from "./artifacts.js";
 import { loadAppConfig } from "./config.js";
 import { generateDemoComparison } from "./demo.js";
 import { validateEvaluator } from "./validation.js";
@@ -16,11 +22,15 @@ const contentTypes = {
   ".js": "text/javascript; charset=utf-8",
   ".css": "text/css; charset=utf-8",
   ".json": "application/json; charset=utf-8",
-  ".svg": "image/svg+xml"
+  ".svg": "image/svg+xml",
+  ".woff2": "font/woff2",
+  ".woff": "font/woff",
 };
 
 function sendJson(response, status, body) {
-  response.writeHead(status, { "content-type": "application/json; charset=utf-8" });
+  response.writeHead(status, {
+    "content-type": "application/json; charset=utf-8",
+  });
   response.end(JSON.stringify(body));
 }
 
@@ -28,7 +38,7 @@ function jsonResponse(status, body) {
   return {
     status,
     headers: { "content-type": "application/json; charset=utf-8" },
-    body: JSON.stringify(body)
+    body: JSON.stringify(body),
   };
 }
 
@@ -37,7 +47,7 @@ function publicPersonas(personas) {
     id: persona.id,
     label: persona.label,
     opening_prompt: persona.opening_prompt,
-    context_provided_nodes: persona.context_provided_nodes || []
+    context_provided_nodes: persona.context_provided_nodes || [],
   }));
 }
 
@@ -45,7 +55,7 @@ async function loadLatestComparisonPayload(config = appConfig) {
   const comparisonPath = path.join(
     PROJECT_ROOT,
     config.storage.outputDir,
-    config.storage.latestComparisonFile
+    config.storage.latestComparisonFile,
   );
   if (!fs.existsSync(comparisonPath)) {
     const demo = await generateDemoComparison();
@@ -54,8 +64,8 @@ async function loadLatestComparisonPayload(config = appConfig) {
       source: {
         kind: "demo",
         label: "Scripted demo",
-        path: null
-      }
+        path: null,
+      },
     };
   }
 
@@ -69,8 +79,8 @@ async function loadLatestComparisonPayload(config = appConfig) {
     source: {
       kind: "latest",
       label: "Latest real run",
-      path: path.relative(PROJECT_ROOT, comparisonPath)
-    }
+      path: path.relative(PROJECT_ROOT, comparisonPath),
+    },
   };
 }
 
@@ -78,16 +88,19 @@ export async function resolveRequest(request, options = {}) {
   const demoProvider = options.demoProvider || generateDemoComparison;
   const latestProvider = options.latestProvider || loadLatestComparisonPayload;
   const root = options.publicDir || publicDir;
-  const url = new URL(request.url, `http://${request.headers?.host || "localhost"}`);
+  const url = new URL(
+    request.url,
+    `http://${request.headers?.host || "localhost"}`,
+  );
 
   if (url.pathname === "/api/demo") {
     return jsonResponse(200, {
-      ...await demoProvider(),
+      ...(await demoProvider()),
       source: {
         kind: "demo",
         label: "Scripted demo",
-        path: null
-      }
+        path: null,
+      },
     });
   }
 
@@ -101,21 +114,27 @@ export async function resolveRequest(request, options = {}) {
   if (url.pathname === "/api/personas") {
     return jsonResponse(200, {
       hierarchy: loadHierarchy(),
-      personas: loadPersonasDetailed()
+      personas: loadPersonasDetailed(),
     });
   }
 
   const requestedPath = url.pathname === "/" ? "/index.html" : url.pathname;
   const filePath = path.normalize(path.join(root, requestedPath));
-  if (!filePath.startsWith(root) || !fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {
+  if (
+    !filePath.startsWith(root) ||
+    !fs.existsSync(filePath) ||
+    fs.statSync(filePath).isDirectory()
+  ) {
     return jsonResponse(404, { error: "Not found" });
   }
 
   const ext = path.extname(filePath);
   return {
     status: 200,
-    headers: { "content-type": contentTypes[ext] || "application/octet-stream" },
-    body: fs.readFileSync(filePath)
+    headers: {
+      "content-type": contentTypes[ext] || "application/octet-stream",
+    },
+    body: fs.readFileSync(filePath),
   };
 }
 
@@ -131,7 +150,9 @@ export function createServer(options = {}) {
   });
 }
 
-const isCliEntry = process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1]);
+const isCliEntry =
+  process.argv[1] &&
+  fileURLToPath(import.meta.url) === path.resolve(process.argv[1]);
 if (isCliEntry) {
   const server = createServer();
   server.listen(PORT, () => {
