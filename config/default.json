@@ -3,7 +3,7 @@
     "port": 5173
   },
   "run": {
-    "turnLimit": 30
+    "turnLimit": 10
   },
   "scoring": {
     "noisePenalty": false
