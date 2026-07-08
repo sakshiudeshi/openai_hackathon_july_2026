@@ -1891,6 +1891,8 @@ function renderHealthForgePage() {
   ).join("");
 
   app().innerHTML = `
+    <div class="hfBanner">${icon("flag")}<span><strong>Placeholder Data</strong> — For actual runs see other tabs</span></div>
+
     <section class="band hfIntro">
       <div class="sectionHeader">
         <div>

@@ -2857,3 +2857,24 @@ a.patientName.patientLink:hover {
   width: 17px;
   height: 17px;
 }
+
+.hfBanner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  padding: 11px 16px;
+  border-radius: 10px;
+  font-size: 13.5px;
+  color: var(--mixed);
+  background: var(--mixed-soft);
+  border: 1px solid var(--line-strong);
+}
+.hfBanner .ic {
+  width: 18px;
+  height: 18px;
+  flex: none;
+}
+.hfBanner strong {
+  color: var(--ink);
+}
