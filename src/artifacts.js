@@ -40,6 +40,22 @@ export function loadPersonas() {
     .map((file) => JSON.parse(fs.readFileSync(path.join(dir, file), "utf8")));
 }
 
+// The scripted PatientSimulator is the v1/flat path: it discloses a fact's
+// `answer` string on cue. Richer v2 personas instead split each fact into
+// `stated_value`/`true_value` gated by a reveal condition and are meant to be
+// driven by the LLM patient harness (see usesHarness in llmPatient.js), so they
+// have no `answer` for the scripted simulator to speak. The deterministic
+// scripted comparison therefore runs only the flat personas.
+export function isFlatPersona(persona) {
+  return Object.values(persona.hidden_facts || {}).every(
+    (fact) => fact && fact.stated_value == null && fact.true_value == null
+  );
+}
+
+export function loadScriptedPersonas() {
+  return loadPersonas().filter(isFlatPersona);
+}
+
 export function loadGoldTranscripts() {
   return readJson("data/validation/gold_transcripts.json");
 }

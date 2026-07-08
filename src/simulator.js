@@ -91,8 +91,19 @@ export class PatientSimulator {
 
   #nodeById(nodeId) {
     const node = this.hierarchy.nodes.find((candidate) => candidate.id === nodeId);
-    if (!node) throw new Error(`Unknown hierarchy node: ${nodeId}`);
-    return node;
+    if (node) return node;
+
+    // Rich personas can carry "symptom" disclosures (e.g. headache, medications)
+    // that sit outside the scored risk-factor hierarchy. The patient still holds
+    // and can disclose these facts; they simply are not scored by the
+    // hierarchy-scoped evaluator. Build a lightweight node from the persona's own
+    // fact definition so disclosure works without a matching hierarchy entry.
+    const fact = this.persona.hidden_facts?.[nodeId];
+    if (fact) {
+      return { id: nodeId, followups: Object.keys(fact.followups || {}) };
+    }
+
+    throw new Error(`Unknown hierarchy node: ${nodeId}`);
   }
 
   #response(text, revealedNode, revealedFollowups, reason, done = false) {
