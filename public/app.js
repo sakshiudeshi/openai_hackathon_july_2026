@@ -1178,7 +1178,7 @@ function labelTagsForTurn(run, turn, speaker) {
     : "";
 }
 
-function renderTranscript(run) {
+function renderTranscript(run, { showTags = true } = {}) {
   // Name the patient in each of their turns (falling back to the scenario
   // label) so the transcript reads as a real person rather than an anonymous
   // "patient". Same persona lookup the patient list uses.
@@ -1198,7 +1198,7 @@ function renderTranscript(run) {
     <div class="message ${event.speaker}">
       <div class="speaker">${who} &middot; turn ${event.turn}</div>
       <div class="messageText ${textClass}">${text}</div>
-      ${labelTagsForTurn(run, event.turn, event.speaker)}
+      ${showTags ? labelTagsForTurn(run, event.turn, event.speaker) : ""}
     </div>
   `;
     })
@@ -1853,6 +1853,219 @@ function renderPatientDetailPage(key) {
 }
 
 /* =====================================================================
+   NAVIX — interactive playground. Paste a coaching prompt, pick a patient
+   persona and a model, and "forge" a consultation scored on Coverage /
+   Priority / Depth (the same three axes the Coverage Evaluation tab reports).
+
+   NOTE: this is a demo stub. On forge it pulls a real evaluated run from
+   runs/latest-comparison.json (hardcoded below) at random and shows its
+   genuine metrics — no synthetic scoring, no network call.
+   ===================================================================== */
+const HF_MODELS = [
+  { id: "gpt-5.5", label: "gpt-5.5", tag: "flagship" },
+  { id: "claude-opus-4-8", label: "claude-opus-4.8", tag: "flagship" },
+  { id: "gemini-3-pro", label: "gemini-3-pro", tag: "frontier" },
+  { id: "gpt-5.4-mini", label: "gpt-5.4-mini", tag: "small / fast" },
+];
+
+const HF_SAMPLE_PROMPT = `You are a cardiovascular risk coach. Interview the patient one question at a time.
+Draw out every required risk factor — blood pressure, cholesterol, diabetes, smoking,
+family history, and physical activity — and ask the expected follow-ups when a factor
+surfaces. Prioritise the most serious factors early, and probe anything the patient
+seems to be minimising.`;
+
+function hfLevel(value) {
+  if (value >= 0.75) return "good";
+  if (value >= 0.5) return "mixed";
+  return "bad";
+}
+
+// Composite is a 0..3 sum, so level it against its own max.
+function hfCompositeLevel(value) {
+  return hfLevel(value / 3);
+}
+
+// The 12 real runs from runs/latest-comparison.json, hardcoded (coverage /
+// priority / depth and the composite bottom-to-roof score). Navix always shows
+// genuine numbers; a forge picks one of these at random.
+const HF_REAL_RUNS = [
+  { run_id: "039uCvC5hiAT", patient: "Liu Jianhua", model: "GPT-5.4 mini · v3", scenario: "Middle-aged man hiding ED — sentinel for undiagnosed diabetes", coverage: 0.731, priority: 0.731, depth: 0.75, composite: 3.212 },
+  { run_id: "3FMeBazzPKdL", patient: "Ma Cheng", model: "GPT-5.4 mini · v3", scenario: "Ideal historian — honest multi-risk-factor control case", coverage: 1, priority: 0.913, depth: 0.87, composite: 3.783 },
+  { run_id: "3YvzuHUibMdb", patient: "Zhao Lei", model: "GPT-5.4 mini · v3", scenario: "Sedentary with high cholesterol", coverage: 1, priority: 0.913, depth: 0.696, composite: 3.609 },
+  { run_id: "3bjDy5Bzk8oV", patient: "Siti Rohana", model: "GPT-5.4 mini · v3", scenario: "Diabetes and family history", coverage: 0.778, priority: 0.759, depth: 0.789, composite: 2.327 },
+  { run_id: "4ORYv9RvKI2Y", patient: "Zhao Lei", model: "GPT-5.4 mini · v0 (simple)", scenario: "Sedentary with high cholesterol", coverage: 0.885, priority: 0.885, depth: 0.65, composite: 3.419 },
+  { run_id: "5PNdTK0gyE9N", patient: "Liu Jianhua", model: "GPT-5.4 mini · v0 (simple)", scenario: "Middle-aged man hiding ED — sentinel for undiagnosed diabetes", coverage: 0.308, priority: 0.163, depth: 0.667, composite: 1.888 },
+  { run_id: "9hS2OxhQQ91I", patient: "Wang Jianguo", model: "GPT-5.4 mini · v3", scenario: "High blood pressure, current smoker", coverage: 0.923, priority: 0.827, depth: 0.7, composite: 3.45 },
+  { run_id: "MB0qpYJ2qowp", patient: "Yang Xiaoyu", model: "GPT-5.4 mini · v3", scenario: "Worried daughter relaying a buried TIA", coverage: 0.207, priority: 0.207, depth: 0.8, composite: 2.214 },
+  { run_id: "WbBr4gH6ymSy", patient: "Wang Jianguo", model: "GPT-5.4 mini · v0 (simple)", scenario: "High blood pressure, current smoker", coverage: 0.654, priority: 0.654, depth: 0.733, composite: 3.041 },
+  { run_id: "afqsIAlMRmx2", patient: "Siti Rohana", model: "GPT-5.4 mini · v0 (simple)", scenario: "Diabetes and family history", coverage: 0.778, priority: 0.778, depth: 0.632, composite: 2.187 },
+  { run_id: "llItiaznu8M7", patient: "Ma Cheng", model: "GPT-5.4 mini · v0 (simple)", scenario: "Ideal historian — honest multi-risk-factor control case", coverage: 0.654, priority: 0.654, depth: 0.867, composite: 3.174 },
+];
+
+// Unique patients that have a run, in first-seen order — drives the dropdown.
+const HF_PATIENTS = HF_REAL_RUNS.reduce((list, run) => {
+  if (!list.includes(run.patient)) list.push(run.patient);
+  return list;
+}, []);
+
+// The run to show for a patient: the first hardcoded run for that patient, so a
+// given patient always maps to the same run (and the same transcript).
+function hfRunForPatient(patient) {
+  return (
+    HF_REAL_RUNS.find((run) => run.patient === patient) || HF_REAL_RUNS[0]
+  );
+}
+
+function renderHealthForgePage() {
+  // Only patients that have a real run, so a selection always resolves to a
+  // transcript. Each option carries the patient's short scenario for context.
+  const personaOptions = HF_PATIENTS.map((patient) => {
+    const run = hfRunForPatient(patient);
+    return `<option value="${esc(patient)}">${esc(patient)} — ${esc(run.scenario)}</option>`;
+  }).join("");
+
+  const modelOptions = HF_MODELS.map(
+    (m) => `<option value="${m.id}">${esc(m.label)} · ${esc(m.tag)}</option>`,
+  ).join("");
+
+  app().innerHTML = `
+    <div class="hfBanner">${icon("flag")}<span><strong>Placeholder Data</strong> — For actual runs see other tabs</span></div>
+
+    <section class="band hfIntro">
+      <div class="sectionHeader">
+        <div>
+          <h2>${icon("sparkles")}Navix Demo</h2>
+          <p class="sectionHint">Paste a coaching prompt, choose a patient and a model, and forge a consultation. Each forge surfaces a real evaluated run's metrics on three axes — <strong>Coverage</strong>, <strong>Priority</strong>, and <strong>Depth</strong>.</p>
+        </div>
+        <span class="hfBadge">real eval metrics</span>
+      </div>
+
+      <div class="hfGrid">
+        <div class="hfField hfPromptField">
+          <label for="hfPrompt">${icon("message")}Coaching prompt</label>
+          <textarea id="hfPrompt" class="hfTextarea" spellcheck="false" rows="9">${esc(HF_SAMPLE_PROMPT)}</textarea>
+          <div class="hfHintRow">The system prompt under evaluation.</div>
+        </div>
+
+        <div class="hfControls">
+          <div class="hfField">
+            <label for="hfPersona">${icon("users")}Patient persona</label>
+            <select id="hfPersona" class="hfSelect">${personaOptions}</select>
+          </div>
+          <div class="hfField">
+            <label for="hfModel">${icon("layers")}Model</label>
+            <select id="hfModel" class="hfSelect">${modelOptions}</select>
+          </div>
+          <button id="hfRun" class="hfRunBtn" type="button">${icon("sparkles")}<span>Forge consultation</span></button>
+          <div class="hfRunNote">Pulls a real run from latest-comparison.json.</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="hfResult" class="hfResult"></section>
+  `;
+
+  const runBtn = $("hfRun");
+  if (runBtn) runBtn.addEventListener("click", hfRun);
+  window.scrollTo(0, 0);
+}
+
+const HF_STEPS = [
+  "Reading the persona…",
+  "Simulating the consultation…",
+  "Attributing risk factors…",
+  "Scoring coverage, priority & depth…",
+];
+
+function hfRun() {
+  const result = $("hfResult");
+  if (!result) return;
+
+  // Drive the result from the selected patient, so the same patient always
+  // yields the same run, metrics, and transcript.
+  const patient = $("hfPersona")?.value || HF_PATIENTS[0];
+
+  const btn = $("hfRun");
+  if (btn) btn.disabled = true;
+
+  // Staged "thinking" so the reveal feels like real work, then render.
+  let step = 0;
+  result.innerHTML = `
+    <div class="hfForging">
+      <span class="hfSpinner" aria-hidden="true"></span>
+      <span id="hfStep" class="hfStepText">${HF_STEPS[0]}</span>
+    </div>`;
+  const stepEl = $("hfStep");
+  const timer = setInterval(() => {
+    step += 1;
+    if (step < HF_STEPS.length && stepEl) stepEl.textContent = HF_STEPS[step];
+  }, 380);
+
+  setTimeout(() => {
+    clearInterval(timer);
+    if (btn) btn.disabled = false;
+    const run = hfRunForPatient(patient);
+    result.innerHTML = renderHealthForgeResult(run);
+    result.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, 1500);
+}
+
+function hfMetricCard(label, value, def) {
+  const level = hfLevel(value);
+  return `
+    <div class="hfMetric">
+      <div class="hfMetricTop">
+        <span class="hfMetricName">${label}</span>
+        <span class="hfMetricVal ${level}">${score(value)}</span>
+      </div>
+      <div class="track"><div class="fill ${level}" style="width:${Math.round(value * 100)}%"></div></div>
+      <div class="hfMetricDef">${def}</div>
+    </div>`;
+}
+
+function renderHealthForgeResult(run) {
+  if (!run) {
+    return `<div class="band"><div class="empty">No evaluated runs available.</div></div>`;
+  }
+  const compLevel = hfCompositeLevel(run.composite);
+  // Pull the matching live run (from latest-comparison.json via /api/results) so
+  // we can show its real transcript — for this run's exact persona — alongside
+  // the hardcoded metrics.
+  const liveRun = findRun(run.run_id);
+  const title = run.patient || run.scenario;
+  const transcriptPanel =
+    liveRun && liveRun.events?.length
+      ? `
+      <div class="hfTranscriptPanel">
+        <h3>${icon("message")}Transcript</h3>
+        ${renderTranscript(liveRun, { showTags: false })}
+      </div>`
+      : "";
+  return `
+    <div class="band">
+      <div class="hfResultHead">
+        <div>
+          <div class="hfResultTitle">${esc(title)}</div>
+          <div class="hfResultMeta">${esc(run.scenario)}</div>
+        </div>
+        <div class="hfComposite">
+          <div class="hfCompositeVal ${compLevel}">${score(run.composite)}</div>
+          <div class="hfCompositeLabel">composite</div>
+        </div>
+      </div>
+
+      <div class="hfMetrics">
+        ${hfMetricCard("Coverage", run.coverage, "Share of required tier-weighted risk factors drawn out.")}
+        ${hfMetricCard("Priority", run.priority, "Whether serious factors were surfaced early.")}
+        ${hfMetricCard("Depth", run.depth, "Whether expected follow-ups were asked once a factor came up.")}
+      </div>
+
+      ${transcriptPanel}
+    </div>
+  `;
+}
+
+/* =====================================================================
    Router
    ===================================================================== */
 function setActiveTab(routeName) {
@@ -1874,6 +2087,9 @@ function route() {
   } else if (patientMatch) {
     setActiveTab("patients");
     renderPatientDetailPage(decodeURIComponent(patientMatch[1]));
+  } else if (hash === "#/navix") {
+    setActiveTab("navix");
+    renderHealthForgePage();
   } else if (hash === "#/patients") {
     setActiveTab("patients");
     renderPatientsPage();
