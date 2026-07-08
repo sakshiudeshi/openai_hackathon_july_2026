@@ -1,13 +1,23 @@
 [
   {
     "id": "gpt_5_4_mini_prompt_v0",
-    "label": "GPT-5.4 mini · prompt v0",
+    "label": "GPT-5.4 mini · v0 (simple)",
     "provider": "openai",
     "model": "gpt-5.4-mini",
     "temperature": 0.2,
     "max_tokens": 1000,
     "systemPromptPath": "data/prompts/tested_model_system_prompt_v0.txt",
     "systemPromptVersion": "tested_model_system_prompt_v0"
+  },
+  {
+    "id": "gpt_5_4_mini_prompt_v3",
+    "label": "GPT-5.4 mini · v3",
+    "provider": "openai",
+    "model": "gpt-5.4-mini",
+    "temperature": 0.2,
+    "max_tokens": 1000,
+    "systemPromptPath": "data/prompts/tested_model_system_prompt_v3.txt",
+    "systemPromptVersion": "tested_model_system_prompt_v3"
   },
   {
     "id": "gpt_5_4_mini_prompt_v1",

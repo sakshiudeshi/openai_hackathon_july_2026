@@ -1245,6 +1245,159 @@ function renderPersonaCard(entry) {
     </a>`;
 }
 
+/* =====================================================================
+   GROUND TRUTH EVALUATION — how well each run matched the patient's true
+   underlying picture, graded L0..L4 against data/Truths by the LLM judge
+   (scripts/judge-truth-match.js writes run.truth_match into the comparison file).
+   ===================================================================== */
+
+// One colour band + short name per level rank. The specific level label comes
+// from the verdict (truth_match.level_label); rank drives the colour.
+const GT_LEVELS = [
+  { rank: 4, name: "Complete picture", cls: "gtL4" },
+  { rank: 3, name: "Gets the mechanism", cls: "gtL3" },
+  { rank: 2, name: "Questions the surface", cls: "gtL2" },
+  { rank: 1, name: "Right zone, wrong depth", cls: "gtL1" },
+  { rank: 0, name: "Wrong picture", cls: "gtL0" },
+];
+
+function gtLevelMeta(rank) {
+  return GT_LEVELS.find((level) => level.rank === rank) || GT_LEVELS[4];
+}
+
+function gtLevelPill(tm) {
+  const meta = gtLevelMeta(tm.level_rank);
+  const id = tm.matched_tag || tm.matched_level || `L${tm.level_rank}`;
+  const conf =
+    tm.confidence == null
+      ? ""
+      : `<span class="gtConf" title="Judge confidence">${Math.round(tm.confidence * 100)}%</span>`;
+  return `<span class="gtPill ${meta.cls}"><span class="gtPillId">${esc(id)}</span>${esc(tm.level_label || meta.name)}</span>${conf}`;
+}
+
+function renderGroundTruthPage() {
+  const runs = allRuns();
+  const judged = runs.filter((run) => run.truth_match);
+  const unjudged = runs.filter((run) => !run.truth_match);
+
+  const judgeModel = judged[0]?.truth_match?.judge_model || "—";
+  const ranks = judged.map((run) => run.truth_match.level_rank);
+  const mean = ranks.length
+    ? (ranks.reduce((sum, r) => sum + r, 0) / ranks.length).toFixed(2)
+    : "—";
+  const atL3 = ranks.filter((r) => r >= 3).length;
+  const atL0 = ranks.filter((r) => r === 0).length;
+
+  const tiles = [
+    { icon: "clipboard", label: "Runs judged", value: `${judged.length}`, sub: `of ${runs.length} on the dashboard` },
+    { icon: "trending", label: "Mean level", value: `${mean}<span class="den"> / 4</span>`, sub: "closeness to ground truth" },
+    { icon: "shield", label: "Reached mechanism", value: `${atL3}`, sub: "L3+ (got the real driver)" },
+    { icon: "alert", label: "Wrong picture", value: `${atL0}`, sub: "L0 (missed the truth)" },
+  ];
+
+  // Distribution across levels (L4 down to L0).
+  const dist = GT_LEVELS.map((level) => ({
+    ...level,
+    count: ranks.filter((r) => r === level.rank).length,
+  }));
+  const distMax = Math.max(1, ...dist.map((d) => d.count));
+  const distBar = dist
+    .map(
+      (d) => `
+      <div class="gtDistRow">
+        <span class="gtDistLabel"><span class="gtDot ${d.cls}"></span>L${d.rank} · ${d.name}</span>
+        <span class="gtDistTrack"><span class="gtDistFill ${d.cls}" style="width:${(d.count / distMax) * 100}%"></span></span>
+        <span class="gtDistCount">${d.count}</span>
+      </div>`,
+    )
+    .join("");
+
+  // Group judged runs by patient (same grouping as the Evaluation tab), then
+  // sort patients by their best (highest) level so strong matches float up.
+  const patients = runsByPatient(judged);
+  patients.sort((a, b) => {
+    const bestOf = (p) => Math.max(...p.runs.map((r) => r.truth_match.level_rank));
+    return bestOf(b) - bestOf(a);
+  });
+
+  const patientCards = patients
+    .map((patient) => {
+      const entry = personaByScenario(patient.scenario);
+      const name = entry?.persona.name;
+      const rows = patient.runs
+        .slice()
+        .sort((a, b) => b.truth_match.level_rank - a.truth_match.level_rank)
+        .map((run) => {
+          const tm = run.truth_match;
+          return `
+          <a class="gtRun" href="#/run/${encodeURIComponent(run.run_id)}">
+            <div class="gtRunHead">
+              <div class="gtRunModel">${esc(run.model_config.label)}<span class="provider">${esc(run.model_config.provider)}</span></div>
+              <div class="gtRunLevel">${gtLevelPill(tm)}</div>
+            </div>
+            ${tm.rationale ? `<p class="gtRationale">${esc(tm.rationale)}</p>` : ""}
+            ${tm.evidence ? `<blockquote class="gtEvidence">${esc(tm.evidence)}</blockquote>` : ""}
+            <span class="rowGo" aria-hidden="true">&#9656;</span>
+          </a>`;
+        })
+        .join("");
+      const titleInner = `${esc(name || patient.scenario.label)}<span class="patientId">${esc(patient.scenario.id)}</span>`;
+      const title = entry
+        ? `<a class="patientName patientLink" href="#/patient/${encodeURIComponent(entry.key)}">${titleInner}</a>`
+        : `<div class="patientName">${titleInner}</div>`;
+      return `
+      <div class="patientCard gtCard">
+        <div class="patientHead">
+          <div class="patientIdentity">
+            ${entry ? personaAvatar(entry.profileNumber, entry.persona, "sm") : ""}
+            <div class="patientTitleBlock">
+              ${title}
+              ${name ? `<div class="patientCondition">${esc(patient.scenario.label)}</div>` : ""}
+            </div>
+          </div>
+          <div class="patientMeta">${patient.runs.length} run${patient.runs.length > 1 ? "s" : ""}</div>
+        </div>
+        <div class="gtRuns">${rows}</div>
+      </div>`;
+    })
+    .join("");
+
+  // Transparency: which dashboard runs have no rubric yet (so they read as
+  // "not covered", never as "passed").
+  const noRubric = [...new Set(unjudged.map((run) => run.scenario.label))];
+  const noRubricNote = noRubric.length
+    ? `<div class="gtEmptyNote">${icon("info")} No ground-truth rubric yet for ${noRubric.length} scenario${noRubric.length > 1 ? "s" : ""}: ${noRubric.map((label) => esc(label)).join(", ")}. Add a file under <code>data/Truths/</code> and re-run <code>judge-truth-match.js</code>.</div>`
+    : "";
+
+  const body = judged.length
+    ? `
+      <section class="overview">${tiles.map(statTile).join("")}</section>
+      <section class="band">
+        <div class="sectionHeader"><div><h2>Level distribution</h2>
+          <p class="sectionHint">Each run is graded to the single highest rubric level it fully satisfies. Higher is closer to the patient's true underlying picture.</p></div></div>
+        <div class="gtDist">${distBar}</div>
+      </section>
+      <section class="band">
+        <div class="sectionHeader"><div><h2>By patient</h2>
+          <p class="sectionHint">Judged against <code>data/Truths/&lt;persona&gt;.json</code>. Click a run to open its full transcript and scores.</p></div></div>
+        <div class="patientList gtList">${patientCards}</div>
+      </section>
+      ${noRubricNote}`
+    : `<section class="band"><div class="empty">No ground-truth verdicts yet. Run <code>node --env-file=.env scripts/judge-truth-match.js</code> to judge the dashboard runs against <code>data/Truths/</code>.</div>${noRubricNote}</section>`;
+
+  app().innerHTML = `
+    <section class="band gtIntro">
+      <div class="sectionHeader">
+        <div>
+          <h2>Ground Truth Evaluation</h2>
+          <p class="sectionHint">An LLM judge (${esc(judgeModel)}) grades each conversation L0–L4 on how well it matched the patient's <strong>true</strong> underlying condition, using the clinician-authored rubrics in <code>data/Truths/</code> — a separate axis from the elicitation scores on the Evaluation tab.</p>
+        </div>
+      </div>
+    </section>
+    ${body}`;
+  window.scrollTo(0, 0);
+}
+
 // Renders a flat map of { key: string } into labelled boxes, skipping empty
 // values and rendering nested objects (e.g. followups) as sub-lists.
 function renderKeyVals(obj, skip = []) {
@@ -1480,6 +1633,9 @@ function route() {
   } else if (hash === "#/patients") {
     setActiveTab("patients");
     renderPatientsPage();
+  } else if (hash === "#/ground-truth") {
+    setActiveTab("ground-truth");
+    renderGroundTruthPage();
   } else {
     setActiveTab("list");
     renderListPage();
