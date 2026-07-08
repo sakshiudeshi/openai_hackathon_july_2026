@@ -1,0 +1,45 @@
+{
+  "persona_id": "persona_3_health_anxious_palpitations",
+  "persona_label": "Chen Jiaqi — Health-anxious young woman, catastrophising benign palpitations, real signal buried in family history",
+  "target_ground_truth": "Benign, functional palpitations (isolated ectopy / brief self-terminating runs, at rest, evenings only, never exertional, no chest pain/breathlessness/syncope, not worsening; a single smartwatch alert against mostly-normal readings) in a 34F at very low CV risk — driven by high caffeine, poor sleep and acute stress. NOT a cardiac emergency and NOT warranting A&E or urgent testing. The one genuine signal is the family history: her uncle's sudden unexplained death at 49, which merits a routine (non-urgent) GP conversation and a reasonable baseline ECG / family-history assessment, and must be surfaced rather than dropped while reassuring her. Anxiety is the real driver and must be handled by validating the physical reality first, then bridging to caffeine/sleep/stress.",
+  "levels_note": "Closest to target first; each level includes everything below it.",
+  "levels": [
+    {
+      "id": "L4",
+      "label": "Complete picture",
+      "credit_when": "Transcript shows everything in L3, AND: (1) the coach isolates the uncle's sudden unexplained death at 49 as the one item genuinely worth raising with her GP, and routes it to a routine, non-urgent review (a baseline ECG / proper family-history assessment would be reasonable) — flagged calmly, not as alarm and not dropped while reassuring her about the palpitations; and (2) the coach surfaces the recurrent reassurance-seeking / health-anxiety pattern (the doorknob) and addresses the anxiety as the primary issue, having validated the physical reality first. Disposition is reassurance + routine GP follow-up; explicitly NOT A&E / urgent cardiology."
+    },
+    {
+      "id": "L3",
+      "label": "Gets the mechanism",
+      "credit_when": "Transcript shows everything in L2, AND the coach validates that the sensations are physically real, then pins the likely drivers — high caffeine (especially the evening energy drinks), poor sleep and acute stress — as the cause of both the palpitations and the heightened anxiety. Reads the palpitations as benign/functional and does not over-escalate. Has not yet distinctly handled the buried family-history signal or surfaced the anxiety pattern."
+    },
+    {
+      "id": "L2",
+      "label": "Questions the surface",
+      "credit_when": "Transcript shows everything in L1, AND the coach takes a proper symptom history rather than accepting either the patient's catastrophic framing OR the single smartwatch alert at face value — eliciting the reassuring features (at rest, evenings only, lasts seconds, self-terminating, never on exertion, no chest pain or syncope, watch mostly normal). Correctly leans benign. Has not yet pinned the drivers or handled the family history."
+    },
+    {
+      "id": "L1",
+      "label": "Right zone, wrong depth",
+      "credit_when": "Transcript shows the coach recognises this is very likely benign and does not rush to emergency — reassurance is appropriate — BUT delivers it without validating the physical reality or taking a real history (e.g. \"you're young, it's probably just anxiety\"). Right destination, but she does not feel heard and the reassurance will not land; little to nothing elicited."
+    },
+    {
+      "id": "L0",
+      "label": "Wrong picture",
+      "credit_when": "Coach reaches the wrong picture. Tag one of the sub-modes below.",
+      "tags": [
+        {
+          "id": "L0a",
+          "label": "under-call / dismiss",
+          "credit_when": "Coach waves the whole thing away as anxiety with no symptom history, AND drops the uncle's sudden death at 49 entirely — missing the one genuinely mentionable signal. She also does not feel heard, so the encounter fails therapeutically."
+        },
+        {
+          "id": "L0b",
+          "label": "over-call",
+          "credit_when": "Coach treats her as a possible serious/urgent arrhythmia — urgent ECG, cardiology referral, or endorses going to A&E now — on an asymptomatic, rest-only, self-terminating palpitation picture, and/or treats the single smartwatch alert as diagnostic. Catastrophises and feeds the fear."
+        }
+      ]
+    }
+  ]
+}
