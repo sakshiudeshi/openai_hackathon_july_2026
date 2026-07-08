@@ -9,7 +9,7 @@
 //
 // Usage:
 //   node --env-file=.env scripts/check-escalation.js
-//   node --env-file=.env scripts/check-escalation.js --tested-model gpt_5_4_mini_prompt_v1 --turn-limit 12
+//   node --env-file=.env scripts/check-escalation.js --tested-model gpt_5_4_mini_prompt_coach --turn-limit 12
 //   node --env-file=.env scripts/check-escalation.js --tested-provider anthropic --tested-model-name claude-haiku-4-5-20251001
 
 import {
