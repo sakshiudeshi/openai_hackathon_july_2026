@@ -704,6 +704,273 @@ function renderCoverageGrid(run) {
 }
 
 /* =====================================================================
+   STORY-FIRST PAGES — the public-facing narrative layer
+   ===================================================================== */
+function bestRunOverall() {
+  return allRuns()
+    .slice()
+    .sort(
+      (a, b) =>
+        Number(b.score?.bottom_to_roof_score || 0) -
+        Number(a.score?.bottom_to_roof_score || 0),
+    )[0];
+}
+
+function demoRun() {
+  const redFlag = allRuns().find((run) =>
+    (run.score?.details?.safety_flags || []).length,
+  );
+  return redFlag || bestRunOverall();
+}
+
+function strongestMiss(run) {
+  const missed = run?.score?.details?.missed_required_nodes || [];
+  if (!missed.length) return null;
+  return missed
+    .map((nodeId) => state.data.hierarchy.nodes.find((node) => node.id === nodeId))
+    .filter(Boolean)
+    .sort((a, b) => a.rank - b.rank)[0];
+}
+
+function renderOverviewPage() {
+  const runs = allRuns();
+  const models = state.data.comparison.models || [];
+  const scenarios = state.data.personas || [];
+  const judged = runs.filter((run) => run.truth_match);
+  const safety = state.data.comparison?.safety_evaluation;
+  const best = bestRunOverall();
+  const tiles = [
+    {
+      icon: "users",
+      label: "Simulated patients",
+      value: scenarios.length,
+      sub: "messy cardiovascular conversations",
+    },
+    {
+      icon: "layers",
+      label: "Models compared",
+      value: models.length,
+      sub: "prompt and model versions",
+    },
+    {
+      icon: "target",
+      label: "Evaluation runs",
+      value: runs.length,
+      sub: "coverage, priority, depth",
+    },
+    {
+      icon: "shield",
+      label: "Safety checks",
+      value: safety?.versions?.length || 0,
+      sub: judged.length ? `${judged.length} ground-truth judgments` : "routing verdicts",
+    },
+  ];
+
+  app().innerHTML = `
+    <section class="storyHero">
+      <div class="storyHeroCopy">
+        <div class="eyebrow">${icon("activity")} Health AI evaluation harness</div>
+        <h1>Health AI can sound helpful while missing the clinical context that matters.</h1>
+        <p>CardioNAVIX stress-tests health AI with simulated cardiovascular patients. It checks whether an assistant asks the right questions, uncovers hidden risk factors, matches the patient's true clinical picture, and routes urgent cases safely.</p>
+        <div class="heroActions">
+          <a class="primaryAction" href="#/demo">${icon("sparkles")}Watch Demo</a>
+          <a class="secondaryAction" href="#/try">${icon("message")}Try A Prompt</a>
+          <a class="secondaryAction" href="#/results">${icon("bars")}Explore Results</a>
+        </div>
+      </div>
+      <div class="heroEvidence" aria-label="Example score evidence">
+        <div class="heroEvidenceTop">
+          <span>Current best run</span>
+          <strong>${best ? score(best.score.bottom_to_roof_score) : "—"}<small> / 3</small></strong>
+        </div>
+        ${best ? scoreBar(best, "lg") : ""}
+        <div class="heroMiniGrid">
+          <div><span>Coverage</span><strong>${best ? score(best.score.coverage_score) : "—"}</strong></div>
+          <div><span>Priority</span><strong>${best ? score(best.score.priority_score) : "—"}</strong></div>
+          <div><span>Depth</span><strong>${best ? score(best.score.depth_score) : "—"}</strong></div>
+        </div>
+        <p>Scores come from transcript evidence, not self-reported model confidence.</p>
+      </div>
+    </section>
+
+    <section class="overview">
+      ${tiles.map(statTile).join("")}
+    </section>
+
+    <section class="storyBand">
+      <div class="storySectionHead">
+        <h2>What CardioNAVIX Measures</h2>
+        <p>The project turns one-off demos into repeatable patient-case evaluation.</p>
+      </div>
+      <div class="valueGrid">
+        <div class="valueTile">${icon("target")}<h3>Risk elicitation</h3><p>Did the assistant surface required cardiovascular risk factors instead of staying at generic advice?</p></div>
+        <div class="valueTile">${icon("trending")}<h3>Clinical priority</h3><p>Did serious factors come up early enough to change the conversation?</p></div>
+        <div class="valueTile">${icon("ordered")}<h3>Follow-up depth</h3><p>When a risk factor appeared, did the assistant ask the expected clarifying questions?</p></div>
+        <div class="valueTile">${icon("clipboard")}<h3>Ground truth match</h3><p>Did the conversation reach the patient's real underlying picture, not just the surface complaint?</p></div>
+        <div class="valueTile">${icon("shield")}<h3>Safety routing</h3><p>For red-flag cases, did the assistant route to the right level of care?</p></div>
+        <div class="valueTile">${icon("message")}<h3>Transcript evidence</h3><p>Every score links back to what the assistant and patient actually said.</p></div>
+      </div>
+    </section>
+
+    <section class="storyBand splitStory">
+      <div>
+        <h2>Start with a patient case, then inspect the data.</h2>
+        <p class="sectionHint">The fastest way to understand the project is to watch one simulated case unfold, then open the aggregate results when the scoring model is clear.</p>
+      </div>
+      <div class="pathGrid">
+        <a href="#/demo" class="pathCard">${icon("sparkles")}<strong>Guided demo</strong><span>Follow one conversation from patient setup to score.</span></a>
+        <a href="#/patients" class="pathCard">${icon("users")}<strong>Patient library</strong><span>Inspect hidden facts, behavior, and red flags.</span></a>
+        <a href="#/results" class="pathCard">${icon("bars")}<strong>Results dashboard</strong><span>Compare models across coverage, truth, and safety.</span></a>
+      </div>
+    </section>
+  `;
+  window.scrollTo(0, 0);
+}
+
+function renderDemoPage() {
+  const run = demoRun();
+  if (!run) {
+    app().innerHTML = `<section class="band"><div class="empty">No run data available for the guided demo.</div></section>`;
+    return;
+  }
+  const persona = personaByScenario(run.scenario);
+  const patientName = persona?.persona.name || run.scenario.label;
+  const missed = strongestMiss(run);
+  const safetyFlags = run.score?.details?.safety_flags || [];
+  const hiddenFacts = persona ? hiddenFactCount(persona.persona) : 0;
+
+  app().innerHTML = `
+    <section class="storyHero compact">
+      <div class="storyHeroCopy">
+        <div class="eyebrow">${icon("sparkles")} Guided case walkthrough</div>
+        <h1>Watch one cardiovascular-risk conversation get evaluated.</h1>
+        <p>This demo follows a real saved run: who the patient is, what the assistant asked, what CardioNAVIX credited, and what the score means.</p>
+        <div class="heroActions">
+          <a class="primaryAction" href="#/run/${encodeURIComponent(run.run_id)}">${icon("clipboard")}Open Full Evidence</a>
+          <a class="secondaryAction" href="#/try">${icon("message")}Try A Prompt</a>
+        </div>
+      </div>
+      <div class="caseCard">
+        <div class="patientIdentity">
+          ${persona ? personaAvatar(persona.profileNumber, persona.persona, "lg") : ""}
+          <div>
+            <div class="caseName">${esc(patientName)}</div>
+            <div class="caseScenario">${esc(run.scenario.label)}</div>
+          </div>
+        </div>
+        <div class="caseStats">
+          <span>${hiddenFacts} hidden facts</span>
+          <span>${run.events?.length || 0} transcript turns</span>
+          <span>${safetyFlags.length} safety flags</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="storyBand">
+      <div class="timeline">
+        <div class="timelineItem">
+          <div class="timelineStep">1</div>
+          <div><h3>Meet the patient</h3><p>${esc(patientName)} presents as "${esc(run.scenario.label)}". The persona may withhold details, minimize symptoms, or reveal important facts only when asked well.</p></div>
+        </div>
+        <div class="timelineItem">
+          <div class="timelineStep">2</div>
+          <div><h3>Run the assistant conversation</h3><p>The tested assistant interviews the patient. CardioNAVIX watches for risk factors, follow-ups, timing, and unsafe routing.</p></div>
+        </div>
+        <div class="timelineItem">
+          <div class="timelineStep">3</div>
+          <div><h3>Score the transcript</h3><p>The composite score combines coverage, priority, and depth. This run scored <strong>${score(run.score.bottom_to_roof_score)} / 3</strong>.</p></div>
+        </div>
+        <div class="timelineItem">
+          <div class="timelineStep">4</div>
+          <div><h3>Read the miss</h3><p>${missed ? `The highest-priority missed node was <strong>${esc(missed.label)}</strong>, ranked #${missed.rank}.` : "No required hierarchy nodes were missed in this run."}</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="band detailHero">
+      <div class="detailTitle">
+        <div class="runModel">${esc(run.model_config.label)}<span class="provider">${esc(run.model_config.provider)}</span></div>
+        <div class="runScenario">${esc(run.scenario.label)}<span class="patientId">${esc(run.scenario.id)}</span></div>
+      </div>
+      ${scoreBar(run, "lg")}
+      <div class="detailHeroFoot">
+        ${scoreLegend()}
+        <div class="runFlags">${runFlagPills(run)}</div>
+      </div>
+    </section>
+
+    <div class="detailGrid">
+      <div class="subPanel">
+        <h3>${icon("bars")}Why this score?</h3>
+        <div class="subPanelHint">The same dimensions used across every model run.</div>
+        ${renderScoreBreakdown(run)}
+      </div>
+      <div class="subPanel">
+        <h3>${icon("message")}Transcript excerpt</h3>
+        <div class="subPanelHint">The full transcript is available from the evidence link above.</div>
+        ${renderTranscript({ ...run, events: run.events.slice(0, 6) }, { showTags: true })}
+      </div>
+    </div>
+  `;
+  window.scrollTo(0, 0);
+}
+
+function renderHowItWorksPage() {
+  app().innerHTML = `
+    <section class="storyHero compact">
+      <div class="storyHeroCopy">
+        <div class="eyebrow">${icon("sitemap")} Evaluation pipeline</div>
+        <h1>CardioNAVIX turns patient conversations into auditable model evidence.</h1>
+        <p>The harness gives each model the same patient challenge, then scores what the transcript actually surfaced.</p>
+      </div>
+    </section>
+
+    <section class="storyBand">
+      <div class="flowGrid">
+        <div class="flowStep"><span>1</span>${icon("users")}<h3>Simulated patient</h3><p>A persona defines symptoms, behavior, hidden facts, disclosure rules, and ground truth.</p></div>
+        <div class="flowStep"><span>2</span>${icon("message")}<h3>AI conversation</h3><p>The tested model interviews the patient under a prompt and turn limit.</p></div>
+        <div class="flowStep"><span>3</span>${icon("target")}<h3>Evaluation engine</h3><p>The transcript is scored for coverage, priority, depth, truth match, and safety routing.</p></div>
+        <div class="flowStep"><span>4</span>${icon("bars")}<h3>Actionable results</h3><p>The dashboard shows which model found the signal, missed the signal, or routed unsafely.</p></div>
+      </div>
+    </section>
+
+    <section class="storyBand splitStory">
+      <div>
+        <h2>The project separates three questions that often get blurred.</h2>
+        <p class="sectionHint">A model can ask many questions and still miss the underlying condition. It can find context but fail escalation. The separate views make those failures visible.</p>
+      </div>
+      <div class="pathGrid">
+        <a href="#/results" class="pathCard">${icon("target")}<strong>Coverage</strong><span>What required factors were elicited?</span></a>
+        <a href="#/ground-truth" class="pathCard">${icon("clipboard")}<strong>Ground truth</strong><span>Did the model understand the real patient picture?</span></a>
+        <a href="#/safety" class="pathCard">${icon("shield")}<strong>Safety</strong><span>Did urgent cases reach the right care tier?</span></a>
+      </div>
+    </section>
+  `;
+  window.scrollTo(0, 0);
+}
+
+function renderAboutPage() {
+  app().innerHTML = `
+    <section class="storyHero compact">
+      <div class="storyHeroCopy">
+        <div class="eyebrow">${icon("info")} About CardioNAVIX</div>
+        <h1>A focused evaluation harness for cardiovascular-risk conversations.</h1>
+        <p>CardioNAVIX was built to test whether health AI can navigate clinical context, not just produce fluent health advice.</p>
+      </div>
+    </section>
+
+    <section class="storyBand aboutStack">
+      <div class="aboutBlock"><h2>Why We Built This</h2><p>Health assistants can sound competent while failing to uncover risk factors, hidden symptoms, medication confusion, family history, or red flags. We wanted a repeatable way to expose those misses.</p></div>
+      <div class="aboutBlock"><h2>The Problem With Current Evaluation</h2><p>Generic benchmarks rarely test the messy work of interviewing a patient. Real safety depends on whether the assistant asks the next right question and notices when routine advice is not enough.</p></div>
+      <div class="aboutBlock"><h2>What It Measures</h2><p>CardioNAVIX measures risk-factor coverage, priority, follow-up depth, match to ground truth, and escalation behavior. Each result is tied back to transcript evidence.</p></div>
+      <div class="aboutBlock caution"><h2>What This Is Not</h2><p>CardioNAVIX is not a diagnostic tool and does not provide medical advice. It is an evaluation harness for testing whether health AI systems gather clinically important context and handle safety-sensitive routing appropriately.</p></div>
+      <div class="aboutBlock"><h2>Future Direction</h2><p>The next step is a live prompt-testing backend: users paste their own prompt, select a patient and turn limit, run a fresh simulated conversation, and receive the same score breakdown.</p></div>
+    </section>
+  `;
+  window.scrollTo(0, 0);
+}
+
+/* =====================================================================
    LIST PAGE — overview + every run
    ===================================================================== */
 function renderListPage() {
@@ -759,8 +1026,12 @@ function renderListPage() {
     <section class="band">
       <div class="sectionHeader">
         <div>
-          <h2>Model leaderboard</h2>
-          <p class="sectionHint">Composite score (0&ndash;3), broken into its three parts &mdash; longer bars are better. Best model on top.</p>
+          <h2>Results Dashboard</h2>
+          <p class="sectionHint">Composite score (0&ndash;3), broken into coverage, priority, and depth. Use the specialist views below for ground-truth matching and safety routing.</p>
+        </div>
+        <div class="filters resultLinks">
+          <a class="miniLink" href="#/ground-truth">${icon("clipboard")}Ground Truth</a>
+          <a class="miniLink" href="#/safety">${icon("shield")}Safety</a>
         </div>
       </div>
       <div class="chartBox leaderboard"><canvas id="leaderboardChart"></canvas></div>
@@ -954,13 +1225,13 @@ function renderDetailPage(runId) {
   const run = findRun(runId);
   if (!run) {
     app().innerHTML = `
-      <a class="backLink" href="#/">&#8592; Back to all runs</a>
+      <a class="backLink" href="#/results">&#8592; Back to results</a>
       <div class="band"><div class="empty">Run “${runId}” was not found. It may be from a different results file.</div></div>`;
     return;
   }
 
   app().innerHTML = `
-    <a class="backLink" href="#/">&#8592; Back to all runs</a>
+    <a class="backLink" href="#/results">&#8592; Back to results</a>
     <section class="band detailHero">
       <div class="detailTitle">
         <div class="runModel">
@@ -1940,15 +2211,15 @@ function renderHealthForgePage() {
   ).join("");
 
   app().innerHTML = `
-    <div class="hfBanner">${icon("flag")}<span><strong>Placeholder Data</strong> — For actual runs see other tabs</span></div>
+    <div class="hfBanner">${icon("flag")}<span><strong>Backend TODO</strong> — this UI is ready for live prompt scoring, but today it previews saved runs from <code>latest-comparison.json</code>.</span></div>
 
     <section class="band hfIntro">
       <div class="sectionHeader">
         <div>
-          <h2>${icon("sparkles")}Navix Demo</h2>
-          <p class="sectionHint">Paste a coaching prompt, choose a patient and a model, and forge a consultation. Each forge surfaces a real evaluated run's metrics on three axes — <strong>Coverage</strong>, <strong>Priority</strong>, and <strong>Depth</strong>.</p>
+          <h2>${icon("sparkles")}Try Your Prompt</h2>
+          <p class="sectionHint">Paste a prompt, choose a sample patient and turn limit, then preview the scoring experience. The next backend step will run this prompt against the selected persona and produce fresh metrics.</p>
         </div>
-        <span class="hfBadge">real eval metrics</span>
+        <span class="hfBadge">frontend ready</span>
       </div>
 
       <div class="hfGrid">
@@ -1964,11 +2235,15 @@ function renderHealthForgePage() {
             <select id="hfPersona" class="hfSelect">${personaOptions}</select>
           </div>
           <div class="hfField">
+            <label for="hfTurns">${icon("ordered")}Number of turns</label>
+            <input id="hfTurns" class="hfInput" type="number" min="3" max="20" value="8" />
+          </div>
+          <div class="hfField">
             <label for="hfModel">${icon("layers")}Model</label>
             <select id="hfModel" class="hfSelect">${modelOptions}</select>
           </div>
-          <button id="hfRun" class="hfRunBtn" type="button">${icon("sparkles")}<span>Forge consultation</span></button>
-          <div class="hfRunNote">Pulls a real run from latest-comparison.json.</div>
+          <button id="hfRun" class="hfRunBtn" type="button">${icon("sparkles")}<span>Preview score</span></button>
+          <div class="hfRunNote">The selected prompt and turn count are captured in the UI. Backend support is tracked in <code>TODO.md</code>.</div>
         </div>
       </div>
     </section>
@@ -1983,7 +2258,7 @@ function renderHealthForgePage() {
 
 const HF_STEPS = [
   "Reading the persona…",
-  "Simulating the consultation…",
+  "Preparing the prompt run…",
   "Attributing risk factors…",
   "Scoring coverage, priority & depth…",
 ];
@@ -1995,6 +2270,7 @@ function hfRun() {
   // Drive the result from the selected patient, so the same patient always
   // yields the same run, metrics, and transcript.
   const patient = $("hfPersona")?.value || hfPatients()[0];
+  const turns = $("hfTurns")?.value || "8";
 
   const btn = $("hfRun");
   if (btn) btn.disabled = true;
@@ -2016,7 +2292,7 @@ function hfRun() {
     clearInterval(timer);
     if (btn) btn.disabled = false;
     const run = hfRunForPatient(patient);
-    result.innerHTML = renderHealthForgeResult(run);
+    result.innerHTML = renderHealthForgeResult(run, { turns });
     result.scrollIntoView({ behavior: "smooth", block: "start" });
   }, 1500);
 }
@@ -2034,7 +2310,7 @@ function hfMetricCard(label, value, def) {
     </div>`;
 }
 
-function renderHealthForgeResult(run) {
+function renderHealthForgeResult(run, options = {}) {
   if (!run) {
     return `<div class="band"><div class="empty">No evaluated runs available.</div></div>`;
   }
@@ -2057,7 +2333,7 @@ function renderHealthForgeResult(run) {
       <div class="hfResultHead">
         <div>
           <div class="hfResultTitle">${esc(title)}</div>
-          <div class="hfResultMeta">${esc(run.scenario)}</div>
+          <div class="hfResultMeta">${esc(run.scenario)} · requested ${esc(options.turns || "8")} turns</div>
         </div>
         <div class="hfComposite">
           <div class="hfCompositeVal ${compLevel}">${score(run.composite)}</div>
@@ -2069,6 +2345,11 @@ function renderHealthForgeResult(run) {
         ${hfMetricCard("Coverage", run.coverage, "Share of required tier-weighted risk factors drawn out.")}
         ${hfMetricCard("Priority", run.priority, "Whether serious factors were surfaced early.")}
         ${hfMetricCard("Depth", run.depth, "Whether expected follow-ups were asked once a factor came up.")}
+      </div>
+
+      <div class="hfCallout">
+        ${icon("info")}
+        <span>This preview uses a saved evaluated run. The live backend will run the submitted prompt against this patient and turn limit, then return a new transcript and score.</span>
       </div>
 
       ${transcriptPanel}
@@ -2093,26 +2374,38 @@ function route() {
   const runMatch = hash.match(/^#\/run\/(.+)$/);
   const patientMatch = hash.match(/^#\/patient\/(.+)$/);
   if (runMatch) {
-    setActiveTab("list");
+    setActiveTab("results");
     renderDetailPage(decodeURIComponent(runMatch[1]));
   } else if (patientMatch) {
     setActiveTab("patients");
     renderPatientDetailPage(decodeURIComponent(patientMatch[1]));
-  } else if (hash === "#/navix") {
-    setActiveTab("navix");
+  } else if (hash === "#/demo") {
+    setActiveTab("demo");
+    renderDemoPage();
+  } else if (hash === "#/try" || hash === "#/navix") {
+    setActiveTab("try");
     renderHealthForgePage();
+  } else if (hash === "#/results") {
+    setActiveTab("results");
+    renderListPage();
   } else if (hash === "#/patients") {
     setActiveTab("patients");
     renderPatientsPage();
+  } else if (hash === "#/how-it-works") {
+    setActiveTab("how");
+    renderHowItWorksPage();
+  } else if (hash === "#/about") {
+    setActiveTab("about");
+    renderAboutPage();
   } else if (hash === "#/ground-truth") {
-    setActiveTab("ground-truth");
+    setActiveTab("results");
     renderGroundTruthPage();
   } else if (hash === "#/safety") {
-    setActiveTab("safety");
+    setActiveTab("results");
     renderSafetyPage();
   } else {
-    setActiveTab("list");
-    renderListPage();
+    setActiveTab("overview");
+    renderOverviewPage();
   }
 }
 

@@ -382,9 +382,352 @@ select {
 }
 
 select:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
 button:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+}
+
+/* ---------- Story-first public pages ---------- */
+.storyHero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(320px, 0.8fr);
+  gap: 22px;
+  align-items: stretch;
+  min-height: 420px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 28px;
+  background:
+    linear-gradient(135deg, rgba(12, 30, 43, 0.96), rgba(16, 37, 52, 0.9)),
+    radial-gradient(circle at 85% 20%, rgba(245, 196, 81, 0.14), transparent 28%);
+  overflow: hidden;
+}
+
+.storyHero.compact {
+  min-height: 260px;
+}
+
+.storyHeroCopy {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 18px;
+  max-width: 840px;
+}
+
+.storyHero h1 {
+  max-width: 760px;
+  font-size: clamp(34px, 5vw, 64px);
+  line-height: 1.02;
+  letter-spacing: 0;
+}
+
+.storyHero p {
+  max-width: 720px;
+  color: var(--ink-dim);
+  font-size: 16px;
+  line-height: 1.65;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.heroActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.primaryAction,
+.secondaryAction,
+.miniLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 9px 14px;
+  border-radius: 10px;
+  color: inherit;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.primaryAction {
+  color: #041018;
+  background: linear-gradient(135deg, var(--accent), #f5c451);
+}
+
+.secondaryAction,
+.miniLink {
+  border: 1px solid var(--line-strong);
+  background: var(--panel-2);
+  color: var(--ink-dim);
+}
+
+.secondaryAction:hover,
+.miniLink:hover {
+  color: var(--ink);
+  border-color: var(--accent);
+}
+
+.heroEvidence,
+.caseCard {
+  align-self: center;
+  border: 1px solid var(--line-strong);
+  border-radius: 14px;
+  background: rgba(5, 18, 28, 0.72);
+  padding: 18px;
+  box-shadow: var(--shadow);
+}
+
+.heroEvidenceTop {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+  color: var(--muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.heroEvidenceTop strong {
+  color: var(--ink);
+  font-size: 30px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.heroEvidenceTop small {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.heroMiniGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin: 18px 0;
+}
+
+.heroMiniGrid div {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+  padding: 10px;
+}
+
+.heroMiniGrid span {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.heroMiniGrid strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 18px;
+}
+
+.storyBand {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 22px;
+  background: var(--panel);
+}
+
+.storySectionHead {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.storySectionHead p {
+  color: var(--muted);
+}
+
+.valueGrid,
+.flowGrid,
+.pathGrid {
+  display: grid;
+  gap: 12px;
+}
+
+.valueGrid {
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+}
+
+.valueTile,
+.flowStep,
+.pathCard,
+.aboutBlock {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel-2);
+  padding: 16px;
+}
+
+.valueTile > .ic,
+.pathCard > .ic,
+.flowStep > .ic {
+  color: var(--accent);
+  width: 22px;
+  height: 22px;
+}
+
+.valueTile h3,
+.flowStep h3 {
+  margin-top: 12px;
+  font-size: 15px;
+}
+
+.valueTile p,
+.flowStep p,
+.pathCard span,
+.aboutBlock p {
+  display: block;
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.splitStory {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.pathGrid {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.pathCard {
+  color: inherit;
+  text-decoration: none;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+
+.pathCard:hover {
+  border-color: var(--accent);
+  background: var(--panel-3);
+}
+
+.pathCard strong {
+  display: block;
+  margin-top: 10px;
+  font-size: 14px;
+}
+
+.caseCard {
+  display: grid;
+  gap: 16px;
+}
+
+.caseName {
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.caseScenario {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.caseStats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.caseStats span {
+  padding: 4px 9px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--ink-dim);
+  background: var(--panel);
+  font-size: 12px;
+}
+
+.timeline {
+  display: grid;
+  gap: 14px;
+}
+
+.timelineItem {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.timelineStep,
+.flowStep > span {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 800;
+}
+
+.timelineItem h3 {
+  font-size: 15px;
+  margin-bottom: 5px;
+}
+
+.timelineItem p {
+  color: var(--ink-dim);
+  line-height: 1.55;
+}
+
+.flowGrid {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.flowStep {
+  position: relative;
+  min-height: 220px;
+}
+
+.flowStep > span {
+  margin-bottom: 18px;
+}
+
+.aboutStack {
+  display: grid;
+  gap: 12px;
+}
+
+.aboutBlock.caution {
+  border-color: rgba(245, 196, 81, 0.45);
+  background: var(--mixed-soft);
+}
+
+.resultLinks {
+  align-items: flex-start;
 }
 
 /* ---------- Overview stat tiles ---------- */
@@ -1314,6 +1657,7 @@ a.patientName.patientLink:hover {
 /* ---------- Tab navigation ---------- */
 .tabs {
   display: flex;
+  flex-wrap: wrap;
   gap: 6px;
   padding: 12px 28px 0;
   max-width: 1320px;
@@ -2589,6 +2933,17 @@ a.patientName.patientLink:hover {
   height: 38px;
   width: 100%;
 }
+.hfInput {
+  height: 38px;
+  width: 100%;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  background: var(--panel-2);
+  color: var(--ink);
+  padding: 0 10px;
+  font: inherit;
+  font-size: 13px;
+}
 .hfRunBtn {
   display: inline-flex;
   align-items: center;
@@ -2832,6 +3187,17 @@ a.patientName.patientLink:hover {
 }
 
 @media (max-width: 820px) {
+  .storyHero,
+  .splitStory,
+  .flowGrid {
+    grid-template-columns: 1fr;
+  }
+  .storyHero {
+    min-height: auto;
+  }
+  .storyHero h1 {
+    font-size: 34px;
+  }
   .hfGrid {
     grid-template-columns: 1fr;
   }
