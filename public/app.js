@@ -2295,7 +2295,10 @@ async function hfRun() {
       </div>
       <div id="hfScore" class="hfScoreSlot"></div>
       <div class="hfTranscriptPanel">
-        <h3>${icon("message")}Live transcript</h3>
+        <div class="hfTranscriptHead">
+          <h3>${icon("message")}Live transcript</h3>
+          <div id="hfLegend" class="hfLegend" hidden></div>
+        </div>
         <div id="hfTranscript" class="transcript"></div>
       </div>
     </div>`;
@@ -2305,6 +2308,9 @@ async function hfRun() {
   const transcript = $("hfTranscript");
   const meta = $("hfMeta");
   let patientName = "patient";
+  // Accumulate the streamed events so the transcript can be re-rendered WITH the
+  // judge's per-turn pills once the final score (and its labels) arrives.
+  const liveEvents = [];
 
   hfController = new AbortController();
   hfSetRunning(true);
@@ -2353,7 +2359,13 @@ async function hfRun() {
         } catch {
           continue;
         }
-        patientName = hfHandleRow(row, { transcript, statusText, meta, patientName });
+        patientName = hfHandleRow(row, {
+          transcript,
+          statusText,
+          meta,
+          patientName,
+          events: liveEvents,
+        });
       }
     }
   } catch (error) {
@@ -2373,7 +2385,7 @@ async function hfRun() {
 // Apply one streamed row to the UI. Returns the (possibly updated) patient name
 // so the caller can keep labelling subsequent patient turns.
 function hfHandleRow(row, ctx) {
-  const { transcript, statusText, meta } = ctx;
+  const { transcript, statusText, meta, events } = ctx;
   let { patientName } = ctx;
 
   if (row.type === "run_started") {
@@ -2383,6 +2395,7 @@ function hfHandleRow(row, ctx) {
     }
     if (statusText) statusText.textContent = "Patient is opening the conversation…";
   } else if (row.type === "event") {
+    events.push(row.event);
     hfAppendEvent(transcript, row.event, patientName);
     if (statusText && row.event.speaker) {
       statusText.textContent =
@@ -2390,13 +2403,66 @@ function hfHandleRow(row, ctx) {
           ? `Turn ${row.event.turn} · patient is replying…`
           : `Turn ${row.event.turn} · doctor is thinking…`;
     }
+  } else if (row.type === "judging") {
+    // The judge runs once over the whole transcript after the last turn; make
+    // that pause explicit rather than leaving the last "…is replying" message up.
+    if (statusText) {
+      statusText.textContent = "Judge is scoring the full transcript…";
+    }
   } else if (row.type === "score") {
     hfRenderScore(row);
+    // Re-render the transcript with the judge's per-turn attribution pills, and
+    // reveal the legend that explains them.
+    hfRenderScoredTranscript(transcript, events, row.labels, patientName);
+    hfShowLegend();
     if (statusText) statusText.textContent = "Done — evaluated.";
   } else if (row.type === "error") {
     hfShowError(row.message || "The simulation failed.");
   }
   return patientName;
+}
+
+// Re-render the whole live transcript once judging is done, this time with the
+// Elicited / Volunteered / Context pills. Reuses labelTagsForTurn by shaping the
+// streamed events + judge labels into the same `run` object the Results tab uses.
+function hfRenderScoredTranscript(container, events, labels, patientName) {
+  if (!container || !events?.length) return;
+  const run = {
+    events,
+    evidence: { labels: labels || [] },
+    scenario: { label: patientName },
+  };
+  container.innerHTML = events
+    .map((event) => {
+      const who =
+        event.speaker === "patient"
+          ? `patient &middot; ${esc(patientName)}`
+          : "assistant";
+      const textClass = event.speaker === "assistant" ? "formatted" : "plain";
+      const text =
+        event.speaker === "assistant"
+          ? formatAssistantText(event.text)
+          : esc(event.text);
+      return `<div class="message ${event.speaker}">
+        <div class="speaker">${who} &middot; turn ${event.turn}</div>
+        <div class="messageText ${textClass}">${text}</div>
+        ${labelTagsForTurn(run, event.turn, event.speaker)}
+      </div>`;
+    })
+    .join("");
+}
+
+// Reveal the pill legend once the scored transcript is shown. The colours match
+// the .pill.* classes so the key is self-explanatory.
+function hfShowLegend() {
+  const legend = $("hfLegend");
+  if (!legend) return;
+  legend.hidden = false;
+  legend.innerHTML = `
+    <span class="hfLegendItem"><span class="pill model_elicited">Elicited</span>doctor drew it out</span>
+    <span class="hfLegendItem"><span class="pill patient_volunteered">Volunteered</span>patient offered</span>
+    <span class="hfLegendItem"><span class="pill context_provided">Context</span>known upfront</span>
+    <span class="hfLegendItem"><span class="pill partially_covered">Follow-up</span>depth probe</span>`;
 }
 
 // Append one transcript bubble, reusing the same markup/classes as the saved-run

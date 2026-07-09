@@ -166,6 +166,9 @@ export async function runLiveSimulation({ payload, data, apiKeys, emit }) {
       onEvent: async (event) => {
         await emit({ type: "event", event: publicEvent(event) });
       },
+      onJudgeStart: async () => {
+        await emit({ type: "judging" });
+      },
     });
 
     await emit({
@@ -176,6 +179,9 @@ export async function runLiveSimulation({ payload, data, apiKeys, emit }) {
       score: result.score,
       attributions: result.attributions,
       evidence_summary: result.evidence.summary,
+      // Per-turn judge attribution, so the client can back-fill the transcript
+      // with the same Elicited / Volunteered / Context pills the Results tab shows.
+      labels: result.evidence.labels,
       conversation: result.conversation,
     });
     return result;

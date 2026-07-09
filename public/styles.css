@@ -1442,11 +1442,18 @@ a.patientName.patientLink:hover {
   background: var(--accent-soft);
 }
 
-.pill.patient_volunteered,
-.pill.context_provided {
+.pill.patient_volunteered {
   color: var(--mixed);
   border-color: rgba(245, 196, 81, 0.4);
   background: var(--mixed-soft);
+}
+
+/* Context (already known before any question) is neutral, so it reads as
+   distinct from patient_volunteered rather than sharing the amber. */
+.pill.context_provided {
+  color: var(--ink-dim);
+  border-color: var(--line-strong);
+  background: var(--panel-2);
 }
 
 .pill.missed {
@@ -3037,6 +3044,29 @@ a.patientName.patientLink:hover {
 .hfLiveMeta {
   color: var(--ink-dim);
   font-size: 13px;
+}
+.hfTranscriptHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.hfLegend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  align-items: center;
+}
+.hfLegend[hidden] {
+  display: none;
+}
+.hfLegendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--ink-dim);
 }
 .hfScoreSlot:empty {
   display: none;

@@ -98,7 +98,11 @@ export async function runScenario({
   // Optional per-event hook, fired right AFTER each event (opening, assistant,
   // patient) is recorded, so a streaming caller can push it to the client as it
   // happens. No-op by default. Awaited so a slow writer applies backpressure.
-  onEvent = null
+  onEvent = null,
+  // Optional hook fired once the conversation is complete and right BEFORE the
+  // single post-conversation judge call, so a streaming caller can show a
+  // "scoring the transcript" state during that pause. No-op by default.
+  onJudgeStart = null
 }) {
   const runId = makeRunId();
   const simulator = createPatient(persona, hierarchy);
@@ -198,6 +202,10 @@ export async function runScenario({
     }
   }
 
+  // The judge is a single pass over the WHOLE transcript, run only after the
+  // conversation is finished — not per turn. Signal that transition so streaming
+  // callers can surface it (see onJudgeStart above).
+  await onJudgeStart?.();
   const judgeStartedAt = Date.now();
   const evidence = await extractEvidenceFn(events, hierarchy, {
     contextProvidedNodes: persona.context_provided_nodes || []
