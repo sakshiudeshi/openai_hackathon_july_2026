@@ -5,12 +5,17 @@ import { fileURLToPath } from "node:url";
 import {
   loadGoldTranscripts,
   loadHierarchy,
+  loadPatientHarnessPrompt,
   loadPersonas,
   loadPersonasDetailed,
   PROJECT_ROOT,
 } from "./artifacts.js";
 import { loadAppConfig } from "./config.js";
 import { generateDemoComparison } from "./demo.js";
+import {
+  resolveSimulationRequest,
+  runLiveSimulation,
+} from "./liveSimulation.js";
 import { validateEvaluator } from "./validation.js";
 
 const appConfig = loadAppConfig();
@@ -138,14 +143,111 @@ export async function resolveRequest(request, options = {}) {
   };
 }
 
+// Read and JSON-parse a request body, rejecting anything larger than ~256 KiB
+// (a prompt + config payload is tiny; this just caps abuse).
+function readJsonBody(request, limit = 256 * 1024) {
+  return new Promise((resolve, reject) => {
+    let size = 0;
+    const chunks = [];
+    request.on("data", (chunk) => {
+      size += chunk.length;
+      if (size > limit) {
+        reject(new Error("Request body too large"));
+        request.destroy();
+        return;
+      }
+      chunks.push(chunk);
+    });
+    request.on("end", () => {
+      const raw = Buffer.concat(chunks).toString("utf8").trim();
+      if (!raw) return resolve({});
+      try {
+        resolve(JSON.parse(raw));
+      } catch {
+        reject(new Error("Request body is not valid JSON"));
+      }
+    });
+    request.on("error", reject);
+  });
+}
+
+// The bundled data the live simulation needs, read fresh off disk so a dev
+// editing a persona or the hierarchy sees changes without a rebuild. The
+// Cloudflare Pages Function builds the same shape from the generated bundle.
+function buildSimulationData() {
+  const personasDetailed = loadPersonasDetailed();
+  return {
+    hierarchy: loadHierarchy(),
+    patientHarnessPrompt: loadPatientHarnessPrompt(),
+    personaByKey: (key) => personasDetailed.find((entry) => entry.key === key) || null,
+  };
+}
+
+// Streaming NDJSON endpoint that runs one live "Try It" simulation. Input is
+// validated up front so bad requests still get a real 400; once the stream is
+// open, run-time failures arrive as an `error` row (see runLiveSimulation).
+async function handleSimulate(request, response) {
+  let payload;
+  try {
+    payload = await readJsonBody(request);
+  } catch (error) {
+    sendJson(response, 400, { error: error.message });
+    return;
+  }
+
+  const data = buildSimulationData();
+  try {
+    resolveSimulationRequest(payload, data);
+  } catch (error) {
+    sendJson(response, error.status || 400, { error: error.message });
+    return;
+  }
+
+  response.writeHead(200, {
+    "content-type": "application/x-ndjson; charset=utf-8",
+    "cache-control": "no-cache, no-transform",
+    "access-control-allow-origin": "*",
+  });
+
+  const emit = (row) => {
+    if (!response.writableEnded) response.write(`${JSON.stringify(row)}\n`);
+  };
+  await runLiveSimulation({ payload, data, apiKeys: process.env, emit });
+  response.end();
+}
+
 export function createServer(options = {}) {
   return http.createServer(async (request, response) => {
     try {
+      const url = new URL(
+        request.url,
+        `http://${request.headers?.host || "localhost"}`,
+      );
+      // CORS preflight, so the endpoint also works when the static site is hosted
+      // on a different origin (e.g. Cloudflare Pages) than this API.
+      if (request.method === "OPTIONS" && url.pathname === "/api/simulate") {
+        response.writeHead(204, {
+          "access-control-allow-origin": "*",
+          "access-control-allow-methods": "POST, OPTIONS",
+          "access-control-allow-headers": "content-type",
+        });
+        response.end();
+        return;
+      }
+      if (request.method === "POST" && url.pathname === "/api/simulate") {
+        await handleSimulate(request, response);
+        return;
+      }
+
       const resolved = await resolveRequest(request, options);
       response.writeHead(resolved.status, resolved.headers);
       response.end(resolved.body);
     } catch (error) {
-      sendJson(response, 500, { error: error.message });
+      if (!response.headersSent) {
+        sendJson(response, 500, { error: error.message });
+      } else if (!response.writableEnded) {
+        response.end();
+      }
     }
   });
 }

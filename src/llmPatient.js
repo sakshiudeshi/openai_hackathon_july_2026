@@ -10,7 +10,12 @@ export class LlmPatient {
     this.hierarchy = hierarchy;
     this.adapter = adapter;
     this.policyVersion = LLM_PATIENT_POLICY_VERSION;
-    this.systemPrompt = options.systemPrompt || buildDefaultPatientPrompt(persona, hierarchy);
+    // `options.harnessPrompt` lets a caller supply the patient-harness prompt text
+    // directly (e.g. from the bundled data in a Cloudflare Worker, where the
+    // fs-based loader is unavailable). When omitted, buildDefaultPatientPrompt
+    // falls back to reading it off disk as before.
+    this.systemPrompt = options.systemPrompt
+      || buildDefaultPatientPrompt(persona, hierarchy, options.harnessPrompt);
     // Fallback transcript, used only when a caller drives the patient WITHOUT
     // supplying the runner's authoritative `events` (e.g. a standalone/direct
     // caller or test). In the normal run path the runner's events are the single
@@ -123,9 +128,9 @@ function usesHarness(persona) {
   );
 }
 
-function buildDefaultPatientPrompt(persona, hierarchy) {
+function buildDefaultPatientPrompt(persona, hierarchy, harnessPrompt) {
   return usesHarness(persona)
-    ? buildHarnessPatientSystemPrompt(persona)
+    ? buildHarnessPatientSystemPrompt(persona, harnessPrompt)
     : buildPatientSystemPrompt(persona, hierarchy);
 }
 
@@ -135,8 +140,8 @@ function buildDefaultPatientPrompt(persona, hierarchy) {
 // (optional_modules, contradiction, false_belief, ...) reaches the actor,
 // rather than being selectively re-rendered. A replacer function is used so a
 // literal `$` in the persona JSON is not interpreted as a replacement pattern.
-export function buildHarnessPatientSystemPrompt(persona) {
-  const harness = loadPatientHarnessPrompt();
+export function buildHarnessPatientSystemPrompt(persona, harnessPrompt) {
+  const harness = harnessPrompt ?? loadPatientHarnessPrompt();
   const personaJson = JSON.stringify(persona, null, 2);
   const filled = harness.replace(PERSONA_PLACEHOLDER, () => personaJson);
   return `${filled.trimEnd()}\n\n${PATIENT_END_PROTOCOL}\n`;

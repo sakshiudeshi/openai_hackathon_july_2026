@@ -7,7 +7,7 @@ import { createModelAdapter } from "./modelAdapters.js";
 // Resolves how a run is produced and scored:
 //  - "scripted": deterministic keyword patient + deterministic evaluator (offline, free, used by tests).
 //  - "llm": an independent LLM patient conversing with the tested model, scored by an LLM judge.
-export function buildEngine(config = {}) {
+export function buildEngine(config = {}, options = {}) {
   if (config.engine !== "llm") {
     return {
       mode: "scripted",
@@ -16,8 +16,8 @@ export function buildEngine(config = {}) {
     };
   }
 
-  const patientAdapter = createModelAdapter({ provider: config.patient.provider, ...config.patient });
-  const judgeAdapter = createModelAdapter({ provider: config.judge.provider, ...config.judge });
+  const patientAdapter = createModelAdapter({ provider: config.patient.provider, ...config.patient }, options);
+  const judgeAdapter = createModelAdapter({ provider: config.judge.provider, ...config.judge }, options);
 
   return {
     mode: "llm",

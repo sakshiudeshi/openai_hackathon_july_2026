@@ -1,14 +1,25 @@
 # TODO
 
-## Live Prompt Scoring Backend
+## Live Prompt Scoring Backend — DONE
 
-- Add an API endpoint for the Try It page, for example `POST /api/try-prompt`.
-- Request payload should include:
-  - `prompt`
-  - `persona_id`
-  - `turn_limit`
-  - `model_config` or `model_id`
-- Backend should run a fresh simulated patient conversation using the selected persona and turn limit.
-- Score the resulting transcript with the existing coverage, priority, depth, ground-truth, and safety evaluators where applicable.
-- Return the transcript, score breakdown, missed required nodes, safety flags, and run metadata to the frontend.
-- Persist ad hoc runs separately from benchmark runs so user experiments do not overwrite `runs/latest-comparison.json`.
+Implemented as `POST /api/simulate` (streaming NDJSON), driven by the
+host-agnostic engine in `src/liveSimulation.js` and surfaced in the **Try It**
+tab. It runs a fresh LLM-patient ↔ tested-model conversation for the chosen
+persona and turn limit, scores it with the existing coverage/priority/depth
+evaluator, and streams each turn plus the final score to the frontend.
+
+- Served locally by `src/server.js` and in production by the Cloudflare Pages
+  Function `functions/api/simulate.js` (same shared code).
+- Data ships to the Worker via the generated bundle `src/generated/dataBundle.js`
+  (`npm run build:data`, also run by `npm run build:pages`).
+
+### Follow-ups
+
+- Persist ad hoc Try It runs separately from benchmark runs so user experiments
+  do not overwrite `runs/latest-comparison.json` (currently live runs are not
+  saved to disk at all).
+- Raise the turn cap from 20 to 30 once deploying on Cloudflare Workers Paid
+  (`MAX_TURN_LIMIT` in `src/liveSimulation.js`, `HF_MAX_TURNS` in `public/app.js`).
+- Add Anthropic / Gemini(OpenRouter) as selectable tested models (adapters exist;
+  add entries to `LIVE_MODELS` + `HF_MODELS` and the corresponding API keys).
+- Optionally fold the escalation/safety judge into the live score.

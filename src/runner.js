@@ -1,4 +1,3 @@
-import crypto from "node:crypto";
 import { loadSystemPromptFrom } from "./artifacts.js";
 import { PatientSimulator } from "./simulator.js";
 import { createModelAdapter } from "./modelAdapters.js";
@@ -15,6 +14,22 @@ const RUN_ID_ALPHABET = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrs
 
 function isoNow() {
   return new Date().toISOString();
+}
+
+// Uniform random integer in [0, max) via rejection sampling over random bytes.
+// Uses Web Crypto (`crypto.getRandomValues`), which is a global in both Node 20+
+// and Cloudflare Workers, so run-id generation needs no `node:crypto` and works
+// unchanged in a Pages Function. Rejecting bytes at/above the largest multiple of
+// `max` keeps the distribution unbiased.
+function randomIndex(max) {
+  const limit = Math.floor(256 / max) * max;
+  const buffer = new Uint8Array(1);
+  let value;
+  do {
+    globalThis.crypto.getRandomValues(buffer);
+    value = buffer[0];
+  } while (value >= limit);
+  return value % max;
 }
 
 // A model config may pin its own system prompt via `systemPromptPath`, letting
@@ -37,7 +52,7 @@ export function makeRunId(existingRunIds = issuedRunIds) {
   for (let attempt = 0; attempt < 100; attempt += 1) {
     let runId = "";
     for (let index = 0; index < 12; index += 1) {
-      runId += RUN_ID_ALPHABET[crypto.randomInt(0, RUN_ID_ALPHABET.length)];
+      runId += RUN_ID_ALPHABET[randomIndex(RUN_ID_ALPHABET.length)];
     }
     if (!/[A-Za-z]/.test(runId) || !/\d/.test(runId)) continue;
     if (!existingRunIds.has(runId)) {
@@ -74,7 +89,11 @@ export async function runScenario({
   // Optional per-turn hook, fired at the START of each turn (before the tested
   // model is called) so callers can render live turn-by-turn progress. No-op by
   // default, keeping the existing runComparison path unchanged.
-  onTurn = null
+  onTurn = null,
+  // Optional per-event hook, fired right AFTER each event (opening, assistant,
+  // patient) is recorded, so a streaming caller can push it to the client as it
+  // happens. No-op by default. Awaited so a slow writer applies backpressure.
+  onEvent = null
 }) {
   const runId = makeRunId();
   const simulator = createPatient(persona, hierarchy);
@@ -107,6 +126,7 @@ export async function runScenario({
   };
   events.push(opening);
   await storage?.recordEvent?.(opening);
+  await onEvent?.(opening);
 
   // Wall-clock timing so a saved run shows where its seconds went: per-turn
   // tested-model vs patient latency, plus the judge call and the total. The
@@ -137,6 +157,7 @@ export async function runScenario({
     };
     events.push(assistantEvent);
     await storage?.recordEvent?.(assistantEvent);
+    await onEvent?.(assistantEvent);
     assistantTurns += 1;
 
     // `events` is the single source of truth for the transcript: it already
@@ -161,6 +182,7 @@ export async function runScenario({
     };
     events.push(patientEvent);
     await storage?.recordEvent?.(patientEvent);
+    await onEvent?.(patientEvent);
 
     // The patient can end the conversation once it has nothing left to ask or
     // share, rather than being forced to fill every remaining turn (which is

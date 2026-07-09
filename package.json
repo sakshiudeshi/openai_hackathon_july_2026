@@ -13,6 +13,7 @@
     "run:demo": "node scripts/run-demo.js",
     "run:evaluation": "node scripts/run-evaluation.js",
     "validate:evaluator": "node scripts/validate-evaluator.js",
+    "build:data": "node scripts/build-data-bundle.js",
     "build:pages": "node scripts/build-pages.js",
     "deploy:cloudflare": "node scripts/build-pages.js --deploy"
   },

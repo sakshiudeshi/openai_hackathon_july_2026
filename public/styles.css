@@ -2973,6 +2973,87 @@ a.patientName.patientLink:hover {
   width: 18px;
   height: 18px;
 }
+.hfBtnRow {
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+}
+.hfBtnRow .hfRunBtn {
+  flex: 1;
+}
+.hfStopBtn {
+  height: 44px;
+  padding: 0 16px;
+  border-radius: 10px;
+  border: 1px solid var(--line-strong);
+  background: var(--panel-2);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter 0.15s ease;
+}
+.hfStopBtn:hover {
+  filter: brightness(1.08);
+}
+.hfStopBtn[hidden] {
+  display: none;
+}
+
+/* turns slider */
+.hfRange {
+  width: 100%;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+/* live run */
+.hfLiveHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.hfStatus {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--ink-dim);
+  font-size: 14px;
+}
+.hfStatus.stopped {
+  color: var(--ink-dim);
+}
+.hfStatus.errored,
+.hfErrText {
+  color: #ff6b6b;
+}
+.hfStatus .ic {
+  width: 18px;
+  height: 18px;
+}
+.hfLiveMeta {
+  color: var(--ink-dim);
+  font-size: 13px;
+}
+.hfScoreSlot:empty {
+  display: none;
+}
+.hfScoreSlot {
+  margin-bottom: 18px;
+}
+.hfError {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--ink-dim);
+}
+.hfError .ic {
+  width: 18px;
+  height: 18px;
+}
 
 /* forging / loading */
 .hfResult {

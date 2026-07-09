@@ -2135,10 +2135,10 @@ function renderPatientDetailPage(key) {
    live data (runs/latest-comparison.json, via /api/results) for the selected
    patient and shows its genuine metrics and transcript — no synthetic scoring.
    ===================================================================== */
+// Models the live backend can actually run as the TESTED model. Must match the
+// keys in LIVE_MODELS (src/liveSimulation.js) — only OpenAI is wired up today.
 const HF_MODELS = [
   { id: "gpt-5.5", label: "gpt-5.5", tag: "flagship" },
-  { id: "claude-opus-4-8", label: "claude-opus-4.8", tag: "flagship" },
-  { id: "gemini-3-pro", label: "gemini-3-pro", tag: "frontier" },
   { id: "gpt-5.4-mini", label: "gpt-5.4-mini", tag: "small / fast" },
 ];
 
@@ -2159,77 +2159,48 @@ function hfCompositeLevel(value) {
   return hfLevel(value / 3);
 }
 
-// The demo's runs are derived from the live data on your filesystem
-// (runs/latest-comparison.json, served over /api/results) rather than a
-// hardcoded list — so their run_ids always match the current data and the
-// transcript panel resolves. One run per patient (the best composite) keeps a
-// patient selection deterministic. Navix always shows genuine numbers.
-function hfRealRuns() {
-  const byPatient = new Map();
-  for (const run of allRuns()) {
-    if (!run.events?.length) continue;
-    const persona = personaByScenario(run.scenario);
-    const patient = persona?.persona.name || run.scenario.label;
-    const s = run.score || {};
-    const entry = {
-      run_id: run.run_id,
-      patient,
-      model: run.model_config?.label || "",
-      scenario: run.scenario.label,
-      coverage: Number(s.coverage_score || 0),
-      priority: Number(s.priority_score || 0),
-      depth: Number(s.depth_score || 0),
-      composite: Number(s.bottom_to_roof_score || 0),
-    };
-    const existing = byPatient.get(patient);
-    if (!existing || entry.composite > existing.composite) {
-      byPatient.set(patient, entry);
-    }
-  }
-  return [...byPatient.values()];
-}
+// Turn-limit slider bounds. Max 20 keeps a run under Cloudflare's free-tier
+// subrequest cap (~2 model calls per turn + one judge call); raise to 30 once
+// deploying on Workers Paid. Mirrors MAX_TURN_LIMIT in src/liveSimulation.js.
+const HF_MIN_TURNS = 3;
+const HF_MAX_TURNS = 20;
+const HF_DEFAULT_TURNS = 10;
 
-// Unique patients that have a run, in first-seen order — drives the dropdown.
-function hfPatients() {
-  return hfRealRuns().map((run) => run.patient);
-}
-
-// The run to show for a patient: that patient's best run, so a given patient
-// always maps to the same run (and the same transcript).
-function hfRunForPatient(patient) {
-  const runs = hfRealRuns();
-  return runs.find((run) => run.patient === patient) || runs[0] || null;
+// Every persona in the test set, straight from /api/personas (the full detailed
+// set) — so any patient can be simulated live, not just ones with a saved run.
+function hfPersonaEntries() {
+  return state.personas?.personas || [];
 }
 
 function renderHealthForgePage() {
-  // Only patients that have a real run, so a selection always resolves to a
-  // transcript. Each option carries the patient's short scenario for context.
-  const personaOptions = hfPatients().map((patient) => {
-    const run = hfRunForPatient(patient);
-    return `<option value="${esc(patient)}">${esc(patient)} — ${esc(run.scenario)}</option>`;
-  }).join("");
+  const personaOptions = hfPersonaEntries()
+    .map((entry) => {
+      const p = entry.persona || {};
+      const name = p.name || p.label || entry.key;
+      const detail = p.label && p.label !== name ? ` — ${esc(p.label)}` : "";
+      return `<option value="${esc(entry.key)}">${esc(name)}${detail}</option>`;
+    })
+    .join("");
 
   const modelOptions = HF_MODELS.map(
-    (m) => `<option value="${m.id}">${esc(m.label)} · ${esc(m.tag)}</option>`,
+    (m) => `<option value="${esc(m.id)}">${esc(m.label)} · ${esc(m.tag)}</option>`,
   ).join("");
 
   app().innerHTML = `
-    <div class="hfBanner">${icon("flag")}<span><strong>Backend TODO</strong> — this UI is ready for live prompt scoring, but today it previews saved runs from <code>latest-comparison.json</code>.</span></div>
-
     <section class="band hfIntro">
       <div class="sectionHeader">
         <div>
           <h2>${icon("sparkles")}Try Your Prompt</h2>
-          <p class="sectionHint">Paste a prompt, choose a sample patient and turn limit, then preview the scoring experience. The next backend step will run this prompt against the selected persona and produce fresh metrics.</p>
+          <p class="sectionHint">Write a coaching prompt, choose a patient and a model, then watch a live simulated consultation play out turn by turn — and get scored on Coverage, Priority, and Depth.</p>
         </div>
-        <span class="hfBadge">frontend ready</span>
+        <span class="hfBadge">live</span>
       </div>
 
       <div class="hfGrid">
         <div class="hfField hfPromptField">
           <label for="hfPrompt">${icon("message")}Coaching prompt</label>
           <textarea id="hfPrompt" class="hfTextarea" spellcheck="false" rows="9">${esc(HF_SAMPLE_PROMPT)}</textarea>
-          <div class="hfHintRow">The system prompt under evaluation.</div>
+          <div class="hfHintRow">This is the system prompt the tested model runs under.</div>
         </div>
 
         <div class="hfControls">
@@ -2238,15 +2209,18 @@ function renderHealthForgePage() {
             <select id="hfPersona" class="hfSelect">${personaOptions}</select>
           </div>
           <div class="hfField">
-            <label for="hfTurns">${icon("ordered")}Number of turns</label>
-            <input id="hfTurns" class="hfInput" type="number" min="3" max="20" value="8" />
-          </div>
-          <div class="hfField">
-            <label for="hfModel">${icon("layers")}Model</label>
+            <label for="hfModel">${icon("layers")}Tested model</label>
             <select id="hfModel" class="hfSelect">${modelOptions}</select>
           </div>
-          <button id="hfRun" class="hfRunBtn" type="button">${icon("sparkles")}<span>Preview score</span></button>
-          <div class="hfRunNote">The selected prompt and turn count are captured in the UI. Backend support is tracked in <code>TODO.md</code>.</div>
+          <div class="hfField">
+            <label for="hfTurns">Max turns · <span id="hfTurnsOut">${HF_DEFAULT_TURNS}</span></label>
+            <input id="hfTurns" class="hfRange" type="range" min="${HF_MIN_TURNS}" max="${HF_MAX_TURNS}" value="${HF_DEFAULT_TURNS}" step="1" />
+            <div class="hfHintRow">The chat may end sooner once the patient has nothing left to say.</div>
+          </div>
+          <div class="hfBtnRow">
+            <button id="hfRun" class="hfRunBtn" type="button">${icon("sparkles")}<span>Run simulation</span></button>
+            <button id="hfStop" class="hfStopBtn" type="button" hidden>Stop</button>
+          </div>
         </div>
       </div>
     </section>
@@ -2256,48 +2230,16 @@ function renderHealthForgePage() {
 
   const runBtn = $("hfRun");
   if (runBtn) runBtn.addEventListener("click", hfRun);
+  const stopBtn = $("hfStop");
+  if (stopBtn) stopBtn.addEventListener("click", hfStop);
+  const turns = $("hfTurns");
+  const turnsOut = $("hfTurnsOut");
+  if (turns && turnsOut) {
+    turns.addEventListener("input", () => {
+      turnsOut.textContent = turns.value;
+    });
+  }
   window.scrollTo(0, 0);
-}
-
-const HF_STEPS = [
-  "Reading the persona…",
-  "Preparing the prompt run…",
-  "Attributing risk factors…",
-  "Scoring coverage, priority & depth…",
-];
-
-function hfRun() {
-  const result = $("hfResult");
-  if (!result) return;
-
-  // Drive the result from the selected patient, so the same patient always
-  // yields the same run, metrics, and transcript.
-  const patient = $("hfPersona")?.value || hfPatients()[0];
-  const turns = $("hfTurns")?.value || "8";
-
-  const btn = $("hfRun");
-  if (btn) btn.disabled = true;
-
-  // Staged "thinking" so the reveal feels like real work, then render.
-  let step = 0;
-  result.innerHTML = `
-    <div class="hfForging">
-      <span class="hfSpinner" aria-hidden="true"></span>
-      <span id="hfStep" class="hfStepText">${HF_STEPS[0]}</span>
-    </div>`;
-  const stepEl = $("hfStep");
-  const timer = setInterval(() => {
-    step += 1;
-    if (step < HF_STEPS.length && stepEl) stepEl.textContent = HF_STEPS[step];
-  }, 380);
-
-  setTimeout(() => {
-    clearInterval(timer);
-    if (btn) btn.disabled = false;
-    const run = hfRunForPatient(patient);
-    result.innerHTML = renderHealthForgeResult(run, { turns });
-    result.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, 1500);
 }
 
 function hfMetricCard(label, value, def) {
@@ -2313,51 +2255,211 @@ function hfMetricCard(label, value, def) {
     </div>`;
 }
 
-function renderHealthForgeResult(run, options = {}) {
-  if (!run) {
-    return `<div class="band"><div class="empty">No evaluated runs available.</div></div>`;
+// Holds the in-flight run's AbortController so the Stop button can cancel the
+// streamed fetch. Null when no run is active.
+let hfController = null;
+
+function hfStop() {
+  if (hfController) hfController.abort();
+}
+
+function hfSetRunning(running) {
+  const runBtn = $("hfRun");
+  const stopBtn = $("hfStop");
+  if (runBtn) runBtn.disabled = running;
+  if (stopBtn) stopBtn.hidden = !running;
+}
+
+// POST the run config to /api/simulate and consume its NDJSON stream, rendering
+// each turn as it arrives and the score when it lands. The endpoint is a live
+// Node route in dev and a Cloudflare Pages Function in production; the wire
+// format (one JSON row per line) is identical for both.
+async function hfRun() {
+  const prompt = $("hfPrompt")?.value?.trim() || "";
+  const personaId = $("hfPersona")?.value || "";
+  const modelId = $("hfModel")?.value || "";
+  const turnLimit = Number($("hfTurns")?.value || HF_DEFAULT_TURNS);
+  const result = $("hfResult");
+  if (!result) return;
+
+  if (!prompt) {
+    result.innerHTML = `<div class="band"><div class="hfError">${icon("info")}<span>Enter a coaching prompt to run.</span></div></div>`;
+    return;
   }
-  const compLevel = hfCompositeLevel(run.composite);
-  // Pull the matching live run (from latest-comparison.json via /api/results) so
-  // we can show its real transcript — for this run's exact persona — alongside
-  // the hardcoded metrics.
-  const liveRun = findRun(run.run_id);
-  const title = run.patient || run.scenario;
-  const transcriptPanel =
-    liveRun && liveRun.events?.length
-      ? `
+
+  result.innerHTML = `
+    <div class="band hfLive">
+      <div class="hfLiveHead">
+        <div id="hfStatus" class="hfStatus"><span class="hfSpinner" aria-hidden="true"></span><span id="hfStatusText">Starting simulation…</span></div>
+        <div id="hfMeta" class="hfLiveMeta"></div>
+      </div>
+      <div id="hfScore" class="hfScoreSlot"></div>
       <div class="hfTranscriptPanel">
-        <h3>${icon("message")}Transcript</h3>
-        ${renderTranscript(liveRun, { showTags: false })}
-      </div>`
-      : "";
-  return `
-    <div class="band">
-      <div class="hfResultHead">
-        <div>
-          <div class="hfResultTitle">${esc(title)}</div>
-          <div class="hfResultMeta">${esc(run.scenario)} · requested ${esc(options.turns || "8")} turns</div>
-        </div>
-        <div class="hfComposite">
-          <div class="hfCompositeVal ${compLevel}">${score(run.composite)}</div>
-          <div class="hfCompositeLabel">composite</div>
-        </div>
+        <h3>${icon("message")}Live transcript</h3>
+        <div id="hfTranscript" class="transcript"></div>
       </div>
+    </div>`;
+  result.scrollIntoView({ behavior: "smooth", block: "start" });
 
-      <div class="hfMetrics">
-        ${hfMetricCard("Coverage", run.coverage, "Share of required tier-weighted risk factors drawn out.")}
-        ${hfMetricCard("Priority", run.priority, "Whether serious factors were surfaced early.")}
-        ${hfMetricCard("Depth", run.depth, "Whether expected follow-ups were asked once a factor came up.")}
+  const statusText = $("hfStatusText");
+  const transcript = $("hfTranscript");
+  const meta = $("hfMeta");
+  let patientName = "patient";
+
+  hfController = new AbortController();
+  hfSetRunning(true);
+
+  try {
+    const response = await fetch("/api/simulate", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        prompt,
+        model_id: modelId,
+        persona_id: personaId,
+        turn_limit: turnLimit,
+      }),
+      signal: hfController.signal,
+    });
+
+    if (!response.ok || !response.body) {
+      let message = `Request failed (${response.status}).`;
+      try {
+        message = (await response.json()).error || message;
+      } catch {
+        /* non-JSON error body; keep the status message */
+      }
+      hfShowError(message);
+      return;
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      // NDJSON: process every complete line, leaving any partial tail buffered.
+      let newline;
+      while ((newline = buffer.indexOf("\n")) >= 0) {
+        const line = buffer.slice(0, newline).trim();
+        buffer = buffer.slice(newline + 1);
+        if (!line) continue;
+        let row;
+        try {
+          row = JSON.parse(line);
+        } catch {
+          continue;
+        }
+        patientName = hfHandleRow(row, { transcript, statusText, meta, patientName });
+      }
+    }
+  } catch (error) {
+    if (error?.name === "AbortError") {
+      if (statusText) statusText.textContent = "Stopped.";
+      $("hfStatus")?.classList.add("stopped");
+    } else {
+      hfShowError(error?.message || "The simulation failed.");
+    }
+  } finally {
+    hfSetRunning(false);
+    hfController = null;
+    document.querySelector("#hfStatus .hfSpinner")?.remove();
+  }
+}
+
+// Apply one streamed row to the UI. Returns the (possibly updated) patient name
+// so the caller can keep labelling subsequent patient turns.
+function hfHandleRow(row, ctx) {
+  const { transcript, statusText, meta } = ctx;
+  let { patientName } = ctx;
+
+  if (row.type === "run_started") {
+    patientName = row.persona?.name || row.persona?.label || "patient";
+    if (meta) {
+      meta.textContent = `${patientName} · ${row.model} · up to ${row.turn_limit} turns`;
+    }
+    if (statusText) statusText.textContent = "Patient is opening the conversation…";
+  } else if (row.type === "event") {
+    hfAppendEvent(transcript, row.event, patientName);
+    if (statusText && row.event.speaker) {
+      statusText.textContent =
+        row.event.speaker === "assistant"
+          ? `Turn ${row.event.turn} · patient is replying…`
+          : `Turn ${row.event.turn} · doctor is thinking…`;
+    }
+  } else if (row.type === "score") {
+    hfRenderScore(row);
+    if (statusText) statusText.textContent = "Done — evaluated.";
+  } else if (row.type === "error") {
+    hfShowError(row.message || "The simulation failed.");
+  }
+  return patientName;
+}
+
+// Append one transcript bubble, reusing the same markup/classes as the saved-run
+// transcript (renderTranscript) so live and saved chats look identical.
+function hfAppendEvent(container, event, patientName) {
+  if (!container || !event) return;
+  const who =
+    event.speaker === "patient"
+      ? `patient &middot; ${esc(patientName)}`
+      : "assistant";
+  const textClass = event.speaker === "assistant" ? "formatted" : "plain";
+  const text =
+    event.speaker === "assistant"
+      ? formatAssistantText(event.text)
+      : esc(event.text);
+  container.insertAdjacentHTML(
+    "beforeend",
+    `<div class="message ${event.speaker}">
+      <div class="speaker">${who} &middot; turn ${event.turn}</div>
+      <div class="messageText ${textClass}">${text}</div>
+    </div>`,
+  );
+  container.lastElementChild?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
+function hfShowError(message) {
+  const status = $("hfStatus");
+  if (status) {
+    status.classList.add("errored");
+    status.innerHTML = `${icon("info")}<span class="hfErrText">${esc(message)}</span>`;
+  }
+}
+
+// Render the final coverage/priority/depth/composite scores once the `score` row
+// arrives. Reuses the same metric cards and level colours as the Results tab.
+function hfRenderScore(row) {
+  const slot = $("hfScore");
+  if (!slot) return;
+  const s = row.score || {};
+  const coverage = Number(s.coverage_score || 0);
+  const priority = Number(s.priority_score || 0);
+  const depth = Number(s.depth_score || 0);
+  const composite = Number(s.bottom_to_roof_score || 0);
+  const compLevel = hfCompositeLevel(composite);
+  const conv = row.conversation || {};
+  const stop =
+    conv.stop_reason === "patient_ended" ? "patient ended" : "turn limit reached";
+  slot.innerHTML = `
+    <div class="hfResultHead">
+      <div>
+        <div class="hfResultTitle">Evaluated result</div>
+        <div class="hfResultMeta">${esc(String(conv.assistant_turn_count ?? "?"))} doctor turns · ${esc(stop)}</div>
       </div>
-
-      <div class="hfCallout">
-        ${icon("info")}
-        <span>This preview uses a saved evaluated run. The live backend will run the submitted prompt against this patient and turn limit, then return a new transcript and score.</span>
+      <div class="hfComposite">
+        <div class="hfCompositeVal ${compLevel}">${score(composite)}</div>
+        <div class="hfCompositeLabel">composite</div>
       </div>
-
-      ${transcriptPanel}
     </div>
-  `;
+    <div class="hfMetrics">
+      ${hfMetricCard("Coverage", coverage, "Share of required tier-weighted risk factors drawn out.")}
+      ${hfMetricCard("Priority", priority, "Whether serious factors were surfaced early.")}
+      ${hfMetricCard("Depth", depth, "Whether expected follow-ups were asked once a factor came up.")}
+    </div>`;
 }
 
 /* =====================================================================

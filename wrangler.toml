@@ -1,0 +1,22 @@
+# Cloudflare Pages configuration.
+#
+# The dashboard deploys as static assets (built into ./dist by
+# scripts/build-pages.js) PLUS one Pages Function — functions/api/simulate.js —
+# that runs live "Try It" simulations.
+#
+# `nodejs_compat` is required: the shared simulation engine transitively imports
+# node:fs (via src/artifacts.js) even though the live path never calls it, and
+# also uses Buffer/process shims. The flag lets those imports resolve on the
+# Workers runtime.
+#
+# Deploy:
+#   npm run build:pages                 # builds ./dist (also refreshes the data bundle)
+#   npx wrangler pages deploy dist      # uploads assets + compiles ./functions
+#
+# Secrets (set once per project; NOT stored in this file or the bundle):
+#   npx wrangler pages secret put OPENAI_API_KEY
+
+name = "cardio-risk-dashboard"
+compatibility_date = "2024-11-01"
+compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = "dist"

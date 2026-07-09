@@ -57,15 +57,16 @@ class ScriptedAdapter {
 }
 
 class OpenAICompatibleAdapter {
-  constructor(config, provider) {
+  constructor(config, provider, apiKeys) {
     this.config = config;
     this.provider = provider;
+    this.apiKeys = apiKeys;
   }
 
   async complete(messages) {
     const apiKey = this.provider === "openrouter"
-      ? process.env.OPENROUTER_API_KEY
-      : process.env.OPENAI_API_KEY;
+      ? this.apiKeys.OPENROUTER_API_KEY
+      : this.apiKeys.OPENAI_API_KEY;
     if (!apiKey) {
       throw new Error(`Missing API key for provider ${this.provider}`);
     }
@@ -96,7 +97,7 @@ class OpenAICompatibleAdapter {
         temperature: this.config.temperature ?? 0.2,
         ...tokenLimitParam
       })
-    }, { label: this.provider });
+    }, { label: this.provider, maxAttempts: this.config.maxAttempts ?? 5 });
     const raw = await response.json();
     return {
       text: raw.choices?.[0]?.message?.content?.trim() || "",
@@ -107,12 +108,13 @@ class OpenAICompatibleAdapter {
 }
 
 class AnthropicAdapter {
-  constructor(config) {
+  constructor(config, apiKeys) {
     this.config = config;
+    this.apiKeys = apiKeys;
   }
 
   async complete(messages) {
-    if (!process.env.ANTHROPIC_API_KEY) {
+    if (!this.apiKeys.ANTHROPIC_API_KEY) {
       throw new Error("Missing API key for provider anthropic");
     }
 
@@ -128,7 +130,7 @@ class AnthropicAdapter {
       method: "POST",
       headers: {
         "content-type": "application/json",
-        "x-api-key": process.env.ANTHROPIC_API_KEY,
+        "x-api-key": this.apiKeys.ANTHROPIC_API_KEY,
         "anthropic-version": "2023-06-01"
       },
       body: JSON.stringify({
@@ -138,7 +140,7 @@ class AnthropicAdapter {
         temperature: this.config.temperature ?? 0.2,
         max_tokens: this.config.max_tokens ?? 500
       })
-    }, { label: "anthropic" });
+    }, { label: "anthropic", maxAttempts: this.config.maxAttempts ?? 5 });
     const raw = await response.json();
     return {
       text: (raw.content || [])
@@ -152,10 +154,17 @@ class AnthropicAdapter {
   }
 }
 
-export function createModelAdapter(config) {
+// `options.apiKeys` supplies the provider API keys as a plain object
+// ({ OPENAI_API_KEY, OPENROUTER_API_KEY, ANTHROPIC_API_KEY }). It defaults to
+// process.env so every existing Node caller (scripts, tests) is unchanged, while
+// Cloudflare Pages Functions — where there is no process.env — can pass the
+// Worker's `env` binding through instead.
+export function createModelAdapter(config, options = {}) {
+  const apiKeys = options.apiKeys
+    || (typeof process !== "undefined" && process.env ? process.env : {});
   if (config.provider === "scripted") return new ScriptedAdapter(config);
-  if (config.provider === "openrouter") return new OpenAICompatibleAdapter(config, "openrouter");
-  if (config.provider === "openai") return new OpenAICompatibleAdapter(config, "openai");
-  if (config.provider === "anthropic") return new AnthropicAdapter(config);
+  if (config.provider === "openrouter") return new OpenAICompatibleAdapter(config, "openrouter", apiKeys);
+  if (config.provider === "openai") return new OpenAICompatibleAdapter(config, "openai", apiKeys);
+  if (config.provider === "anthropic") return new AnthropicAdapter(config, apiKeys);
   throw new Error(`Unsupported provider: ${config.provider}`);
 }

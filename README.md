@@ -44,6 +44,61 @@ Open `http://localhost:5173`.
 
 The dashboard reads the latest comparison from `runs/latest-comparison.json`.
 
+## Try It — Live Prompt Simulation
+
+The **Try It** tab runs a fresh simulation on demand: enter a coaching prompt,
+pick a tested model and a patient persona, choose a turn limit, and watch a real
+LLM-patient ↔ tested-model conversation stream in turn by turn, then get scored on
+Coverage, Priority, and Depth.
+
+It is powered by `POST /api/simulate`, a streaming endpoint that emits
+newline-delimited JSON (`run_started`, one `event` per turn, a final `score`, or
+`error`). The simulation logic is host-agnostic (`src/liveSimulation.js`) and is
+served two ways from the same code:
+
+- **Locally** by the Node dev server (`src/server.js`) — needs `OPENAI_API_KEY`
+  in your `.env`.
+- **In production** by a Cloudflare Pages Function (`functions/api/simulate.js`).
+
+The tested model is the one under evaluation (OpenAI `gpt-5.5` or `gpt-5.4-mini`);
+the simulated patient and the judge always run on the fast model to keep the
+stream responsive. The turn slider is capped at **20** so a run stays under the
+Cloudflare **free-tier** limit of 50 subrequests per request (≈2 model calls per
+turn + 1 judge call). On Cloudflare Workers **Paid** (1000 subrequests) you can
+raise the cap to 30 by bumping `MAX_TURN_LIMIT` in `src/liveSimulation.js` and
+`HF_MAX_TURNS` in `public/app.js`.
+
+## Deploy
+
+The dashboard deploys as a static site (built into `./dist`) plus the one live
+Pages Function above.
+
+### Cloudflare Pages
+
+```bash
+# 1. Build ./dist (also refreshes the fs-free data bundle the Function ships)
+npm run build:pages
+
+# 2. Store the API key as a Pages secret (never committed; not in the bundle)
+npx wrangler pages secret put OPENAI_API_KEY
+
+# 3. Deploy the static assets + compile ./functions
+npx wrangler pages deploy dist
+# or: npm run deploy:cloudflare
+```
+
+Requires `nodejs_compat` (already set in `wrangler.toml`). The static
+benchmark tabs (Results, Ground Truth, Safety, Patients) read snapshotted JSON;
+only the Try It tab calls the live Function.
+
+### Alternative: any Node host (no subrequest cap)
+
+Because the app is a plain Node server, hosts like **Render**, **Railway**, or
+**Fly.io** can run it as-is with no subrequest limit and no free-tier turn cap —
+just set `OPENAI_API_KEY` in the host's environment and run `npm run dev`
+(`node src/server.js`). This is the lowest-friction way to run the full 30-turn
+experience.
+
 ## Run Evaluations
 
 ### Coverage Evaluation

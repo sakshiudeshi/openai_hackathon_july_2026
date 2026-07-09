@@ -133,6 +133,16 @@ function deployToCloudflare() {
 
 async function main() {
   log("building static dashboard");
+
+  // Refresh the generated data bundle first so the live /api/simulate Pages
+  // Function (functions/api/simulate.js) ships the current hierarchy, personas,
+  // and prompts rather than a stale snapshot.
+  log("refreshing data bundle (scripts/build-data-bundle.js)");
+  execFileSync("node", ["scripts/build-data-bundle.js"], {
+    stdio: "inherit",
+    cwd: PROJECT_ROOT,
+  });
+
   fs.rmSync(DIST_DIR, { recursive: true, force: true });
   fs.mkdirSync(DATA_DIR, { recursive: true });
 
