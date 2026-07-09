@@ -954,17 +954,20 @@ function renderAboutPage() {
     <section class="storyHero compact">
       <div class="storyHeroCopy">
         <div class="eyebrow">${icon("info")} About CardioNAVIX</div>
-        <h1>A focused evaluation harness for cardiovascular-risk conversations.</h1>
-        <p>CardioNAVIX was built to test whether health AI can navigate clinical context, not just produce fluent health advice.</p>
+        <h1>A safety instrument for consumer health AI conversations.</h1>
+        <p>Consumer AI is already becoming the front door to care. CardioNAVIX asks a simple question before these systems ship: does your health AI catch what the patient did not say?</p>
       </div>
     </section>
 
     <section class="storyBand aboutStack">
-      <div class="aboutBlock"><h2>Why We Built This</h2><p>Health assistants can sound competent while failing to uncover risk factors, hidden symptoms, medication confusion, family history, or red flags. We wanted a repeatable way to expose those misses.</p></div>
-      <div class="aboutBlock"><h2>The Problem With Current Evaluation</h2><p>Generic benchmarks rarely test the messy work of interviewing a patient. Real safety depends on whether the assistant asks the next right question and notices when routine advice is not enough.</p></div>
-      <div class="aboutBlock"><h2>What It Measures</h2><p>CardioNAVIX measures risk-factor coverage, priority, follow-up depth, match to ground truth, and escalation behavior. Each result is tied back to transcript evidence.</p></div>
-      <div class="aboutBlock caution"><h2>What This Is Not</h2><p>CardioNAVIX is not a diagnostic tool and does not provide medical advice. It is an evaluation harness for testing whether health AI systems gather clinically important context and handle safety-sensitive routing appropriately.</p></div>
-      <div class="aboutBlock"><h2>Future Direction</h2><p>The next step is a live prompt-testing backend: users paste their own prompt, select a patient and turn limit, run a fresh simulated conversation, and receive the same score breakdown.</p></div>
+      <div class="aboutBlock"><h2>Why We Built This</h2><p>People ask health AI about supplements, symptoms, ageing parents, medications, and risk every day, often outside clinic hours. The dangerous moment is not always the final answer. It is the missed interview turn: the funny turn that sounds like a transient ischaemic attack, the chest symptom attributed to COPD, the patient who says they take tablets religiously but does not.</p></div>
+      <div class="aboutBlock"><h2>The Problem With Current Evaluation</h2><p>Most benchmarks grade the answer to a clean exam question. Real patients do not present clean facts. They minimise, misattribute, forget numbers, withhold out of shame, resist questioning, or ask on behalf of someone else. The knowledge was never the whole problem. The risk lives in the interview.</p></div>
+      <div class="aboutBlock"><h2>Our Approach</h2><p>CardioNAVIX tests the interview, not just the answer. A simulated patient carries hidden facts and realistic friction. The AI under test conducts the conversation. A grader scores whether it elicited what was missing, calibrated urgency in both directions, and routed to real care before giving advice.</p></div>
+      <div class="aboutBlock"><h2>Who Are We?</h2><p>We are a team of data engineers, healthcare operators, and a physician who has worked directly with people on health coaching, physical training, and long-term health plans. We have built across nutrition, diet, physio, clinical care, medical records, and preventive-health startups, so our view of patient behavior comes from repeated exposure to real people trying to improve their health over time.</p></div>
+      <div class="aboutBlock"><h2>How We Built The Patients</h2><p>The patient profiles are not arbitrary characters. They are distilled from patterns we have seen across long-term health optimization: people who minimise symptoms, misremember numbers, ask on behalf of family members, negotiate for a preferred answer, hide non-adherence, or present one concern while the clinically important signal sits underneath. We built the dataset to reflect what real patients say, what they leave out, and what actually matters for durable healthspan outcomes.</p></div>
+      <div class="aboutBlock"><h2>What It Measures</h2><p>The harness measures coverage, priority, depth, ground-truth match, and safety routing. Every result links back to transcript evidence, so builders can see exactly where a model caught the signal, missed the signal, or reassured past a red flag.</p></div>
+      <div class="aboutBlock"><h2>Why Cardiovascular First</h2><p>Cardiovascular risk is a proving ground because the burden is large, risk signals are time-sensitive, and poor routing has real system cost. We start here, but the instrument is broader: any consumer health AI can be tested against difficult conversations before it ships.</p></div>
+      <div class="aboutBlock"><h2>Future Direction</h2><p>The goal is one standard many builders can run before launch: prompt teams, model teams, care providers, buyers, and regulators should be able to benchmark whether a health conversation is safe enough. The next implementation step is a live prompt-testing backend where users paste their own prompt, select a patient and turn limit, and receive a fresh transcript and score.</p></div>
     </section>
   `;
   window.scrollTo(0, 0);
