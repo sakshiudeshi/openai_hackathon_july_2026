@@ -86,6 +86,11 @@ export async function runScenario({
   createPatient = (persona_, hierarchy_) => new PatientSimulator(persona_, hierarchy_),
   extractEvidence: extractEvidenceFn = extractEvidence,
   scoreOptions = {},
+  // Provider API keys for the tested-model adapter, as a plain object
+  // ({ OPENAI_API_KEY, ... }). Defaults (undefined) let createModelAdapter fall
+  // back to process.env, so Node callers are unchanged; a Cloudflare Worker —
+  // where process.env is empty — passes its `env` binding through here.
+  apiKeys = undefined,
   // Optional per-turn hook, fired at the START of each turn (before the tested
   // model is called) so callers can render live turn-by-turn progress. No-op by
   // default, keeping the existing runComparison path unchanged.
@@ -97,7 +102,7 @@ export async function runScenario({
 }) {
   const runId = makeRunId();
   const simulator = createPatient(persona, hierarchy);
-  const adapter = createModelAdapter(modelConfig);
+  const adapter = createModelAdapter(modelConfig, { apiKeys });
   const events = [];
 
   await storage?.recordRunStarted?.({

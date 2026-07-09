@@ -3,7 +3,15 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseHierarchyYaml } from "./yaml.js";
 
-const srcDir = path.dirname(fileURLToPath(import.meta.url));
+// In a bundled Cloudflare Worker, `import.meta.url` is undefined, which would
+// make fileURLToPath throw at module load. None of the fs-based loaders below
+// are ever CALLED on the Worker's live-simulation path (it uses the generated
+// data bundle instead), so fall back to a placeholder root rather than crashing
+// the whole Function at import time. Under Node, import.meta.url is defined and
+// this is unchanged.
+const srcDir = import.meta.url
+  ? path.dirname(fileURLToPath(import.meta.url))
+  : "/";
 export const PROJECT_ROOT = path.resolve(srcDir, "..");
 
 function readText(relativePath) {

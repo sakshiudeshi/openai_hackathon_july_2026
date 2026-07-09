@@ -159,6 +159,7 @@ export async function runLiveSimulation({ payload, data, apiKeys, emit }) {
       modelConfig: testedModelConfig,
       systemPrompt: prompt,
       turnLimit,
+      apiKeys,
       createPatient: () => patient,
       extractEvidence: (events, h, options) =>
         extractEvidenceLlm(events, h, options, judgeAdapter),

@@ -263,3 +263,4 @@ $RECYCLE.BIN/
 # Cloudflare (Wrangler local cache / build state)
 #######################################################################
 .wrangler/
+.dev.vars
